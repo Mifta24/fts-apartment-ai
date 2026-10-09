@@ -154,8 +154,11 @@
 .lobby-content:focus { outline: none; }
 .lobby-content > .lobby-eyebrow, .unit-scene .lobby-eyebrow { color: var(--muted); }
 .lobby-content h2 { margin-top: 10px; font-size: clamp(30px, 3vw, 44px); font-weight: 600; line-height: 1.08; letter-spacing: -.03em; }
-.stage:has(.unit-directory) .lobby-content { right: calc(var(--col) + var(--gap) * 2); }
-.stage:has(.stage-chat.is-open) .lobby-content { right: calc(var(--col) + var(--gap) * 2); }
+/* Desktop only: the build merges these into one :is() rule whose specificity would beat the phone layout. */
+@media (min-width: 900px) {
+    .stage:has(.unit-directory) .lobby-content { right: calc(var(--col) + var(--gap) * 2); }
+    .stage:has(.stage-chat.is-open) .lobby-content { right: calc(var(--col) + var(--gap) * 2); }
+}
 .panel-close { position: sticky; top: 0; z-index: 2; float: right; display: grid; place-items: center; width: 40px; height: 40px; margin: -10px -12px 0 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); font-size: 22px; line-height: 1; transition: background .2s; }
 .panel-close:hover { background: white; }
 .lobby-action { display: inline-flex; align-items: center; gap: 18px; border-radius: 4px; background: var(--ink); color: white; padding: 13px 18px; font-size: 13.5px; font-weight: 500; cursor: pointer; transition: background .2s, color .2s; }
@@ -242,8 +245,10 @@
 .lobby-content .facility-hero + h2 { margin-top: 34px; }
 
 /* Building information and the team: narrower sheets that leave the city in view */
-.lobby-content.info-panel, .lobby-content.staff-panel { right: auto; width: min(620px, calc(100% - var(--content-left) - var(--gap))); }
-.stage:has(.stage-chat.is-open) .lobby-content.info-panel, .stage:has(.stage-chat.is-open) .lobby-content.staff-panel { right: auto; width: min(620px, calc(100% - var(--content-left) - var(--col) - var(--gap) * 3)); }
+@media (min-width: 900px) {
+    .lobby-content.info-panel, .lobby-content.staff-panel { right: auto; width: min(620px, calc(100% - var(--content-left) - var(--gap))); }
+    .stage:has(.stage-chat.is-open) .lobby-content.info-panel, .stage:has(.stage-chat.is-open) .lobby-content.staff-panel { right: auto; width: min(620px, calc(100% - var(--content-left) - var(--col) - var(--gap) * 3)); }
+}
 /* Beside her, every card and panel ends before she starts. */
 @media (min-width: 1280px) {
     .stage-welcome { width: min(640px, calc(var(--char-left) + var(--char-w) * .25 - var(--content-left) - 20px)); }
