@@ -1,0 +1,65 @@
+name: Deploy
+
+# Ships master to the Plesk server once CI has passed. The code goes over SSH
+# straight into the server's own git checkout (a `deploy` branch), so the
+# server never needs read access to this private repository.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_TARGET: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Load SSH key
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          printf 'Host deploy-server\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/deploy_key\n  IdentitiesOnly yes\n' \
+            "${{ secrets.DEPLOY_HOST }}" "${{ secrets.DEPLOY_USER }}" > ~/.ssh/config
+
+      - name: Send the code to the server
+        run: git push --force "deploy-server:${{ secrets.DEPLOY_PATH }}" HEAD:refs/heads/deploy
+
+      - name: Install, build and migrate on the server
+        run: |
+          ssh deploy-server "bash -l -s" <<'REMOTE'
+          set -euo pipefail
+          export PATH="$HOME/.phpenv/shims:$HOME/.nodenv/shims:$PATH"
+          export NODENV_VERSION=24
+          cd "${{ secrets.DEPLOY_PATH }}"
+
+          # Refuses to run if someone changed tracked files on the server by hand.
+          git merge --ff-only deploy
+
+          composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+          npm ci --no-audit --no-fund
+          npm run build
+          php artisan migrate --force
+          php artisan optimize
+
+          git log --oneline -1
+          REMOTE
+
+      - name: Check the site answers
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' https://apartment-ai.fts-tech.co.id/fts-apartment-ai)
+          echo "HTTP $code"
+          test "$code" = 200
