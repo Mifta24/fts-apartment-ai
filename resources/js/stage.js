@@ -61,7 +61,13 @@ function initStage() {
     runFloorDisplay(stage, reducedMotion);
 
     // On phones the lift panel is a scrolling strip; keep the lit button in view.
-    stage.querySelector('.lift-button[aria-current]')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+    // Scrolling the strip itself: scrollIntoView would also pan the stage and clip the header.
+    const strip = stage.querySelector('.lift-buttons');
+    const current = strip?.querySelector('.lift-button[aria-current]');
+    if (strip && current) {
+        const offset = current.getBoundingClientRect().left - strip.getBoundingClientRect().left;
+        strip.scrollLeft += offset - (strip.clientWidth - current.offsetWidth) / 2;
+    }
 
     if (!image || image.complete) {
         showScene();

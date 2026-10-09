@@ -7,7 +7,7 @@
     @fonts
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="flex min-h-screen items-center justify-center bg-stone-50">
+<body class="flex min-h-screen items-center justify-center bg-stone-50 p-4">
     <div class="w-full max-w-sm rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
         <h1 class="text-lg font-semibold text-stone-900">Apartment Admin</h1>
         <p class="mt-1 text-sm text-stone-500">Sign in to manage your apartment's AI Concierge.</p>
