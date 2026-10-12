@@ -18,7 +18,7 @@ class ApartmentPageController extends Controller
     /** The concierge's face for the chat and narrator avatars. */
     private const AVATAR_IMAGE = 'images/character/character avatar.jpg';
 
-    /** The lobby is the front-desk picture on its own: no concierge cut-out is laid over it. */
+    /** The lobby opens on the front desk, with the concierge welcoming guests in front of it. */
     private const LOBBY_DESK_IMAGE = 'images/apartment-lobby.jpg';
 
     /**
@@ -40,6 +40,7 @@ class ApartmentPageController extends Controller
      */
     private const SCENE_POSES = [
         'units' => 'presenting',
+        'lobby' => 'welcoming',
         'facilities' => 'welcoming',
         'reservation' => 'consulting',
         'staff' => 'consulting',
@@ -350,7 +351,7 @@ class ApartmentPageController extends Controller
      * The photograph behind a scene, the concierge posed in front of it,
      * plus the crop of her face used by the chat and narrator avatars.
      *
-     * @return array{image: string, focus: string, focusMobile: string, character: ?string, pose: string, avatarImage: string, avatarZoom: string, avatarFocus: string}
+     * @return array{image: string, focus: string, focusMobile: string, character: string, pose: string, avatarImage: string, avatarZoom: string, avatarFocus: string}
      */
     private function sceneBackdrop(string $scene): array
     {
@@ -364,7 +365,7 @@ class ApartmentPageController extends Controller
 
         return [
             ...$photo,
-            'character' => $scene === 'lobby' ? null : asset(self::CHARACTER_POSES[$pose]),
+            'character' => asset(self::CHARACTER_POSES[$pose]),
             'pose' => $pose,
             'avatarImage' => asset(self::AVATAR_IMAGE),
             'avatarZoom' => 'cover',
