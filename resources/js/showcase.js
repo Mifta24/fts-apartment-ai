@@ -411,7 +411,9 @@ function initShowcase() {
                                         <div class="showcase-option-body">
                                             <h3>${esc(unit.name)}</h3>
                                             <p class="showcase-option-facts">${esc(facts)}</p>
-                                            <p class="showcase-option-price">${money(unit.total_price)} <span>${esc(tpl(L.total_for, { nights: unit.nights }))}</span></p>
+                                            <p class="showcase-option-price">${unit.total_price !== undefined && unit.total_price !== null
+                                                ? `${money(unit.total_price)} <span>${esc(tpl(L.total_for, { nights: unit.nights }))}</span>`
+                                                : `<span>${esc(L.from)}</span> ${money(unit.starting_price)} <span>${esc(L.per_night)}</span>`}</p>
                                             ${unit.discount_percent > 0 ? `<p class="showcase-chip">−${unit.discount_percent}% ${esc(L.discount)}</p>` : ''}
                                             <div class="showcase-option-actions">
                                                 <button type="button" class="showcase-button is-ghost" data-view="${esc(unit.unit_type_slug)}">${esc(L.view)}</button>

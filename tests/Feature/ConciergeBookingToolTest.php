@@ -81,6 +81,22 @@ class ConciergeBookingToolTest extends TestCase
         $this->assertSame(25, $detail['long_stay']['monthly_discount_percent']);
     }
 
+    public function test_search_units_without_dates_lists_every_active_unit_type_with_starting_prices(): void
+    {
+        $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
+        $apartment->unitTypes()->create(['name' => 'Studio', 'slug' => 'studio', 'base_price' => 500000, 'max_adults' => 2, 'max_children' => 0, 'bedrooms' => 0, 'is_active' => true]);
+        $apartment->unitTypes()->create(['name' => 'Two Bedroom', 'slug' => 'two-bedroom', 'base_price' => 1500000, 'max_adults' => 4, 'max_children' => 2, 'bedrooms' => 2, 'is_active' => true]);
+        $apartment->unitTypes()->create(['name' => 'Hidden', 'slug' => 'hidden', 'base_price' => 100000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => false]);
+        $conversation = Conversation::create(['apartment_id' => $apartment->id, 'guest_token' => (string) Str::uuid(), 'locale' => 'id']);
+
+        $result = (new ApartmentConciergeTools($apartment, $conversation, 'id'))->dispatch('search_units', []);
+
+        $this->assertSame('unit_results', $result['ui']['type']);
+        $this->assertSame(['studio', 'two-bedroom'], array_column($result['ui']['units'], 'unit_type_slug'));
+        $this->assertSame(500000.0, (float) $result['ui']['units'][0]['starting_price']);
+        $this->assertArrayNotHasKey('total_price', $result['ui']['units'][0]);
+    }
+
     public function test_start_reservation_opens_a_prefilled_form_and_quotes_the_dates(): void
     {
         $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);

@@ -53,18 +53,18 @@ class ApartmentConciergeTools
                 ],
                 [
                     'name' => 'search_units',
-                    'description' => 'Search apartment unit types (studio, 1, 2 or 3 bedrooms) that fit the guest\'s dates and household, with real-time availability and the total price — long-stay discount already applied — checked. Use this whenever a guest describes what they want (dates, residents, bedrooms, view, budget) rather than naming one unit by name.',
+                    'description' => 'Search apartment unit types (studio, 1, 2 or 3 bedrooms). With dates and household it checks real-time availability and returns the total price, long-stay discount already applied. Without dates it simply lists the building\'s unit types with their per-night starting price. Use this whenever a guest wants to see, browse or compare units, or describes what they want (dates, residents, bedrooms, view, budget) rather than naming one unit by name — never wait for dates before showing the units.',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
-                            'check_in' => ['type' => 'string', 'description' => 'Check-in date, YYYY-MM-DD'],
-                            'check_out' => ['type' => 'string', 'description' => 'Check-out date, YYYY-MM-DD'],
-                            'adults' => ['type' => 'integer', 'minimum' => 1],
+                            'check_in' => ['type' => 'string', 'description' => 'Optional check-in date, YYYY-MM-DD; leave out when the guest has not given dates'],
+                            'check_out' => ['type' => 'string', 'description' => 'Optional check-out date, YYYY-MM-DD'],
+                            'adults' => ['type' => 'integer', 'minimum' => 1, 'description' => 'Optional number of adults'],
                             'children' => ['type' => 'integer', 'minimum' => 0],
                             'view_type' => ['type' => 'string', 'description' => 'e.g. city, skyline, park, pool — optional preference'],
                             'bedrooms' => ['type' => 'integer', 'minimum' => 0, 'description' => 'Optional minimum number of bedrooms; 0 means a studio is fine'],
                         ],
-                        'required' => ['check_in', 'check_out', 'adults'],
+                        'required' => [],
                     ],
                 ],
                 [
@@ -207,8 +207,12 @@ class ApartmentConciergeTools
 
     private function searchUnits(array $input): array
     {
+        if (empty($input['check_in']) || empty($input['check_out'])) {
+            return $this->browseUnits($input);
+        }
+
         [$checkIn, $checkOut, $nights] = $this->parseStay($input['check_in'], $input['check_out']);
-        $adults = (int) $input['adults'];
+        $adults = max(1, (int) ($input['adults'] ?? 1));
         $children = (int) ($input['children'] ?? 0);
         $viewType = $input['view_type'] ?? null;
         $bedrooms = isset($input['bedrooms']) ? (int) $input['bedrooms'] : null;
@@ -277,6 +281,63 @@ class ApartmentConciergeTools
                 'adults' => $adults,
                 'children' => $children,
                 'units' => $showcase,
+            ],
+        ];
+    }
+
+    /**
+     * Lists the building's active unit types with their per-night starting
+     * price when the guest has not given dates yet.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array{text: string, ui: ?array<string, mixed>}
+     */
+    private function browseUnits(array $input): array
+    {
+        $viewType = $input['view_type'] ?? null;
+        $bedrooms = isset($input['bedrooms']) ? (int) $input['bedrooms'] : null;
+
+        $unitTypes = $this->apartment->unitTypes()
+            ->where('is_active', true)
+            ->with('images')
+            ->get()
+            ->when($viewType, fn ($c) => $c->filter(fn (UnitType $rt) => $rt->view_type === $viewType))
+            ->when($bedrooms !== null, fn ($c) => $c->filter(fn (UnitType $rt) => $rt->bedrooms >= $bedrooms))
+            ->sortBy('base_price')
+            ->values();
+
+        if ($unitTypes->isEmpty()) {
+            return ['text' => 'No unit type matches. Tell the guest honestly, or call request_human_handover.', 'ui' => null];
+        }
+
+        $units = $unitTypes->map(fn (UnitType $unitType) => [
+            ...$this->unitDetail($unitType),
+            'thumbnail_url' => $unitType->images->first()?->image_source,
+        ])->all();
+
+        $summary = array_map(fn (array $unit) => [
+            'unit_type_slug' => $unit['unit_type_slug'],
+            'name' => $unit['name'],
+            'size_sqm' => $unit['size_sqm'],
+            'bedrooms' => $unit['bedrooms'],
+            'max_adults' => $unit['max_adults'],
+            'max_children' => $unit['max_children'],
+            'starting_price_per_night' => $unit['starting_price'],
+            'currency' => $unit['currency'],
+        ], $units);
+
+        return [
+            'text' => json_encode([
+                'units' => $summary,
+                'note' => 'No dates were given, so these are indicative per-night starting prices only. The units are now shown on the guest\'s screen; ask for dates and household size to check real availability and the exact price.',
+            ], JSON_UNESCAPED_UNICODE),
+            'ui' => [
+                'type' => 'unit_results',
+                'check_in' => null,
+                'check_out' => null,
+                'adults' => null,
+                'children' => null,
+                'units' => $units,
             ],
         ];
     }

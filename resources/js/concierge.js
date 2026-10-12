@@ -344,7 +344,9 @@ function initConcierge() {
             <div class="p-3">
                 <p class="chat-card-tag">${facts}</p>
                 <p class="mt-1 font-semibold">${unit.name}</p>
-                <p class="mt-1 text-sm font-semibold">${money(unit.total_price)} <span class="font-normal opacity-60">/ ${unit.nights} ${config.labels.night}</span></p>
+                <p class="mt-1 text-sm font-semibold">${unit.total_price !== undefined && unit.total_price !== null
+                    ? `${money(unit.total_price)} <span class="font-normal opacity-60">/ ${unit.nights} ${config.labels.night}</span>`
+                    : `${money(unit.starting_price)} <span class="font-normal opacity-60">/ ${config.labels.night}</span>`}</p>
                 ${unit.discount_percent > 0 ? `<p class="chat-card-tag mt-1">−${unit.discount_percent}% ${config.labels.discount}</p>` : ''}
                 <button type="button" class="chat-card-button" data-detail-slug="${unit.unit_type_slug}">
                     ${config.labels.viewDetails}
