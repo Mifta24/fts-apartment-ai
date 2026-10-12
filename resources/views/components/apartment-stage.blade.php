@@ -25,7 +25,7 @@
         </div>
         <img src="{{ $backdrop['image'] }}" alt="" class="stage-image" fetchpriority="high">
         <div class="stage-shade"></div>
-        @if ($scene !== 'unit')
+        @if ($scene !== 'unit' && $backdrop['character'])
             <img src="{{ $backdrop['character'] }}" alt="{{ $lobby['assistant'] }}" class="stage-character" data-pose="{{ $backdrop['pose'] }}">
         @endif
         <p class="stage-tour" data-stage-tour aria-live="polite"></p>

@@ -487,8 +487,8 @@ class ApartmentLobbyTest extends TestCase
 
         $this->get('/demo')
             ->assertOk()
-            ->assertSee('photo-1545324418-cc1a3fa10c00', false)
-            ->assertSee('class="stage-character" data-pose="standing"', false);
+            ->assertSee('images/apartment-lobby.jpg', false)
+            ->assertDontSee('class="stage-character"', false);
         $this->get('/demo/units')
             ->assertOk()
             ->assertSee('photo-1600607687939-ce8a6c25118c', false)

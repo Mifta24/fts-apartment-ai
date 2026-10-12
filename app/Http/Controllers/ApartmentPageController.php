@@ -18,6 +18,9 @@ class ApartmentPageController extends Controller
     /** The concierge's face for the chat and narrator avatars. */
     private const AVATAR_IMAGE = 'images/character/character avatar.jpg';
 
+    /** The lobby is the front-desk picture on its own: no concierge cut-out is laid over it. */
+    private const LOBBY_DESK_IMAGE = 'images/apartment-lobby.jpg';
+
     /**
      * The concierge's poses, transparent cut-outs shown in front of the scene photo.
      *
@@ -50,7 +53,7 @@ class ApartmentPageController extends Controller
      * @var array<string, array{image: string, focus: string, focusMobile: string}>
      */
     private const SCENE_PHOTOS = [
-        'lobby' => ['image' => 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=2000&q=80', 'focus' => 'center 40%', 'focusMobile' => '30% 40%'],
+        'lobby' => ['image' => self::LOBBY_DESK_IMAGE, 'focus' => 'center 40%', 'focusMobile' => '59% 50%'],
         'units' => ['image' => 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=2000&q=80', 'focus' => 'center 50%', 'focusMobile' => '40% 50%'],
         'facilities' => ['image' => 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=2000&q=80', 'focus' => 'center 55%', 'focusMobile' => '50% 55%'],
         'info' => ['image' => 'https://images.unsplash.com/photo-1555899434-94d1368aa7af?auto=format&fit=crop&w=2000&q=80', 'focus' => 'center 45%', 'focusMobile' => '50% 45%'],
@@ -345,7 +348,7 @@ class ApartmentPageController extends Controller
      * The photograph behind a scene, the concierge posed in front of it,
      * plus the crop of her face used by the chat and narrator avatars.
      *
-     * @return array{image: string, focus: string, focusMobile: string, character: string, pose: string, avatarImage: string, avatarZoom: string, avatarFocus: string}
+     * @return array{image: string, focus: string, focusMobile: string, character: ?string, pose: string, avatarImage: string, avatarZoom: string, avatarFocus: string}
      */
     private function sceneBackdrop(string $scene): array
     {
@@ -353,9 +356,13 @@ class ApartmentPageController extends Controller
 
         $pose = self::SCENE_POSES[['unit' => 'units'][$scene] ?? $scene] ?? 'standing';
 
+        if ($scene === 'lobby') {
+            $photo['image'] = asset($photo['image']);
+        }
+
         return [
             ...$photo,
-            'character' => asset(self::CHARACTER_POSES[$pose]),
+            'character' => $scene === 'lobby' ? null : asset(self::CHARACTER_POSES[$pose]),
             'pose' => $pose,
             'avatarImage' => asset(self::AVATAR_IMAGE),
             'avatarZoom' => 'cover',
