@@ -94,8 +94,24 @@ class ApartmentConciergeTools
                     ],
                 ],
                 [
+                    'name' => 'start_reservation',
+                    'description' => 'Open the stay request form on the guest\'s screen, pre-filled with whatever you already know. Use this as soon as a guest says they want to book, reserve, rent or request a unit — the guest fills in their name, contact and any missing details in the form themselves, so do NOT ask for name or phone in chat first. Only the unit is required; pass dates and household size when the guest already gave them.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'unit_type_slug' => ['type' => 'string'],
+                            'check_in' => ['type' => 'string', 'description' => 'Optional, YYYY-MM-DD'],
+                            'check_out' => ['type' => 'string', 'description' => 'Optional, YYYY-MM-DD'],
+                            'adults' => ['type' => 'integer', 'minimum' => 1],
+                            'children' => ['type' => 'integer', 'minimum' => 0],
+                            'units' => ['type' => 'integer', 'minimum' => 1, 'description' => 'Number of units, default 1'],
+                        ],
+                        'required' => ['unit_type_slug'],
+                    ],
+                ],
+                [
                     'name' => 'create_booking_request',
-                    'description' => 'Create a stay request after the guest confirms the unit and dates and you have their name and phone. This re-checks availability before booking. It does not charge payment or sign a lease — it creates a pending request for the apartment team to confirm.',
+                    'description' => 'Create a stay request directly in the chat, only when the guest has already typed the unit, exact dates, household size, their name and phone in the conversation. Otherwise use start_reservation instead. This re-checks availability before booking. It does not charge payment or sign a lease — it creates a pending request for the apartment team to confirm.',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
@@ -144,6 +160,7 @@ class ApartmentConciergeTools
             'search_units' => $this->searchUnits($input),
             'get_unit_detail' => $this->getUnitDetail($input),
             'check_availability' => $this->checkAvailability($input),
+            'start_reservation' => $this->startReservation($input),
             'create_booking_request' => $this->createBookingRequest($input),
             'request_human_handover' => $this->requestHumanHandover($input),
             default => ['text' => "Unknown tool: {$name}", 'ui' => null],
@@ -202,6 +219,7 @@ class ApartmentConciergeTools
 
         $candidates = $this->apartment->unitTypes()
             ->where('is_active', true)
+            ->with('images')
             ->get()
             ->filter(fn (UnitType $rt) => $this->reservations->fitsOccupancy($rt, $adults, $children, 1))
             ->when($viewType, fn ($c) => $c->filter(fn (UnitType $rt) => $rt->view_type === $viewType))
@@ -245,13 +263,20 @@ class ApartmentConciergeTools
 
         usort($matches, fn ($a, $b) => $a['total_price'] <=> $b['total_price']);
 
+        $showcase = array_map(
+            fn (array $match) => [...$this->unitDetail($candidates->firstWhere('slug', $match['unit_type_slug'])), ...$match],
+            $matches,
+        );
+
         return [
             'text' => json_encode($matches, JSON_UNESCAPED_UNICODE),
             'ui' => [
                 'type' => 'unit_results',
                 'check_in' => $input['check_in'],
                 'check_out' => $input['check_out'],
-                'units' => $matches,
+                'adults' => $adults,
+                'children' => $children,
+                'units' => $showcase,
             ],
         ];
     }
@@ -263,13 +288,76 @@ class ApartmentConciergeTools
             return ['text' => 'Unit type not found.', 'ui' => null];
         }
 
-        $images = $unitType->images;
-        $tag = $input['image_tag'] ?? null;
-        if ($tag) {
-            $images = $images->filter(fn ($img) => $img->hasTag($tag));
+        $detail = $this->unitDetail($unitType, $input['image_tag'] ?? null);
+
+        return [
+            'text' => json_encode($detail, JSON_UNESCAPED_UNICODE),
+            'ui' => ['type' => 'unit_detail', 'unit' => $detail],
+        ];
+    }
+
+    /**
+     * Opens the stay request form on the guest's screen, pre-filled. The guest
+     * types their own name and contact there; the form submits through the
+     * same reservation endpoint as the stay request wizard.
+     */
+    private function startReservation(array $input): array
+    {
+        $unitType = $this->findUnitType($input['unit_type_slug']);
+        if (! $unitType) {
+            return ['text' => 'Unit type not found.', 'ui' => null];
         }
 
-        $detail = [
+        $adults = max(1, (int) ($input['adults'] ?? 1));
+        $children = max(0, (int) ($input['children'] ?? 0));
+        $units = max(1, (int) ($input['units'] ?? 1));
+        $prefill = compact('adults', 'children', 'units');
+        $quote = null;
+
+        if (filled($input['check_in'] ?? null) && filled($input['check_out'] ?? null)) {
+            [$checkIn, $checkOut, $nights] = $this->parseStay($input['check_in'], $input['check_out']);
+            $today = CarbonImmutable::now($this->apartment->timezone)->startOfDay();
+
+            if ($nights >= 1 && ! $checkIn->lessThan($today)) {
+                $prefill += ['check_in' => $checkIn->toDateString(), 'check_out' => $checkOut->toDateString()];
+                $quote = $this->reservations->quote($unitType, $checkIn, $checkOut, $units);
+
+                if (! $quote) {
+                    return [
+                        'text' => 'This unit has no availability for every night of those dates, so the form was not opened. Tell the guest honestly and offer other dates or another unit (search_units).',
+                        'ui' => ['type' => 'availability', 'available' => false, 'unit_type_slug' => $unitType->slug],
+                    ];
+                }
+            }
+        }
+
+        $unit = $this->unitDetail($unitType);
+
+        return [
+            'text' => json_encode([
+                'ok' => true,
+                'message' => 'The stay request form for '.$unit['name'].' is now open on the guest\'s screen'.(isset($prefill['check_in']) ? ' with the dates filled in' : '').'. Tell the guest in one short sentence to complete their name and contact there. Do not ask for their name or phone in chat.',
+            ], JSON_UNESCAPED_UNICODE),
+            'ui' => [
+                'type' => 'reservation_form',
+                'unit' => $unit,
+                'prefill' => $prefill,
+                'quote' => $quote ? ['nights' => $quote['nights'], 'grand_total' => $quote['grand_total'], 'discount_percent' => $quote['discount_percent']] : null,
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function unitDetail(UnitType $unitType, ?string $imageTag = null): array
+    {
+        $images = $unitType->images;
+        if ($imageTag) {
+            $images = $images->filter(fn ($img) => $img->hasTag($imageTag));
+        }
+
+        return [
             'unit_type_slug' => $unitType->slug,
             'name' => $unitType->translatedName($this->locale),
             'description' => $unitType->translatedDescription($this->locale),
@@ -299,11 +387,6 @@ class ApartmentConciergeTools
                 'tags' => $img->tags,
                 'alt' => $img->alt_text,
             ])->values()->all(),
-        ];
-
-        return [
-            'text' => json_encode($detail, JSON_UNESCAPED_UNICODE),
-            'ui' => ['type' => 'unit_detail', 'unit' => $detail],
         ];
     }
 

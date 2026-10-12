@@ -80,4 +80,86 @@ class ConciergeBookingToolTest extends TestCase
         $this->assertSame(0, $detail['bedrooms']);
         $this->assertSame(25, $detail['long_stay']['monthly_discount_percent']);
     }
+
+    public function test_start_reservation_opens_a_prefilled_form_and_quotes_the_dates(): void
+    {
+        $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
+        $unit = $apartment->unitTypes()->create(['name' => 'Deluxe King', 'slug' => 'deluxe-king', 'base_price' => 1000000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
+        $unit->images()->create(['image_url' => 'https://example.test/a.jpg', 'tags' => ['bedroom'], 'alt_text' => 'Bedroom', 'sort_order' => 0]);
+        $conversation = Conversation::create(['apartment_id' => $apartment->id, 'guest_token' => (string) Str::uuid(), 'locale' => 'en']);
+
+        $checkIn = CarbonImmutable::now()->addDays(5)->startOfDay();
+        foreach ([0, 1] as $offset) {
+            UnitInventory::create(['unit_type_id' => $unit->id, 'stay_date' => $checkIn->addDays($offset)->toDateString(), 'total_units' => 3, 'booked_units' => 0, 'price' => 1000000]);
+        }
+
+        $tools = new ApartmentConciergeTools($apartment, $conversation, 'en');
+
+        $result = $tools->dispatch('start_reservation', [
+            'unit_type_slug' => 'deluxe-king', 'check_in' => $checkIn->toDateString(), 'check_out' => $checkIn->addDays(2)->toDateString(), 'adults' => 2,
+        ]);
+
+        $this->assertSame('reservation_form', $result['ui']['type']);
+        $this->assertSame('deluxe-king', $result['ui']['unit']['unit_type_slug']);
+        $this->assertSame('https://example.test/a.jpg', $result['ui']['unit']['images'][0]['url']);
+        $this->assertSame(['adults' => 2, 'children' => 0, 'units' => 1, 'check_in' => $checkIn->toDateString(), 'check_out' => $checkIn->addDays(2)->toDateString()], $result['ui']['prefill']);
+        $this->assertSame(2000000.0, $result['ui']['quote']['grand_total']);
+        $this->assertSame(0, Booking::count());
+    }
+
+    public function test_start_reservation_works_without_dates_and_ignores_past_ones(): void
+    {
+        $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
+        $apartment->unitTypes()->create(['name' => 'Studio', 'slug' => 'studio', 'base_price' => 600000, 'max_adults' => 2, 'is_active' => true]);
+        $conversation = Conversation::create(['apartment_id' => $apartment->id, 'guest_token' => (string) Str::uuid(), 'locale' => 'en']);
+        $tools = new ApartmentConciergeTools($apartment, $conversation, 'en');
+
+        $bare = $tools->dispatch('start_reservation', ['unit_type_slug' => 'studio']);
+        $this->assertSame('reservation_form', $bare['ui']['type']);
+        $this->assertNull($bare['ui']['quote']);
+        $this->assertArrayNotHasKey('check_in', $bare['ui']['prefill']);
+
+        $past = $tools->dispatch('start_reservation', ['unit_type_slug' => 'studio', 'check_in' => '2020-01-01', 'check_out' => '2020-01-05']);
+        $this->assertSame('reservation_form', $past['ui']['type']);
+        $this->assertArrayNotHasKey('check_in', $past['ui']['prefill']);
+
+        $this->assertNull($tools->dispatch('start_reservation', ['unit_type_slug' => 'nope'])['ui']);
+    }
+
+    public function test_start_reservation_does_not_open_a_form_for_dates_that_are_not_available(): void
+    {
+        $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
+        $apartment->unitTypes()->create(['name' => 'Studio', 'slug' => 'studio', 'base_price' => 600000, 'max_adults' => 2, 'is_active' => true]);
+        $conversation = Conversation::create(['apartment_id' => $apartment->id, 'guest_token' => (string) Str::uuid(), 'locale' => 'en']);
+        $checkIn = CarbonImmutable::now()->addDays(5);
+
+        $result = (new ApartmentConciergeTools($apartment, $conversation, 'en'))->dispatch('start_reservation', [
+            'unit_type_slug' => 'studio', 'check_in' => $checkIn->toDateString(), 'check_out' => $checkIn->addDays(2)->toDateString(),
+        ]);
+
+        $this->assertSame('availability', $result['ui']['type']);
+        $this->assertFalse($result['ui']['available']);
+    }
+
+    public function test_unit_search_results_carry_the_photos_and_details_the_stage_needs(): void
+    {
+        $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
+        $unit = $apartment->unitTypes()->create(['name' => 'Studio', 'slug' => 'studio', 'base_price' => 600000, 'bedrooms' => 0, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
+        $unit->images()->create(['image_url' => 'https://example.test/studio.jpg', 'tags' => ['living_room'], 'alt_text' => 'Living', 'sort_order' => 0]);
+        $conversation = Conversation::create(['apartment_id' => $apartment->id, 'guest_token' => (string) Str::uuid(), 'locale' => 'en']);
+
+        $checkIn = CarbonImmutable::now()->addDays(5)->startOfDay();
+        UnitInventory::create(['unit_type_id' => $unit->id, 'stay_date' => $checkIn->toDateString(), 'total_units' => 1, 'booked_units' => 0, 'price' => 600000]);
+
+        $result = (new ApartmentConciergeTools($apartment, $conversation, 'en'))->dispatch('search_units', [
+            'check_in' => $checkIn->toDateString(), 'check_out' => $checkIn->addDay()->toDateString(), 'adults' => 2,
+        ]);
+
+        $ui = $result['ui']['units'][0];
+        $this->assertSame('https://example.test/studio.jpg', $ui['images'][0]['url']);
+        $this->assertSame(600000.0, $ui['total_price']);
+        $this->assertSame(2, $result['ui']['adults']);
+        // The model only ever receives the compact result, never the photo gallery.
+        $this->assertStringNotContainsString('images', $result['text']);
+    }
 }

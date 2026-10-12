@@ -311,4 +311,27 @@ class ReservationRequestTest extends TestCase
             ->assertJsonPath('discount_percent', 0)
             ->assertJsonPath('grand_total', 8000000);
     }
+
+    public function test_a_request_made_from_the_chat_form_is_kept_in_the_conversation(): void
+    {
+        $conversation = Conversation::create(['apartment_id' => $this->apartment->id, 'guest_token' => (string) Str::uuid(), 'locale' => 'en']);
+
+        $response = $this->postJson('/demo/reservation', $this->request(['guest_token' => $conversation->guest_token]))->assertCreated();
+
+        $message = $conversation->messages()->firstOrFail();
+        $this->assertSame('assistant', $message->role);
+        $this->assertStringContainsString($response->json('reference'), $message->content);
+        $this->assertSame('booking_confirmation', $message->ui_payload[0]['type']);
+        $this->assertSame($response->json('reference'), $message->ui_payload[0]['booking']['booking_reference']);
+        $this->assertSame(3, $message->ui_payload[0]['booking']['nights']);
+        $this->assertEquals(3000000, $message->ui_payload[0]['booking']['total_price']);
+        $this->assertSame($conversation->id, Booking::firstOrFail()->conversation_id);
+    }
+
+    public function test_a_request_without_a_conversation_leaves_no_chat_message(): void
+    {
+        $this->postJson('/demo/reservation', $this->request())->assertCreated();
+
+        $this->assertDatabaseCount('conversation_messages', 0);
+    }
 }

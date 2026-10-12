@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Apartment;
+use App\Models\Booking;
 use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use App\Models\UnitInventory;
 use App\Models\UnitType;
 use App\Services\Reservation\ReservationHandover;
@@ -39,6 +41,7 @@ class ReservationController extends Controller
             'unavailable' => 'This unit type is not available for those dates.',
             'contact_email' => 'Please enter a valid email address.',
             'contact_phone' => 'Please enter a valid phone or WhatsApp number.',
+            'chat_received' => 'Your stay request :reference is in. The apartment team will confirm it shortly.',
         ],
         'id' => [
             'invalid' => 'Mohon periksa kolom ini.',
@@ -50,6 +53,7 @@ class ReservationController extends Controller
             'unavailable' => 'Tipe unit ini tidak tersedia pada tanggal tersebut.',
             'contact_email' => 'Masukkan alamat email yang valid.',
             'contact_phone' => 'Masukkan nomor telepon atau WhatsApp yang valid.',
+            'chat_received' => 'Permintaan sewa :reference sudah masuk. Tim apartemen akan segera mengonfirmasinya.',
         ],
         'ja' => [
             'invalid' => 'この項目をご確認ください。',
@@ -61,6 +65,7 @@ class ReservationController extends Controller
             'unavailable' => 'この日程では、このお部屋タイプはご利用いただけません。',
             'contact_email' => '有効なメールアドレスを入力してください。',
             'contact_phone' => '有効な電話番号またはWhatsApp番号を入力してください。',
+            'chat_received' => '滞在リクエスト :reference を受け付けました。まもなくスタッフが確認いたします。',
         ],
     ];
 
@@ -174,6 +179,10 @@ class ReservationController extends Controller
             return $this->unavailable($apartment, $unitType, $data, $locale);
         }
 
+        if ($conversation) {
+            $this->recordInConversation($conversation, $booking, $unitType, $apartment, $locale);
+        }
+
         return response()->json([
             'reference' => $booking->reference,
             'status' => $booking->status,
@@ -181,6 +190,35 @@ class ReservationController extends Controller
             'currency' => $apartment->currency,
             'handover' => $this->handover->forBooking($apartment, $booking, $locale),
         ], 201);
+    }
+
+    /**
+     * Leaves the request in the guest's chat history, so the concierge knows it
+     * was made and the guest sees the same confirmation when they come back.
+     */
+    private function recordInConversation(Conversation $conversation, Booking $booking, UnitType $unitType, Apartment $apartment, string $locale): void
+    {
+        $conversation->messages()->create([
+            'role' => ConversationMessage::ROLE_ASSISTANT,
+            'content' => str_replace(':reference', $booking->reference, self::MESSAGES[$locale]['chat_received']),
+            'ui_payload' => [[
+                'type' => 'booking_confirmation',
+                'booking' => [
+                    'booking_reference' => $booking->reference,
+                    'unit_type_slug' => $unitType->slug,
+                    'name' => $unitType->translatedName($locale),
+                    'check_in' => $booking->check_in->toDateString(),
+                    'check_out' => $booking->check_out->toDateString(),
+                    'nights' => $booking->check_in->diffInDays($booking->check_out),
+                    'units' => $booking->unit_count,
+                    'total_price' => (float) $booking->total_price,
+                    'currency' => $apartment->currency,
+                    'status' => 'pending_confirmation',
+                ],
+            ]],
+        ]);
+
+        $conversation->update(['last_message_at' => now()]);
     }
 
     /**
