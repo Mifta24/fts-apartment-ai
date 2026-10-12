@@ -532,6 +532,11 @@ class ApartmentLobbyTest extends TestCase
             ->assertSee('photo-1555899434-94d1368aa7af', false)
             ->assertSee('class="stage-character" data-pose="standing"', false)
             ->assertSee('images/character/character avatar.jpg', false);
+        $this->get('/demo/facilities')
+            ->assertOk()
+            ->assertSee('photo-1571896349842-33c89424de2d', false)
+            ->assertSee('class="stage-character" data-pose="welcoming"', false)
+            ->assertSee('images/character/character welcoming.png', false);
         $this->get('/demo/staff')->assertOk()->assertSee('class="stage-character" data-pose="consulting"', false);
         $this->get('/demo/reservation')->assertOk()->assertSee('class="stage-character" data-pose="consulting"', false);
 

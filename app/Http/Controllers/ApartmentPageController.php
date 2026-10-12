@@ -29,6 +29,7 @@ class ApartmentPageController extends Controller
     private const CHARACTER_POSES = [
         'standing' => 'images/character/character standing.png',
         'presenting' => 'images/character/character presenting.png',
+        'welcoming' => 'images/character/character welcoming.png',
         'consulting' => 'images/character/character consulting.png',
     ];
 
@@ -39,6 +40,7 @@ class ApartmentPageController extends Controller
      */
     private const SCENE_POSES = [
         'units' => 'presenting',
+        'facilities' => 'welcoming',
         'reservation' => 'consulting',
         'staff' => 'consulting',
     ];

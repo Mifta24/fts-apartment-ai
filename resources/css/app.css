@@ -50,6 +50,7 @@
    --char-left is where she starts, and the cards and panels beside her are cut to end before it. */
 .stage { --char-h: calc((100dvh - var(--header)) * .96); --char-ratio: .332; --char-right: calc(var(--col) + var(--gap) * 2); --char-w: calc(var(--char-h) * var(--char-ratio)); --char-left: calc(100% - var(--char-right) - var(--char-w)); }
 .stage:has(.stage-character[data-pose="presenting"]) { --char-h: calc((100dvh - var(--header)) * .72); --char-ratio: .648; }
+.stage:has(.stage-character[data-pose="welcoming"]) { --char-h: calc((100dvh - var(--header)) * .9); --char-ratio: .667; }
 /* Cropped at the right edge of the picture, so it sits flush with the edge of the screen: she faces the guest beside her. */
 .stage:has(.stage-character[data-pose="consulting"]) { --char-h: calc((100dvh - var(--header)) * .62); --char-ratio: .934; --char-right: 0px; }
 .stage:has(.stage-character[data-pose="consulting"]):has(.stage-chat.is-open) { --char-right: calc(var(--col) + var(--gap) * 2); }
