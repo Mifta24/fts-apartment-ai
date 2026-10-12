@@ -53,6 +53,40 @@ class ApartmentLobbyTest extends TestCase
             ->assertSee('aria-controls="concierge-chat-log"', false);
     }
 
+    public function test_chat_composer_has_a_microphone_button_with_speech_language_and_copy_for_each_locale(): void
+    {
+        Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published']);
+
+        $this->get('/demo?lang=en')
+            ->assertOk()
+            ->assertSee('type="button" data-chat-mic', false)
+            ->assertSee('data-speech-lang="en-US"', false)
+            ->assertSee('data-label-mic-start="Speak your message"', false);
+        $this->get('/demo?lang=id')
+            ->assertOk()
+            ->assertSee('data-speech-lang="id-ID"', false)
+            ->assertSee('data-label-mic-listening="Mendengarkan…"', false);
+        $this->get('/demo?lang=ja')
+            ->assertOk()
+            ->assertSee('data-speech-lang="ja-JP"', false)
+            ->assertSee('data-label-mic-start="音声で入力"', false);
+    }
+
+    public function test_every_floor_carries_the_centre_stage_showcase_with_copy_for_each_locale(): void
+    {
+        Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published']);
+
+        $this->get('/demo/units?lang=en')
+            ->assertOk()
+            ->assertSee('data-showcase', false)
+            ->assertSee('data-showcase-labels', false)
+            ->assertSee('data-quote-url="'.route('reservation.quote', 'demo').'"', false)
+            ->assertSee('data-reserve-url="'.route('reservation.store', 'demo').'"', false)
+            ->assertSee('Send stay request');
+        $this->get('/demo?lang=id')->assertOk()->assertSee('Kirim permintaan sewa');
+        $this->get('/demo/staff?lang=ja')->assertOk()->assertSee('滞在リクエストを送信');
+    }
+
     public function test_chat_exposes_consistent_status_draft_and_loading_copy_for_each_locale(): void
     {
         Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published']);

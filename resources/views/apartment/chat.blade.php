@@ -10,6 +10,12 @@
             data-storage-key="concierge_token_{{ $apartment->slug }}"
             data-label-placeholder="{{ $labels['chat_placeholder'] }}"
             data-label-send="{{ $labels['chat_send'] }}"
+            data-label-mic-start="{{ $labels['chat_mic_start'] }}"
+            data-label-mic-stop="{{ $labels['chat_mic_stop'] }}"
+            data-label-mic-listening="{{ $labels['chat_mic_listening'] }}"
+            data-label-mic-denied="{{ $labels['chat_mic_denied'] }}"
+            data-label-mic-error="{{ $labels['chat_mic_error'] }}"
+            data-speech-lang="{{ ['id' => 'id-ID', 'en' => 'en-US', 'ja' => 'ja-JP'][$locale] }}"
             data-label-open="{{ $labels['chat_open'] }}"
             data-label-close="{{ $labels['chat_close'] }}"
             data-label-intro="{{ $labels['chat_intro'] }}"
@@ -42,6 +48,10 @@
             data-label-slow="{{ $labels['chat_slow'] }}"
             data-label-retry="{{ $labels['chat_retry'] }}"
             data-currency="{{ $apartment->currency }}"
+            data-quote-url="{{ route('reservation.quote', $apartment->slug) }}"
+            data-reserve-url="{{ route('reservation.store', $apartment->slug) }}"
+            data-today="{{ now($apartment->timezone)->toDateString() }}"
+            data-max-nights="{{ \App\Services\Reservation\ReservationService::MAX_NIGHTS }}"
             data-lobby-url="{{ route('apartment.show', ['apartmentSlug' => $apartment->slug, 'lang' => $locale]) }}"
             data-unit-url="{{ route('apartment.unit', ['apartmentSlug' => $apartment->slug, 'unitSlug' => '__SLUG__', 'lang' => $locale]) }}"
             data-staff-url="{{ route('apartment.staff', ['apartmentSlug' => $apartment->slug, 'lang' => $locale]) }}"
@@ -83,6 +93,9 @@
                     placeholder="{{ $labels['chat_placeholder'] }}"
                     autocomplete="off"
                 >
+                <button type="button" data-chat-mic class="chat-mic" hidden aria-pressed="false" aria-label="{{ $labels['chat_mic_start'] }}" title="{{ $labels['chat_mic_start'] }}">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+                </button>
                 <button type="submit" data-chat-submit>{{ $labels['chat_send'] }}</button>
             </form>
 
@@ -102,3 +115,10 @@
             </button>
 
         </div>
+
+        {{-- Centre stage: where the concierge shows a guest a unit, a set of options or the stay request form. Filled in by showcase.js. --}}
+        <div class="showcase" data-showcase hidden>
+            <div class="showcase-backdrop" data-showcase-backdrop></div>
+            <section class="showcase-card" data-showcase-card role="dialog" aria-modal="true" aria-label="{{ $labels['showcase']['presenting'] }}" tabindex="-1"></section>
+        </div>
+        <script type="application/json" data-showcase-labels>@json($labels['showcase'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE)</script>

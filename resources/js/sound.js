@@ -85,6 +85,12 @@ const sounds = {
     sent(now) {
         pop(1200, 420, now, 0.07, 0.16);
     },
+    /** The concierge unveils something: a soft rising three-note shimmer. */
+    reveal(now) {
+        bell(784, now, 0.08, 0.5);
+        bell(1046.5, now + 0.1, 0.08, 0.55);
+        bell(1568, now + 0.2, 0.07, 0.8);
+    },
 };
 
 function play(name) {

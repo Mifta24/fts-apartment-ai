@@ -374,7 +374,7 @@ class ApartmentPageController extends Controller
      * The elevator panel. Every section is its own floor, so choosing one
      * eases the stage out as if the guest were riding up to it.
      *
-     * @param  array<string, string>  $labels
+     * @param  array<string, string|array<string, string>>  $labels
      * @param  array<string, string>  $lobby
      * @return list<array{key: string, floor: string, label: string, href: string, exit: bool, tour: ?string, topic: string}>
      */
@@ -692,11 +692,11 @@ class ApartmentPageController extends Controller
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, string|array<string, string>>
      */
     private function labels(string $locale): array
     {
-        return match ($locale) {
+        return [...match ($locale) {
             'en' => [
                 'from' => 'from',
                 'per_night' => '/ night',
@@ -706,6 +706,7 @@ class ApartmentPageController extends Controller
                 'chat_subtitle' => 'Ask about units, long stays or the building — on duty 24/7.',
                 'chat_placeholder' => 'Ask about a unit, a rate or a house rule…',
                 'chat_send' => 'Send',
+                'chat_mic_start' => 'Speak your message', 'chat_mic_stop' => 'Stop listening', 'chat_mic_listening' => 'Listening…', 'chat_mic_denied' => 'Microphone access is blocked. Allow it in your browser settings to speak.', 'chat_mic_error' => 'Could not hear you. Please try again.',
                 'chat_open' => 'Talk to the AI Concierge',
                 'chat_close' => 'Close conversation',
                 'chat_intro' => "Hi! I'm the AI Concierge of this building. Ask me about units, long-stay rates, facilities or anything about living here.",
@@ -752,6 +753,7 @@ class ApartmentPageController extends Controller
                 'chat_subtitle' => 'お部屋・長期滞在・建物について24時間いつでもどうぞ。',
                 'chat_placeholder' => 'お部屋、料金、館内ルールについて質問…',
                 'chat_send' => '送信',
+                'chat_mic_start' => '音声で入力', 'chat_mic_stop' => '音声入力を停止', 'chat_mic_listening' => '聞き取り中…', 'chat_mic_denied' => 'マイクへのアクセスがブロックされています。ブラウザの設定で許可してください。', 'chat_mic_error' => '聞き取れませんでした。もう一度お試しください。',
                 'chat_open' => 'AIコンシェルジュに相談',
                 'chat_close' => '会話を閉じる',
                 'chat_intro' => 'こんにちは。この建物のAIコンシェルジュです。お部屋、長期滞在の料金、共用施設など、暮らしについて何でもお尋ねください。',
@@ -798,6 +800,7 @@ class ApartmentPageController extends Controller
                 'chat_subtitle' => 'Tanyakan unit, sewa jangka panjang, atau gedung — siaga 24 jam.',
                 'chat_placeholder' => 'Tanya soal unit, tarif, atau aturan gedung…',
                 'chat_send' => 'Kirim',
+                'chat_mic_start' => 'Ucapkan pesan', 'chat_mic_stop' => 'Berhenti mendengarkan', 'chat_mic_listening' => 'Mendengarkan…', 'chat_mic_denied' => 'Akses mikrofon diblokir. Izinkan di pengaturan browser untuk berbicara.', 'chat_mic_error' => 'Suara tidak terdengar. Silakan coba lagi.',
                 'chat_open' => 'Ngobrol dengan AI Concierge',
                 'chat_close' => 'Tutup percakapan',
                 'chat_intro' => 'Halo! Saya AI Concierge gedung ini. Tanyakan apa saja soal unit, tarif sewa jangka panjang, fasilitas, atau kehidupan di sini.',
@@ -834,6 +837,72 @@ class ApartmentPageController extends Controller
                 'menu_policies_q' => 'Apa kebijakan check-in, aturan gedung, dan pembatalan?',
                 'menu_staff' => 'Bicara dengan tim',
                 'menu_staff_q' => 'Saya ingin bicara dengan tim apartemen.',
+            ],
+        }, 'showcase' => $this->showcaseLabels($locale)];
+    }
+
+    /**
+     * Wording for the concierge's centre-stage showcase: units presented to
+     * the guest and the stay request form that opens from the chat.
+     *
+     * @return array<string, string>
+     */
+    private function showcaseLabels(string $locale): array
+    {
+        return match ($locale) {
+            'en' => [
+                'presenting' => 'AI Concierge', 'presenting_hint' => 'is showing you',
+                'close' => 'Close', 'prev' => 'Previous photo', 'next' => 'Next photo', 'photo' => 'Photo :n of :total', 'no_photo' => 'No photo yet',
+                'results_title' => 'Picked for you', 'results_dates' => ':in → :out · :nights night(s)', 'results_empty' => 'No units to show.', 'scroll_prev' => 'Previous', 'scroll_next' => 'Next',
+                'view' => 'See this unit', 'reserve' => 'Request this unit', 'ask' => 'Ask about it', 'ask_question' => 'I have a question about :unit', 'show_again' => 'Show on stage', 'reopen_form' => 'Open request form',
+                'from' => 'from', 'per_night' => '/ night', 'total_for' => ':nights night(s) in total', 'discount' => 'long-stay discount',
+                'studio' => 'Studio', 'bedrooms' => ':count bedroom(s)', 'bathrooms' => ':count bath', 'floor' => 'Floors :range', 'residents' => 'Up to :count residents', 'view_label' => ':view view', 'breakfast' => 'Breakfast included', 'size' => 'Size', 'beds' => 'Beds', 'layout' => 'Layout', 'guests' => 'Residents', 'view_title' => 'View', 'floors' => 'Floors',
+                'amenities' => 'What is inside', 'long_stay' => 'Long stays: :weekly% off from :weekly_nights nights, :monthly% off from :monthly_nights nights.',
+                'form_title' => 'Stay request', 'form_intro' => 'Fill in your details — no payment now. The leasing team confirms availability.',
+                'check_in' => 'Move-in', 'check_out' => 'Move-out', 'adults' => 'Adults', 'children' => 'Children', 'units' => 'Units', 'nights' => 'night(s)',
+                'name' => 'Full name', 'unit' => 'Unit', 'extra_bed' => 'Add a rollaway bed (+:price / night)', 'contact_method' => 'Contact me via', 'whatsapp' => 'WhatsApp', 'phone' => 'Phone', 'email' => 'Email', 'contact_value' => 'Number or email address',
+                'special' => 'Special request (optional)', 'special_placeholder' => 'e.g. high floor, parking space',
+                'estimated_total' => 'Estimated total', 'pick_dates' => 'Pick your dates to see the price.', 'need_dates' => 'Please choose your move-in and move-out dates.', 'need_name' => 'Please enter your name.', 'need_contact' => 'Please enter how we can reach you.', 'checking' => 'Checking availability…', 'subtotal' => 'Subtotal',
+                'disclaimer' => 'This is a stay request, not a lease. No payment is taken now.', 'submit' => 'Send stay request', 'sending' => 'Sending…', 'back' => 'Back',
+                'available_instead' => 'Available for your dates instead:', 'error_network' => 'Connection problem. Your details are kept — please try again.', 'error_generic' => 'Something went wrong. Please try again or contact the apartment team.',
+                'done_title' => 'Request received', 'done_line' => 'Thank you, :name. We will confirm shortly.', 'reference' => 'Your reference', 'awaiting' => 'Awaiting confirmation from the leasing team',
+                'done_hint' => 'Send it to our team to speed things up.', 'send_whatsapp' => 'Send to WhatsApp', 'call_team' => 'Call', 'email_team' => 'Email', 'back_to_chat' => 'Back to chat',
+            ],
+            'ja' => [
+                'presenting' => 'AIコンシェルジュ', 'presenting_hint' => 'がご案内します',
+                'close' => '閉じる', 'prev' => '前の写真', 'next' => '次の写真', 'photo' => '写真 :n / :total', 'no_photo' => '写真は準備中です',
+                'results_title' => 'おすすめのお部屋', 'results_dates' => ':in → :out · :nights泊', 'results_empty' => '表示できるお部屋がありません。', 'scroll_prev' => '前へ', 'scroll_next' => '次へ',
+                'view' => 'このお部屋を見る', 'reserve' => 'このお部屋をリクエスト', 'ask' => '質問する', 'ask_question' => ':unit について質問があります', 'show_again' => 'もう一度表示', 'reopen_form' => 'リクエストフォームを開く',
+                'from' => '', 'per_night' => '〜 / 泊', 'total_for' => ':nights泊の合計', 'discount' => '長期滞在割引',
+                'studio' => 'スタジオ', 'bedrooms' => ':count ベッドルーム', 'bathrooms' => 'バス:count', 'floor' => ':range階', 'residents' => '最大:count名', 'view_label' => ':viewの眺望', 'breakfast' => '朝食付き', 'size' => '広さ', 'beds' => 'ベッド', 'layout' => '間取り', 'guests' => '入居人数', 'view_title' => '眺望', 'floors' => '階数',
+                'amenities' => '設備・備品', 'long_stay' => '長期滞在：:weekly_nights泊以上で:weekly%オフ、:monthly_nights泊以上で:monthly%オフ。',
+                'form_title' => '滞在リクエスト', 'form_intro' => 'ご情報を入力してください。お支払いは不要です。空室はリーシングチームが確認します。',
+                'check_in' => '入居日', 'check_out' => '退去日', 'adults' => '大人', 'children' => '子ども', 'units' => '戸数', 'nights' => '泊',
+                'name' => 'お名前', 'unit' => 'お部屋', 'extra_bed' => '簡易ベッドを追加（+:price / 泊）', 'contact_method' => 'ご連絡方法', 'whatsapp' => 'WhatsApp', 'phone' => '電話', 'email' => 'メール', 'contact_value' => '番号またはメールアドレス',
+                'special' => 'ご要望（任意）', 'special_placeholder' => '例：高層階、駐車スペース',
+                'estimated_total' => '概算合計', 'pick_dates' => '日程を選ぶと料金が表示されます。', 'need_dates' => '入居日と退去日を選択してください。', 'need_name' => 'お名前を入力してください。', 'need_contact' => 'ご連絡先を入力してください。', 'checking' => '空室を確認中…', 'subtotal' => '小計',
+                'disclaimer' => 'これは滞在のリクエストであり、賃貸契約ではありません。現時点でお支払いは発生しません。', 'submit' => '滞在リクエストを送信', 'sending' => '送信中…', 'back' => '戻る',
+                'available_instead' => 'ご希望の日程で空いているお部屋：', 'error_network' => '接続に問題があります。入力内容は保持されています。もう一度お試しください。', 'error_generic' => 'エラーが発生しました。もう一度お試しいただくか、スタッフにご連絡ください。',
+                'done_title' => 'リクエストを受け付けました', 'done_line' => ':nameさま、ありがとうございます。まもなくご連絡します。', 'reference' => '受付番号', 'awaiting' => 'リーシングチームの確認待ち',
+                'done_hint' => 'スタッフに送ると、確認がスムーズです。', 'send_whatsapp' => 'WhatsAppで送る', 'call_team' => '電話', 'email_team' => 'メール', 'back_to_chat' => 'チャットに戻る',
+            ],
+            default => [
+                'presenting' => 'AI Concierge', 'presenting_hint' => 'sedang menunjukkan untuk Anda',
+                'close' => 'Tutup', 'prev' => 'Foto sebelumnya', 'next' => 'Foto berikutnya', 'photo' => 'Foto :n dari :total', 'no_photo' => 'Belum ada foto',
+                'results_title' => 'Pilihan untuk Anda', 'results_dates' => ':in → :out · :nights malam', 'results_empty' => 'Tidak ada unit untuk ditampilkan.', 'scroll_prev' => 'Sebelumnya', 'scroll_next' => 'Berikutnya',
+                'view' => 'Lihat unit ini', 'reserve' => 'Ajukan sewa unit ini', 'ask' => 'Tanya soal unit ini', 'ask_question' => 'Saya ingin bertanya soal :unit', 'show_again' => 'Tampilkan di layar', 'reopen_form' => 'Buka formulir sewa',
+                'from' => 'mulai', 'per_night' => '/ malam', 'total_for' => 'total :nights malam', 'discount' => 'diskon menginap lama',
+                'studio' => 'Studio', 'bedrooms' => ':count kamar tidur', 'bathrooms' => ':count kamar mandi', 'floor' => 'Lantai :range', 'residents' => 'Maks. :count penghuni', 'view_label' => 'Pemandangan :view', 'breakfast' => 'Termasuk sarapan', 'size' => 'Luas', 'beds' => 'Tempat tidur', 'layout' => 'Tata letak', 'guests' => 'Penghuni', 'view_title' => 'Pemandangan', 'floors' => 'Lantai',
+                'amenities' => 'Isi unit', 'long_stay' => 'Sewa lama: hemat :weekly% mulai :weekly_nights malam, hemat :monthly% mulai :monthly_nights malam.',
+                'form_title' => 'Permintaan sewa', 'form_intro' => 'Lengkapi data Anda — belum ada pembayaran. Tim leasing yang mengonfirmasi ketersediaan.',
+                'check_in' => 'Check-in', 'check_out' => 'Check-out', 'adults' => 'Dewasa', 'children' => 'Anak', 'units' => 'Jumlah unit', 'nights' => 'malam',
+                'name' => 'Nama lengkap', 'unit' => 'Unit', 'extra_bed' => 'Tambah kasur lipat (+:price / malam)', 'contact_method' => 'Hubungi saya lewat', 'whatsapp' => 'WhatsApp', 'phone' => 'Telepon', 'email' => 'Email', 'contact_value' => 'Nomor atau alamat email',
+                'special' => 'Permintaan khusus (opsional)', 'special_placeholder' => 'mis. lantai tinggi, slot parkir',
+                'estimated_total' => 'Perkiraan total', 'pick_dates' => 'Pilih tanggal untuk melihat harga.', 'need_dates' => 'Silakan pilih tanggal check-in dan check-out.', 'need_name' => 'Silakan isi nama Anda.', 'need_contact' => 'Silakan isi kontak yang bisa kami hubungi.', 'checking' => 'Memeriksa ketersediaan…', 'subtotal' => 'Subtotal',
+                'disclaimer' => 'Ini permintaan sewa, bukan kontrak. Belum ada pembayaran yang diambil.', 'submit' => 'Kirim permintaan sewa', 'sending' => 'Mengirim…', 'back' => 'Kembali',
+                'available_instead' => 'Tersedia di tanggal Anda:', 'error_network' => 'Koneksi bermasalah. Data Anda tersimpan — coba lagi.', 'error_generic' => 'Terjadi kesalahan. Coba lagi atau hubungi tim apartemen.',
+                'done_title' => 'Permintaan diterima', 'done_line' => 'Terima kasih, :name. Kami segera mengonfirmasi.', 'reference' => 'Nomor referensi', 'awaiting' => 'Menunggu konfirmasi tim leasing',
+                'done_hint' => 'Kirim ke tim kami agar konfirmasi lebih cepat.', 'send_whatsapp' => 'Kirim ke WhatsApp', 'call_team' => 'Telepon', 'email_team' => 'Email', 'back_to_chat' => 'Kembali ke chat',
             ],
         };
     }

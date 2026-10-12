@@ -54,13 +54,30 @@ function initConcierge() {
             error: root.dataset.labelError,
             slow: root.dataset.labelSlow,
             retry: root.dataset.labelRetry,
+            micStart: root.dataset.labelMicStart,
+            micStop: root.dataset.labelMicStop,
+            micListening: root.dataset.labelMicListening,
+            micDenied: root.dataset.labelMicDenied,
+            micError: root.dataset.labelMicError,
         },
+        speechLang: root.dataset.speechLang,
     };
+
+    /** Wording for the centre-stage showcase (shared with showcase.js). */
+    const stageLabels = (() => {
+        try {
+            return JSON.parse(document.querySelector('[data-showcase-labels]')?.textContent || '{}');
+        } catch {
+            return {};
+        }
+    })();
+    const showcase = () => window.apartmentShowcase;
 
     const messagesEl = root.querySelector('[data-messages]');
     const formEl = root.querySelector('[data-chat-form]');
     const inputEl = root.querySelector('[data-chat-input]');
     const submitEl = root.querySelector('[data-chat-submit]');
+    const micEl = root.querySelector('[data-chat-mic]');
     const statusBanner = root.querySelector('[data-status-banner]');
     const chatStatus = root.querySelector('[data-chat-status]');
     const thinkingIndicator = root.querySelector('[data-thinking-indicator]');
@@ -126,6 +143,7 @@ function initConcierge() {
 
     function finishClosePanel({ restoreFocus = true } = {}) {
         isOpen = false;
+        stopListening();
         syncPanelState();
         hideDraftDialog();
         if (restoreFocus) launcher?.focus();
@@ -158,6 +176,84 @@ function initConcierge() {
         if (isOpen) closePanel();
     });
     syncPanelState();
+
+    /**
+     * Voice input through the browser's speech recognition: the guest's words
+     * land in the text box so they can be checked and sent, never sent on
+     * their own. The button stays hidden where the browser has no support.
+     */
+    const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let listening = false;
+
+    function setListening(value) {
+        listening = value;
+        if (!micEl) return;
+
+        const label = value ? config.labels.micStop : config.labels.micStart;
+        micEl.classList.toggle('is-listening', value);
+        micEl.setAttribute('aria-pressed', String(value));
+        micEl.setAttribute('aria-label', label);
+        micEl.title = label;
+        inputEl.placeholder = value ? config.labels.micListening : config.labels.placeholder;
+        setChatStatus(value ? config.labels.micListening : '', 'listening');
+    }
+
+    function stopListening() {
+        if (!recognition) return;
+
+        recognition.stop();
+    }
+
+    function startListening() {
+        if (!SpeechRecognitionClass || listening || busy || !ready || handedOver) return;
+
+        const baseText = inputEl.value.trim();
+        const session = new SpeechRecognitionClass();
+        let failed = false;
+
+        session.lang = config.speechLang;
+        session.interimResults = true;
+        session.continuous = false;
+        session.onresult = (event) => {
+            const spoken = [...event.results].map((result) => result[0].transcript).join(' ').trim();
+            inputEl.value = [baseText, spoken].filter(Boolean).join(' ');
+        };
+        session.onerror = (event) => {
+            if (event.error === 'aborted' || event.error === 'no-speech') return;
+
+            failed = true;
+            const denied = event.error === 'not-allowed' || event.error === 'service-not-allowed';
+            setChatStatus(denied ? config.labels.micDenied : config.labels.micError, 'error');
+        };
+        session.onend = () => {
+            recognition = null;
+            listening = false;
+            if (micEl) {
+                micEl.classList.remove('is-listening');
+                micEl.setAttribute('aria-pressed', 'false');
+                micEl.setAttribute('aria-label', config.labels.micStart);
+                micEl.title = config.labels.micStart;
+            }
+            inputEl.placeholder = config.labels.placeholder;
+            if (!failed) setChatStatus('');
+            inputEl.focus();
+        };
+
+        try {
+            session.start();
+        } catch {
+            return;
+        }
+
+        recognition = session;
+        setListening(true);
+    }
+
+    if (micEl && SpeechRecognitionClass) {
+        micEl.hidden = false;
+        micEl.addEventListener('click', () => (listening ? stopListening() : startListening()));
+    }
 
     function money(value) {
         const n = Number(value) || 0;
@@ -256,6 +352,10 @@ function initConcierge() {
             </div>
         `;
         el.querySelector('[data-detail-slug]').addEventListener('click', () => {
+            if (showcase()?.has(unit.unit_type_slug)) {
+                showcase().presentUnit(unit.unit_type_slug);
+                return;
+            }
             sendMessage(config.labels.unitDetailsQuestion.replace(':unit', unit.name));
         });
         return el;
@@ -282,8 +382,10 @@ function initConcierge() {
                     ${unit.breakfast_included ? `<div>${config.labels.breakfastIncluded}</div>` : ''}
                     <div>${unit.view_type ? unit.view_type + ' ' + config.labels.viewSuffix : ''}</div>
                 </dl>
+                <button type="button" class="chat-card-button is-stage" data-stage-slug="${unit.unit_type_slug}">${stageLabels.show_again || config.labels.viewDetails}</button>
             </div>
         `;
+        el.querySelector('[data-stage-slug]').addEventListener('click', () => showcase()?.presentUnit(unit.unit_type_slug));
         return el;
     }
 
@@ -328,14 +430,43 @@ function initConcierge() {
         return el;
     }
 
-    function renderUiPayload(uiPayload) {
+    /** A note in the chat that the stay request form was put on screen, with a way to bring it back. */
+    function reservationFormCard(payload) {
+        const el = document.createElement('div');
+        el.className = 'chat-card p-3';
+        el.style.borderLeft = '3px solid var(--signal-deep)';
+        el.innerHTML = `
+            <p class="chat-card-tag">${stageLabels.form_title || ''}</p>
+            <p class="mt-1 text-sm font-semibold">${payload.unit.name}</p>
+            <button type="button" class="chat-card-button is-stage" style="margin-top:10px" data-open-form>${stageLabels.reopen_form || ''}</button>
+        `;
+        el.querySelector('[data-open-form]').addEventListener('click', () => showcase()?.present(payload));
+        return el;
+    }
+
+    /** Which of a reply's payloads the concierge should hold up to the guest, if any. */
+    function presentablePayload(uiPayload) {
+        for (const type of ['reservation_form', 'unit_detail', 'unit_results', 'booking_confirmation']) {
+            const found = (uiPayload || []).find((payload) => payload.type === type);
+            if (found) return found;
+        }
+
+        return null;
+    }
+
+    function renderUiPayload(uiPayload, { caption = '', live = false } = {}) {
         if (!uiPayload || !uiPayload.length) return;
 
         uiPayload.forEach((payload) => {
             if (payload.type === 'unit_results') {
+                payload.units.forEach((unit) => showcase()?.remember(unit));
                 messagesEl.appendChild(card(payload.units.map(unitResultCard)));
             } else if (payload.type === 'unit_detail') {
+                showcase()?.remember(payload.unit);
                 messagesEl.appendChild(card([unitDetailCard(payload.unit)]));
+            } else if (payload.type === 'reservation_form') {
+                showcase()?.remember(payload.unit);
+                messagesEl.appendChild(card([reservationFormCard(payload)]));
             } else if (payload.type === 'availability') {
                 messagesEl.appendChild(card([availabilityCard(payload)]));
             } else if (payload.type === 'booking_confirmation') {
@@ -344,6 +475,12 @@ function initConcierge() {
                 messagesEl.appendChild(card([handoverCard(payload)]));
             }
         });
+
+        // A fresh answer is shown to the guest at centre stage, a beat after the words arrive.
+        const presentable = live ? presentablePayload(uiPayload) : null;
+        if (presentable && showcase()) {
+            window.setTimeout(() => showcase().present(presentable, { caption }), 420);
+        }
     }
 
     function scrollToBottom() {
@@ -355,6 +492,8 @@ function initConcierge() {
         const disabled = busy || !ready || handedOver;
         inputEl.disabled = disabled;
         submitEl.disabled = disabled;
+        if (micEl) micEl.disabled = disabled;
+        if (disabled) stopListening();
         if (launcher) launcher.disabled = busy || !ready;
         root.setAttribute('aria-busy', String(busy));
         document.body.classList.toggle('is-thinking', busy);
@@ -426,14 +565,14 @@ function initConcierge() {
         }
     }
 
-    function renderMessage(message) {
+    function renderMessage(message, { live = false } = {}) {
         if (message.role === 'guest') {
             messagesEl.appendChild(bubble('guest', message.content));
         } else if (message.role === 'assistant') {
             if (message.content) {
                 messagesEl.appendChild(bubble('assistant', message.content));
             }
-            renderUiPayload(message.ui_payload);
+            renderUiPayload(message.ui_payload, { caption: message.content || '', live });
             const chips = actionChips(message.suggested_actions);
             if (chips) messagesEl.appendChild(chips);
         } else if (message.role === 'staff') {
@@ -529,6 +668,12 @@ function initConcierge() {
             link.className = 'chat-chip';
             link.textContent = target[0];
             link.addEventListener('click', (event) => {
+                if (action.action === 'reserve' && showcase()?.has(action.unit)) {
+                    event.preventDefault();
+                    showcase().presentForm(action.unit);
+                    return;
+                }
+
                 closePanel({ confirmDraft: false, restoreFocus: false });
 
                 // Another page: walk there the way the menu does. A panel on
@@ -596,7 +741,7 @@ function initConcierge() {
 
         try {
             const data = await api(config.messageUrl, { guest_token: guestToken, message: text, ...uiContext() });
-            renderMessage(data.message);
+            renderMessage(data.message, { live: true });
             setChatStatus(config.labels.statusSent, 'sent');
             window.apartmentSound?.play('incoming');
             knownMessageCount += 2; // the guest message just sent + the reply just rendered
@@ -659,6 +804,10 @@ function initConcierge() {
     formEl.addEventListener('submit', (event) => {
         event.preventDefault();
         if (!ready || busy || handedOver || !inputEl.value.trim()) return;
+        if (recognition) {
+            recognition.onresult = null;
+            recognition.abort();
+        }
         const text = inputEl.value;
         inputEl.value = '';
         sendMessage(text);
@@ -680,6 +829,19 @@ function initConcierge() {
             openPanel();
             sendMessage(button.dataset.heroQuickMessage);
         });
+    });
+
+    // The guest sent a stay request from the form at centre stage: keep the receipt in the chat too.
+    window.addEventListener('showcase:reserved', (event) => {
+        messagesEl.appendChild(card([bookingConfirmationCard({ booking: event.detail.booking })]));
+        knownMessageCount += 1;
+        setChatStatus(config.labels.statusSent, 'sent');
+        scrollToBottom();
+    });
+
+    // Closing the showcase hands the conversation back to the guest.
+    window.addEventListener('showcase:closed', () => {
+        if (isOpen && !inputEl.disabled) inputEl.focus({ preventScroll: true });
     });
 
     // A menu pick in the same scene: the concierge answers right where the guest stands.
