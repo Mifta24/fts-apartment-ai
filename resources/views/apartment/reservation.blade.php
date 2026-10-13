@@ -1,3 +1,11 @@
+@php
+    $rentalTypes = array_values(array_filter([
+        'daily',
+        $unitTypes->contains(fn ($unitType) => $unitType->offersMonthlyRental()) ? 'monthly' : null,
+        $unitTypes->contains(fn ($unitType) => $unitType->offersYearlyRental()) ? 'yearly' : null,
+    ]));
+    $priceText = fn ($value, string $per) => trim($labels['from'].' '.$apartment->currency.' '.number_format((float) $value, 0, ',', '.').' '.$per);
+@endphp
 <section class="lobby-content wizard-panel stage-panel-right @container" aria-label="{{ $wizard['title'] }}">
     <a href="{{ route('apartment.show', ['apartmentSlug' => $apartment->slug, 'lang' => $locale]) }}" data-stage-exit data-tour-line="{{ $narration['tour_lobby'] }}" class="panel-close" aria-label="{{ $lobby['back'] }}"><span aria-hidden="true">×</span></a>
     <p class="lobby-eyebrow">{{ $lobby['floor'] }} {{ $floor }} · {{ $apartment->name }}</p>
@@ -12,6 +20,9 @@
         data-currency="{{ $apartment->currency }}"
         data-today="{{ $today }}"
         data-max-nights="{{ \App\Services\Reservation\ReservationService::MAX_NIGHTS }}"
+        data-min-months="{{ max(1, $apartment->min_monthly_lease_months) }}"
+        data-max-months="{{ \App\Models\Apartment::MAX_MONTHLY_LEASE_MONTHS }}"
+        data-max-years="{{ \App\Models\Apartment::MAX_YEARLY_LEASE_YEARS }}"
         data-preselect-unit="{{ $preselectedUnit ?? '' }}"
     >
         <div data-wizard-flow>
@@ -29,7 +40,21 @@
             <form data-wizard-form novalidate autocomplete="on">
                 <div data-step="1" class="wizard-step wizard-step-wide">
                     <input type="hidden" name="check_in" required>
-                    <input type="hidden" name="check_out" required>
+                    <input type="hidden" name="check_out">
+
+                    @if (count($rentalTypes) > 1)
+                        <fieldset class="wizard-rental">
+                            <legend>{{ $wizard['rental_title'] }}</legend>
+                            <div class="wizard-pills">
+                                @foreach ($rentalTypes as $rentalType)
+                                    <label><input type="radio" name="rental_type" value="{{ $rentalType }}" @checked($loop->first)><span>{{ $wizard['rental_'.$rentalType] }}</span></label>
+                                @endforeach
+                            </div>
+                            <p class="wizard-hint" data-rental-hint aria-live="polite"></p>
+                        </fieldset>
+                    @else
+                        <input type="hidden" name="rental_type" value="daily">
+                    @endif
 
                     <div class="wizard-dates" data-date-picker>
                         <div class="wizard-slots">
@@ -46,6 +71,10 @@
                             <div class="wizard-cal-grid" data-cal-grid></div>
                         </div>
                         <div class="wizard-dates-extra">
+                            <label class="wizard-field wizard-term" data-term-field hidden>
+                                <span>{{ $wizard['term'] }}</span>
+                                <select name="lease_months"></select>
+                            </label>
                             <p class="wizard-hint" data-nights-hint aria-live="polite"></p>
                             @if ($wizard['long_stay_hint'])
                                 <p class="wizard-long-stay"><span aria-hidden="true">%</span>{{ $wizard['long_stay_hint'] }}</p>
@@ -79,12 +108,15 @@
                                     data-max-adults="{{ $unitType->max_adults }}"
                                     data-max-occupancy="{{ $unitType->maxOccupancy() }}"
                                     data-extra-bed="{{ $unitType->extra_bed_available ? 1 : 0 }}"
+                                    data-price-daily="{{ $priceText($unitType->base_price, $labels['per_night']) }}"
+                                    data-price-monthly="{{ $unitType->offersMonthlyRental() ? $priceText($unitType->monthly_price, $labels['per_month']) : '' }}"
+                                    data-price-yearly="{{ $unitType->offersYearlyRental() ? $priceText($unitType->yearly_price, $labels['per_year']) : '' }}"
                                 >
                                     <input type="radio" name="unit_type_slug" value="{{ $unitType->slug }}">
                                     <span class="wizard-unit-body">
                                         <strong>{{ $unitType->translatedName($locale) }}</strong>
                                         <span>{{ str_replace(':count', (string) $unitType->maxOccupancy(), $wizard['fits']) }}</span>
-                                        <span class="wizard-unit-price">{{ $labels['from'] }} {{ $apartment->currency }} {{ number_format((float) $unitType->base_price, 0, ',', '.') }} {{ $labels['per_night'] }}</span>
+                                        <span class="wizard-unit-price" data-unit-price>{{ $priceText($unitType->base_price, $labels['per_night']) }}</span>
                                         <span class="wizard-unit-hint" data-unit-hint></span>
                                     </span>
                                 </label>
@@ -124,6 +156,8 @@
                     <dl class="wizard-summary" data-summary></dl>
                     <p class="wizard-discount" data-summary-discount hidden><span>{{ $wizard['discount'] }} <b data-summary-discount-percent></b></span> <strong data-summary-discount-amount></strong></p>
                     <p class="wizard-total"><span>{{ $wizard['estimated_total'] }}</span> <strong data-summary-total></strong></p>
+                    <p class="wizard-deposit" data-summary-deposit hidden><span>{{ $wizard['deposit'] }}</span> <strong data-summary-deposit-amount></strong></p>
+                    <p class="wizard-hint" data-summary-deposit-hint hidden>{{ $wizard['deposit_hint'] }}</p>
                     <p class="wizard-hint">{{ $wizard['disclaimer'] }}</p>
                 </div>
 

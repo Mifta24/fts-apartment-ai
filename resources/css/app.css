@@ -352,8 +352,14 @@ a.info-fact:hover { border-color: var(--text); }
 .wizard-field, .wizard-step fieldset { display: block; min-width: 0; }
 .wizard-field-wide { grid-column: 1 / -1; }
 .wizard-field > span, .wizard-step legend { display: block; margin-bottom: 6px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.wizard-field input, .wizard-field textarea { width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); font-size: 15px; }
-.wizard-field input:focus, .wizard-field textarea:focus { border-color: var(--text); outline: 2px solid #a9c92c80; }
+.wizard-field input, .wizard-field textarea, .wizard-field select { width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); font-size: 15px; }
+.wizard-field input:focus, .wizard-field textarea:focus, .wizard-field select:focus { border-color: var(--text); outline: 2px solid #a9c92c80; }
+.wizard-rental { grid-column: 1 / -1; margin-bottom: 18px; }
+.wizard-rental .wizard-hint { margin-top: 8px; }
+.wizard-term { margin-bottom: 12px; }
+.wizard-term[hidden], .wizard-deposit[hidden] { display: none; }
+.wizard-deposit { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; padding-top: 8px; font-size: 13px; color: var(--muted); }
+.wizard-deposit strong { font-size: 17px; font-weight: 600; color: var(--text); }
 .wizard-hint { grid-column: 1 / -1; font-size: 12.5px; line-height: 1.7; color: var(--muted); }
 .wizard-long-stay { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 4px; background: var(--ink); color: white; font-size: 12.5px; line-height: 1.5; }
 .wizard-long-stay span { display: grid; place-items: center; flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: var(--signal); color: var(--signal-ink); font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
@@ -783,6 +789,10 @@ a.info-fact:hover { border-color: var(--text); }
 fieldset.showcase-field { border: 0; padding: 0; }
 .showcase-field > span, fieldset.showcase-field > legend { display: block; margin-bottom: 6px; padding: 0; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: #ffffff9e; }
 .showcase-field input[type="text"], .showcase-field input[type="date"], .showcase-field input[type="tel"], .showcase-field input[type="email"], .showcase-field textarea { width: 100%; padding: 11px 12px; border: 1px solid #ffffff2e; border-radius: 4px; background: #ffffff0d; color: white; font-size: 14.5px; color-scheme: dark; transition: border-color .2s, background .2s; }
+.showcase-field select { width: 100%; padding: 11px 12px; border: 1px solid #ffffff2e; border-radius: 4px; background: #ffffff0d; color: white; font-size: 14.5px; color-scheme: dark; }
+.showcase-field select:focus { border-color: var(--signal); background: #ffffff14; outline: none; }
+.showcase-field[hidden], .showcase-check[hidden] { display: none; }
+.showcase-quote-deposit { margin-top: 8px; }
 .showcase-field textarea { resize: vertical; }
 .showcase-field input::placeholder, .showcase-field textarea::placeholder { color: #ffffff59; }
 .showcase-field input:focus, .showcase-field textarea:focus { border-color: var(--signal); background: #ffffff14; outline: none; }

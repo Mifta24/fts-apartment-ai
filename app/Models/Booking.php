@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'reference',
+    'rental_type',
     'apartment_id',
     'unit_type_id',
     'conversation_id',
@@ -18,16 +19,27 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'locale',
     'check_in',
     'check_out',
+    'lease_months',
     'adults',
     'children',
     'unit_count',
     'extra_bed',
     'total_price',
+    'deposit_total',
     'status',
     'notes',
 ])]
 class Booking extends Model
 {
+    public const RENTAL_DAILY = 'daily';
+
+    public const RENTAL_MONTHLY = 'monthly';
+
+    public const RENTAL_YEARLY = 'yearly';
+
+    /** @var list<string> */
+    public const RENTAL_TYPES = [self::RENTAL_DAILY, self::RENTAL_MONTHLY, self::RENTAL_YEARLY];
+
     public const STATUS_PENDING = 'pending';
 
     public const STATUS_CONFIRMED = 'confirmed';
@@ -53,6 +65,8 @@ class Booking extends Model
             'check_out' => 'date',
             'extra_bed' => 'boolean',
             'total_price' => 'decimal:2',
+            'deposit_total' => 'decimal:2',
+            'lease_months' => 'integer',
         ];
     }
 
@@ -90,6 +104,11 @@ class Booking extends Model
     public function canTransitionTo(string $status): bool
     {
         return in_array($status, self::TRANSITIONS[$this->status] ?? [], true);
+    }
+
+    public function isLease(): bool
+    {
+        return in_array($this->rental_type, [self::RENTAL_MONTHLY, self::RENTAL_YEARLY], true);
     }
 
     public function nights(): int

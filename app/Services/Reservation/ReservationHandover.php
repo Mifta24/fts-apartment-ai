@@ -4,6 +4,7 @@ namespace App\Services\Reservation;
 
 use App\Models\Apartment;
 use App\Models\Booking;
+use App\Notifications\GuestBookingSummary;
 
 /**
  * Builds the WhatsApp / phone / email hand-over links that carry a
@@ -49,17 +50,18 @@ class ReservationHandover
         $booking->loadMissing('unitType');
 
         $labels = match ($locale) {
-            'en' => ['Hello, I would like to request a stay at the apartment.', 'Name', 'Move-in', 'Move-out', 'Residents', 'Units', 'Unit type', 'Special request', 'Reference'],
-            'ja' => ['こんにちは。アパートメントの滞在をリクエストしたいです。', 'お名前', '入居日', '退去日', '人数', '戸数', 'お部屋タイプ', 'ご要望', '予約番号'],
-            default => ['Halo, saya ingin mengajukan permintaan sewa unit apartemen.', 'Nama', 'Check-in', 'Check-out', 'Penghuni', 'Jumlah unit', 'Tipe unit', 'Permintaan khusus', 'Referensi'],
+            'en' => ['Hello, I would like to request a stay at the apartment.', 'Name', 'Move-in', 'Move-out', 'Residents', 'Units', 'Unit type', 'Special request', 'Reference', 'Rental'],
+            'ja' => ['こんにちは。アパートメントの滞在をリクエストしたいです。', 'お名前', '入居日', '退去日', '人数', '戸数', 'お部屋タイプ', 'ご要望', '予約番号', '契約形態'],
+            default => ['Halo, saya ingin mengajukan permintaan sewa unit apartemen.', 'Nama', 'Check-in', 'Check-out', 'Penghuni', 'Jumlah unit', 'Tipe unit', 'Permintaan khusus', 'Referensi', 'Jenis sewa'],
         };
 
         $guests = $booking->adults + $booking->children;
 
-        return implode("\n", [
+        return implode("\n", array_filter([
             $labels[0],
             '',
             "{$labels[1]}: {$booking->guest_name}",
+            $booking->isLease() ? "{$labels[9]}: ".GuestBookingSummary::leaseLabel($booking, $locale) : null,
             "{$labels[2]}: ".$booking->check_in->locale($locale)->translatedFormat('j F Y'),
             "{$labels[3]}: ".$booking->check_out->locale($locale)->translatedFormat('j F Y'),
             "{$labels[4]}: {$guests}",
@@ -68,7 +70,7 @@ class ReservationHandover
             "{$labels[7]}: ".($booking->notes ?: '-'),
             '',
             "{$labels[8]}: {$booking->reference}",
-        ]);
+        ], fn ($line) => $line !== null));
     }
 
     private function subject(string $key, string $locale): string

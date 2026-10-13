@@ -55,8 +55,16 @@
 
                 <div class="unit-scene-rate">
                     <p><span class="unit-scene-rate-label">{{ $labels['from'] }}</span> <span class="unit-scene-rate-amount"><strong>{{ $money($unitType->base_price) }}</strong> <span class="unit-scene-rate-label">{{ $labels['per_night'] }}</span></span></p>
-                    @if ($apartment->monthly_discount_percent > 0 || $apartment->weekly_discount_percent > 0)
+                    @if ($unitType->offersMonthlyRental())
+                        <p class="unit-scene-monthly">{{ str_replace(':price', $money($unitType->monthly_price), $lobby['rent_monthly']) }}</p>
+                    @elseif ($apartment->monthly_discount_percent > 0 || $apartment->weekly_discount_percent > 0)
                         <p class="unit-scene-monthly">{{ str_replace(':price', $money($monthlyRate), $lobby['monthly_estimate']) }}</p>
+                    @endif
+                    @if ($unitType->offersYearlyRental())
+                        <p class="unit-scene-monthly">{{ str_replace([':price', ':monthly'], [$money($unitType->yearly_price), $money($unitType->yearlyMonthlyEquivalent())], $lobby['rent_yearly']) }}</p>
+                    @endif
+                    @if ($unitType->offersMonthlyRental() || $unitType->offersYearlyRental())
+                        <p class="unit-scene-note">{{ str_replace([':months', ':min', ':max', ':years'], [$apartment->security_deposit_months, max(1, $apartment->min_monthly_lease_months), \App\Models\Apartment::MAX_MONTHLY_LEASE_MONTHS, \App\Models\Apartment::MAX_YEARLY_LEASE_YEARS], $lobby['lease_note']) }}</p>
                     @endif
                     <p class="unit-scene-note">{{ $lobby['availability_note'] }}</p>
                 </div>

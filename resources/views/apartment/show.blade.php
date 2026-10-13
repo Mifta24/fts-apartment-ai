@@ -21,7 +21,9 @@
                 @if ($unitTypes->isNotEmpty())
                     <div><dt>{{ $lobby['stat_from'] }}</dt><dd>{{ $money($unitTypes->min('base_price')) }}</dd></div>
                 @endif
-                @if ($apartment->monthly_discount_percent > 0)
+                @if ($unitTypes->contains(fn ($unitType) => $unitType->offersMonthlyRental()))
+                    <div><dt>{{ $lobby['stat_rent_monthly'] }}</dt><dd>{{ $money($unitTypes->filter(fn ($unitType) => $unitType->offersMonthlyRental())->min('monthly_price')) }}</dd></div>
+                @elseif ($apartment->monthly_discount_percent > 0)
                     <div><dt>{{ $lobby['stat_monthly'] }}</dt><dd>{{ str_replace(':percent', (string) $apartment->monthly_discount_percent, $lobby['stat_monthly_value']) }}</dd></div>
                 @endif
                 @if ($apartment->check_in_time)

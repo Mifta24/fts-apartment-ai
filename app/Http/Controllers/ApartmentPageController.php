@@ -6,6 +6,7 @@ use App\Models\Apartment;
 use App\Models\ApartmentKnowledgeItem;
 use App\Models\UnitType;
 use App\Services\Reservation\ReservationHandover;
+use App\Services\Reservation\ReservationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -531,7 +532,7 @@ class ApartmentPageController extends Controller
             }
         );
 
-        return [...ReservationController::MESSAGES[$locale], 'long_stay_hint' => $apartment->weekly_discount_percent > 0 || $apartment->monthly_discount_percent > 0 ? $longStay : '', ...match ($locale) {
+        $labels = [...ReservationController::MESSAGES[$locale], 'long_stay_hint' => $apartment->weekly_discount_percent > 0 || $apartment->monthly_discount_percent > 0 ? $longStay : '', ...match ($locale) {
             'en' => [
                 'title' => 'Stay request', 'intro' => 'A few quick steps. Final availability is confirmed by our leasing team.',
                 'step_of' => 'Step :current of :total', 'steps' => ['Dates', 'Residents', 'Unit', 'Your details', 'Summary'],
@@ -551,6 +552,12 @@ class ApartmentPageController extends Controller
                 'error_network' => 'Connection problem. Your details are saved — please try again or contact the apartment team.',
                 'error_generic' => 'Something went wrong. Please try again or contact the apartment team.', 'select_unit' => 'Please choose a unit type.',
                 'contact_staff' => 'Contact the apartment team',
+                'rental_title' => 'How do you want to rent?', 'rental_daily' => 'By the night', 'rental_monthly' => 'By the month', 'rental_yearly' => 'By the year',
+                'rental_hint_daily' => 'Stay from one night up to :nights nights.', 'rental_hint_monthly' => 'A lease of :min to :max months, at a monthly rent.', 'rental_hint_yearly' => 'A lease of 1 to :years years, at a lower rent per month.',
+                'move_in' => 'Move-in date', 'term' => 'Lease length', 'term_month' => ':count month', 'term_months' => ':count months', 'term_year' => ':count year', 'term_years' => ':count years',
+                'lease_ends' => 'Lease ends :date', 'rent' => 'Rent', 'rent_per_month' => ':price / month', 'rent_per_year' => ':price / year',
+                'deposit' => 'Security deposit (refundable)', 'deposit_hint' => 'The deposit is paid when the lease is confirmed and refunded when it ends. Rent is paid as arranged with the leasing team.',
+                'not_offered' => 'Not rented this way', 'need_term' => 'Please choose how long you want to rent.',
             ],
             'ja' => [
                 'title' => '滞在リクエスト', 'intro' => 'かんたんな手順です。空室状況はリーシングチームが最終確認いたします。',
@@ -571,6 +578,12 @@ class ApartmentPageController extends Controller
                 'error_network' => '接続に問題があります。入力内容は保存されています。もう一度お試しいただくか、スタッフにご連絡ください。',
                 'error_generic' => 'エラーが発生しました。もう一度お試しいただくか、スタッフにご連絡ください。', 'select_unit' => 'お部屋タイプを選択してください。',
                 'contact_staff' => 'スタッフに連絡',
+                'rental_title' => 'ご契約の形態', 'rental_daily' => '日単位', 'rental_monthly' => '月単位', 'rental_yearly' => '年単位',
+                'rental_hint_daily' => '1泊から最大:nights泊までご滞在いただけます。', 'rental_hint_monthly' => ':min〜:maxか月の月契約（月額賃料）。', 'rental_hint_yearly' => '1〜:years年の年契約。月あたりの賃料がさらにお得です。',
+                'move_in' => '入居開始日', 'term' => '契約期間', 'term_month' => ':countか月', 'term_months' => ':countか月', 'term_year' => ':count年', 'term_years' => ':count年',
+                'lease_ends' => '契約終了日：:date', 'rent' => '賃料', 'rent_per_month' => ':price / 月', 'rent_per_year' => ':price / 年',
+                'deposit' => '敷金（返還）', 'deposit_hint' => '敷金は契約確定時にお支払いいただき、契約終了時に返還します。賃料のお支払い方法はリーシングチームとご相談ください。',
+                'not_offered' => 'この契約形態は対象外です', 'need_term' => '契約期間を選択してください。',
             ],
             default => [
                 'title' => 'Permintaan sewa', 'intro' => 'Hanya beberapa langkah singkat. Ketersediaan final dikonfirmasi oleh tim leasing kami.',
@@ -591,8 +604,27 @@ class ApartmentPageController extends Controller
                 'error_network' => 'Koneksi bermasalah. Data Anda tersimpan — coba lagi atau hubungi tim apartemen.',
                 'error_generic' => 'Terjadi kesalahan. Coba lagi atau hubungi tim apartemen.', 'select_unit' => 'Silakan pilih tipe unit.',
                 'contact_staff' => 'Hubungi tim apartemen',
+                'rental_title' => 'Jenis sewa', 'rental_daily' => 'Harian', 'rental_monthly' => 'Bulanan', 'rental_yearly' => 'Tahunan',
+                'rental_hint_daily' => 'Menginap mulai 1 malam hingga :nights malam.', 'rental_hint_monthly' => 'Kontrak :min sampai :max bulan dengan tarif sewa per bulan.', 'rental_hint_yearly' => 'Kontrak 1 sampai :years tahun, tarif per bulan lebih hemat.',
+                'move_in' => 'Tanggal mulai sewa', 'term' => 'Lama sewa', 'term_month' => ':count bulan', 'term_months' => ':count bulan', 'term_year' => ':count tahun', 'term_years' => ':count tahun',
+                'lease_ends' => 'Sewa berakhir :date', 'rent' => 'Sewa', 'rent_per_month' => ':price / bulan', 'rent_per_year' => ':price / tahun',
+                'deposit' => 'Deposit keamanan (dikembalikan)', 'deposit_hint' => 'Deposit dibayar saat sewa dikonfirmasi dan dikembalikan saat masa sewa berakhir. Pembayaran sewa diatur bersama tim leasing.',
+                'not_offered' => 'Tidak tersedia untuk jenis sewa ini', 'need_term' => 'Pilih lama sewa.',
             ],
         }];
+
+        $placeholders = [
+            ':nights' => (string) ReservationService::MAX_NIGHTS,
+            ':min' => (string) max(1, $apartment->min_monthly_lease_months),
+            ':max' => (string) Apartment::MAX_MONTHLY_LEASE_MONTHS,
+            ':years' => (string) Apartment::MAX_YEARLY_LEASE_YEARS,
+        ];
+
+        foreach (['rental_hint_daily', 'rental_hint_monthly', 'rental_hint_yearly'] as $key) {
+            $labels[$key] = strtr($labels[$key], $placeholders);
+        }
+
+        return $labels;
     }
 
     /**
@@ -630,6 +662,9 @@ class ApartmentPageController extends Controller
                 'ask_unit_q' => 'Tell me more about the :name.',
                 'cta_units' => 'See the residences', 'stat_from' => 'Nightly from', 'stat_monthly' => 'Monthly stays',
                 'stat_monthly_value' => ':percent% off', 'stat_checkin' => 'Check-in',
+                'rent_monthly' => 'Monthly rental :price / month', 'rent_yearly' => 'Yearly rental :price / year (about :monthly / month)',
+                'lease_note' => 'Refundable security deposit of :months month(s) of rent. Monthly leases run :min–:max months, yearly leases 1–:years years.',
+                'stat_rent_monthly' => 'Monthly rent from',
             ],
             'ja' => [
                 'welcome' => 'ようこそ', 'lobby' => 'バーチャルロビーへ',
@@ -660,6 +695,9 @@ class ApartmentPageController extends Controller
                 'ask_unit_q' => ':name について詳しく教えてください。',
                 'cta_units' => 'お部屋を見る', 'stat_from' => '1泊あたり', 'stat_monthly' => '月単位の滞在',
                 'stat_monthly_value' => ':percent%オフ', 'stat_checkin' => 'チェックイン',
+                'rent_monthly' => '月契約 :price / 月', 'rent_yearly' => '年契約 :price / 年（月あたり約 :monthly）',
+                'lease_note' => '敷金は賃料:monthsか月分（返還）。月契約は:min〜:maxか月、年契約は1〜:years年。',
+                'stat_rent_monthly' => '月額賃料',
             ],
             default => [
                 'welcome' => 'Selamat datang di', 'lobby' => 'lobi virtual Anda',
@@ -690,6 +728,9 @@ class ApartmentPageController extends Controller
                 'ask_unit_q' => 'Ceritakan lebih banyak tentang :name.',
                 'cta_units' => 'Lihat unit', 'stat_from' => 'Per malam mulai', 'stat_monthly' => 'Sewa bulanan',
                 'stat_monthly_value' => 'hemat :percent%', 'stat_checkin' => 'Check-in',
+                'rent_monthly' => 'Sewa bulanan :price / bulan', 'rent_yearly' => 'Sewa tahunan :price / tahun (sekitar :monthly / bulan)',
+                'lease_note' => 'Deposit keamanan :months bulan sewa, dikembalikan. Sewa bulanan :min–:max bulan, sewa tahunan 1–:years tahun.',
+                'stat_rent_monthly' => 'Sewa bulanan mulai',
             ],
         };
     }
@@ -703,6 +744,11 @@ class ApartmentPageController extends Controller
             'en' => [
                 'from' => 'from',
                 'per_night' => '/ night',
+                'per_month' => '/ month',
+                'per_year' => '/ year',
+                'chat_month' => 'month(s)',
+                'chat_year' => 'year(s)',
+                'chat_deposit' => 'deposit',
                 'ask_ai' => 'Ask the AI Concierge',
                 'units_heading' => 'Residences',
                 'chat_heading' => 'AI Concierge',
@@ -750,6 +796,11 @@ class ApartmentPageController extends Controller
             'ja' => [
                 'from' => '',
                 'per_night' => '〜 / 泊',
+                'per_month' => '〜 / 月',
+                'per_year' => '〜 / 年',
+                'chat_month' => 'か月',
+                'chat_year' => '年',
+                'chat_deposit' => '敷金',
                 'ask_ai' => 'AIコンシェルジュに聞く',
                 'units_heading' => 'レジデンス',
                 'chat_heading' => 'AIコンシェルジュ',
@@ -797,6 +848,11 @@ class ApartmentPageController extends Controller
             default => [
                 'from' => 'mulai dari',
                 'per_night' => '/ malam',
+                'per_month' => '/ bulan',
+                'per_year' => '/ tahun',
+                'chat_month' => 'bulan',
+                'chat_year' => 'tahun',
+                'chat_deposit' => 'deposit',
                 'ask_ai' => 'Tanya AI Concierge',
                 'units_heading' => 'Unit Hunian',
                 'chat_heading' => 'AI Concierge',
@@ -870,6 +926,11 @@ class ApartmentPageController extends Controller
                 'available_instead' => 'Available for your dates instead:', 'error_network' => 'Connection problem. Your details are kept — please try again.', 'error_generic' => 'Something went wrong. Please try again or contact the apartment team.',
                 'done_title' => 'Request received', 'done_line' => 'Thank you, :name. We will confirm shortly.', 'reference' => 'Your reference', 'awaiting' => 'Awaiting confirmation from the leasing team',
                 'done_hint' => 'Send it to our team to speed things up.', 'send_whatsapp' => 'Send to WhatsApp', 'call_team' => 'Call', 'email_team' => 'Email', 'back_to_chat' => 'Back to chat',
+                'rental_title' => 'Rental', 'rental_daily' => 'Nightly', 'rental_monthly' => 'Monthly', 'rental_yearly' => 'Yearly',
+                'move_in' => 'Move-in date', 'term' => 'Lease length', 'term_month' => ':count month', 'term_months' => ':count months', 'term_year' => ':count year', 'term_years' => ':count years',
+                'lease_ends' => 'Lease ends', 'rent' => 'Rent', 'rent_per_month' => ':price / month', 'rent_per_year' => ':price / year', 'per_month' => '/ month', 'per_year' => '/ year',
+                'total_for_term' => ':term in total', 'deposit' => 'Security deposit (refundable)', 'deposit_hint' => 'Paid when the lease is confirmed, refunded when it ends.',
+                'not_offered' => 'This unit is not rented this way.', 'need_move_in' => 'Please choose your move-in date.', 'need_term' => 'Please choose how long you want to rent.',
             ],
             'ja' => [
                 'presenting' => 'AIコンシェルジュ', 'presenting_hint' => 'がご案内します',
@@ -888,6 +949,11 @@ class ApartmentPageController extends Controller
                 'available_instead' => 'ご希望の日程で空いているお部屋：', 'error_network' => '接続に問題があります。入力内容は保持されています。もう一度お試しください。', 'error_generic' => 'エラーが発生しました。もう一度お試しいただくか、スタッフにご連絡ください。',
                 'done_title' => 'リクエストを受け付けました', 'done_line' => ':nameさま、ありがとうございます。まもなくご連絡します。', 'reference' => '受付番号', 'awaiting' => 'リーシングチームの確認待ち',
                 'done_hint' => 'スタッフに送ると、確認がスムーズです。', 'send_whatsapp' => 'WhatsAppで送る', 'call_team' => '電話', 'email_team' => 'メール', 'back_to_chat' => 'チャットに戻る',
+                'rental_title' => '契約形態', 'rental_daily' => '日単位', 'rental_monthly' => '月単位', 'rental_yearly' => '年単位',
+                'move_in' => '入居開始日', 'term' => '契約期間', 'term_month' => ':countか月', 'term_months' => ':countか月', 'term_year' => ':count年', 'term_years' => ':count年',
+                'lease_ends' => '契約終了日', 'rent' => '賃料', 'rent_per_month' => ':price / 月', 'rent_per_year' => ':price / 年', 'per_month' => '〜 / 月', 'per_year' => '〜 / 年',
+                'total_for_term' => ':termの合計', 'deposit' => '敷金（返還）', 'deposit_hint' => '契約確定時にお支払い、契約終了時に返還します。',
+                'not_offered' => 'このお部屋はこの契約形態では対象外です。', 'need_move_in' => '入居開始日を選択してください。', 'need_term' => '契約期間を選択してください。',
             ],
             default => [
                 'presenting' => 'AI Concierge', 'presenting_hint' => 'sedang menunjukkan untuk Anda',
@@ -906,6 +972,11 @@ class ApartmentPageController extends Controller
                 'available_instead' => 'Tersedia di tanggal Anda:', 'error_network' => 'Koneksi bermasalah. Data Anda tersimpan — coba lagi.', 'error_generic' => 'Terjadi kesalahan. Coba lagi atau hubungi tim apartemen.',
                 'done_title' => 'Permintaan diterima', 'done_line' => 'Terima kasih, :name. Kami segera mengonfirmasi.', 'reference' => 'Nomor referensi', 'awaiting' => 'Menunggu konfirmasi tim leasing',
                 'done_hint' => 'Kirim ke tim kami agar konfirmasi lebih cepat.', 'send_whatsapp' => 'Kirim ke WhatsApp', 'call_team' => 'Telepon', 'email_team' => 'Email', 'back_to_chat' => 'Kembali ke chat',
+                'rental_title' => 'Jenis sewa', 'rental_daily' => 'Harian', 'rental_monthly' => 'Bulanan', 'rental_yearly' => 'Tahunan',
+                'move_in' => 'Tanggal mulai sewa', 'term' => 'Lama sewa', 'term_month' => ':count bulan', 'term_months' => ':count bulan', 'term_year' => ':count tahun', 'term_years' => ':count tahun',
+                'lease_ends' => 'Sewa berakhir', 'rent' => 'Sewa', 'rent_per_month' => ':price / bulan', 'rent_per_year' => ':price / tahun', 'per_month' => '/ bulan', 'per_year' => '/ tahun',
+                'total_for_term' => 'total :term', 'deposit' => 'Deposit keamanan (dikembalikan)', 'deposit_hint' => 'Dibayar saat sewa dikonfirmasi, dikembalikan saat masa sewa berakhir.',
+                'not_offered' => 'Unit ini tidak disewakan dengan jenis sewa tersebut.', 'need_move_in' => 'Silakan pilih tanggal mulai sewa.', 'need_term' => 'Pilih lama sewa.',
             ],
         };
     }

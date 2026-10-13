@@ -106,6 +106,21 @@
         </section>
 
         <section class="rounded-xl border border-stone-200 bg-white p-5">
+            <h2 class="text-sm font-semibold text-stone-900">Monthly and yearly rentals</h2>
+            <p class="mt-1 text-xs text-stone-500">The rent itself is set on each unit type. Monthly leases run up to {{ \App\Models\Apartment::MAX_MONTHLY_LEASE_MONTHS }} months; a year or more is a yearly rental, up to {{ \App\Models\Apartment::MAX_YEARLY_LEASE_YEARS }} years. The deposit is refundable and is based on one month of rent.</p>
+            <div class="mt-4 grid grid-cols-2 gap-4">
+                <div>
+                    <label for="security_deposit_months" class="block text-sm font-medium text-stone-700">Security deposit (months of rent)</label>
+                    <input id="security_deposit_months" type="number" name="security_deposit_months" value="{{ old('security_deposit_months', $apartment->security_deposit_months) }}" min="0" max="12" required class="{{ $field }}">
+                </div>
+                <div>
+                    <label for="min_monthly_lease_months" class="block text-sm font-medium text-stone-700">Shortest monthly lease (months)</label>
+                    <input id="min_monthly_lease_months" type="number" name="min_monthly_lease_months" value="{{ old('min_monthly_lease_months', $apartment->min_monthly_lease_months) }}" min="1" max="{{ \App\Models\Apartment::MAX_MONTHLY_LEASE_MONTHS }}" required class="{{ $field }}">
+                </div>
+            </div>
+        </section>
+
+        <section class="rounded-xl border border-stone-200 bg-white p-5">
             <h2 class="text-sm font-semibold text-stone-900">Visibility</h2>
             <div class="mt-4">
                 <label for="public_status" class="block text-sm font-medium text-stone-700">Public page</label>

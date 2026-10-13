@@ -1,0 +1,129 @@
+- main [ref=f3e2]:
+  - status:
+    - generic [aria-hidden]: "03"
+    - paragraph: Memanggil lift…
+  - img "Concierge penghuni Anda"
+  - generic [ref=f3e4]:
+    - link "FTS Apartment AI Jakarta Selatan · Indonesia" [ref=f3e5] [cursor=pointer]:
+      - /url: http://127.0.0.1:8123/fts-apartment-ai?lang=id
+      - generic [ref=f3e11]:
+        - generic [ref=f3e12]: FTS Apartment AI
+        - generic [ref=f3e13]: Jakarta Selatan · Indonesia
+    - generic [ref=f3e14]:
+      - generic [aria-hidden] [ref=f3e15]: ▲
+      - generic [ref=f3e16]: "03"
+      - generic [ref=f3e17]: Fasilitas bersama
+    - generic [ref=f3e18]:
+      - button "Suara aktif" [pressed] [ref=f3e19] [cursor=pointer]
+      - navigation "Language" [ref=f3e23]:
+        - link "Bahasa Indonesia" [ref=f3e24] [cursor=pointer]:
+          - /url: "?lang=id"
+          - text: id
+        - link "English" [ref=f3e25] [cursor=pointer]:
+          - /url: "?lang=en"
+          - text: en
+        - link "日本語" [ref=f3e26] [cursor=pointer]:
+          - /url: "?lang=ja"
+          - text: ja
+  - navigation "Direktori gedung" [ref=f3e27]:
+    - paragraph [ref=f3e28]: Direktori gedung
+    - list [ref=f3e29]:
+      - listitem [ref=f3e30]:
+        - link "Bicara dengan tim" [ref=f3e31] [cursor=pointer]:
+          - /url: http://127.0.0.1:8123/fts-apartment-ai/staff?lang=id
+          - generic [aria-hidden] [ref=f3e32]: "06"
+      - listitem [ref=f3e34]:
+        - link "Rencanakan menginap" [ref=f3e35] [cursor=pointer]:
+          - /url: http://127.0.0.1:8123/fts-apartment-ai/reservation?lang=id
+          - generic [aria-hidden] [ref=f3e36]: "05"
+      - listitem [ref=f3e38]:
+        - link "Informasi gedung" [ref=f3e39] [cursor=pointer]:
+          - /url: http://127.0.0.1:8123/fts-apartment-ai/info?lang=id
+          - generic [aria-hidden] [ref=f3e40]: "04"
+      - listitem [ref=f3e42]:
+        - link "Fasilitas bersama" [ref=f3e43] [cursor=pointer]:
+          - /url: http://127.0.0.1:8123/fts-apartment-ai/facilities?lang=id
+          - generic [aria-hidden] [ref=f3e44]: "03"
+      - listitem [ref=f3e46]:
+        - link "Unit Hunian" [ref=f3e47] [cursor=pointer]:
+          - /url: http://127.0.0.1:8123/fts-apartment-ai/units?lang=id
+          - generic [aria-hidden] [ref=f3e48]: "02"
+      - listitem [ref=f3e50]:
+        - link "Lobi" [ref=f3e51] [cursor=pointer]:
+          - /url: http://127.0.0.1:8123/fts-apartment-ai?lang=id
+          - generic [aria-hidden] [ref=f3e52]: L
+    - generic [ref=f3e54]: Concierge siaga 24 jam
+  - region "Fasilitas bersama" [ref=f3e57]:
+    - link "Kembali ke lobi" [ref=f3e58] [cursor=pointer]:
+      - /url: http://127.0.0.1:8123/fts-apartment-ai?lang=id
+      - generic [aria-hidden] [ref=f3e59]: ×
+    - paragraph [ref=f3e60]: Lantai 03
+    - heading "Fasilitas bersama" [level=2] [ref=f3e61]
+    - generic [ref=f3e63]:
+      - paragraph [ref=f3e64]: Penghuni bisa memakai 8 fasilitas dan layanan, di antaranya Kolam renang infinity rooftop; Gym 24 jam; Co-working lounge. Pilih salah satu untuk membaca detailnya, atau tanyakan apa saja kepada saya.
+      - paragraph [aria-hidden] [ref=f3e65]: Penghuni b isa memakai 8 fasilitas dan layanan, di antaranya Kolam renang infinity rooftop; Gym 24 jam; Co-working lounge. Pilih salah satu untuk membaca detailnya, atau tanyakan apa saja kepada saya.
+      - generic [ref=f3e66]:
+        - button "Dengarkan" [ref=f3e67] [cursor=pointer]
+        - button "Lewati" [ref=f3e68] [cursor=pointer]
+    - generic [ref=f3e69]:
+      - link "03.01 Kolam renang infinity rooftop Kolam renang infinity di rooftop lantai 32 buka setiap hari pukul 06:00–21:00, khusus penghuni. Handuk tersedia di area kolam. Anak di bawah 12 tahun wajib didampingi orang dewasa." [ref=f3e70] [cursor=pointer]:
+        - /url: http://127.0.0.1:8123/fts-apartment-ai/facilities/7?lang=id
+        - generic [ref=f3e77]:
+          - generic [ref=f3e78]: "03.01"
+          - generic [ref=f3e79]: Kolam renang infinity rooftop
+          - generic [ref=f3e80]: Kolam renang infinity di rooftop lantai 32 buka setiap hari pukul 06:00–21:00, khusus penghuni. Handuk tersedia di area kolam. Anak di bawah 12 tahun wajib didampingi orang dewasa.
+        - generic [aria-hidden] [ref=f3e81]: ›
+      - link "03.02 Gym 24 jam Gym di lantai 5 buka 24 jam dengan kartu akses penghuni, lengkap dengan treadmill, sepeda statis, dan area beban bebas. Kelas yoga gratis setiap Sabtu pukul 07:30." [ref=f3e82] [cursor=pointer]:
+        - /url: http://127.0.0.1:8123/fts-apartment-ai/facilities/8?lang=id
+        - generic [ref=f3e87]:
+          - generic [ref=f3e88]: "03.02"
+          - generic [ref=f3e89]: Gym 24 jam
+          - generic [ref=f3e90]: Gym di lantai 5 buka 24 jam dengan kartu akses penghuni, lengkap dengan treadmill, sepeda statis, dan area beban bebas. Kelas yoga gratis setiap Sabtu pukul 07:30.
+        - generic [aria-hidden] [ref=f3e91]: ›
+      - link "03.03 Co-working lounge Co-working lounge di lantai 5 buka 07:00–23:00 dengan Wi-Fi 1 Gbps, meja kerja, dan dua ruang meeting kecil yang bisa dipesan gratis lewat concierge, maksimal 2 jam per hari." [ref=f3e92] [cursor=pointer]:
+        - /url: http://127.0.0.1:8123/fts-apartment-ai/facilities/9?lang=id
+        - generic [ref=f3e98]:
+          - generic [ref=f3e99]: "03.03"
+          - generic [ref=f3e100]: Co-working lounge
+          - generic [ref=f3e101]: Co-working lounge di lantai 5 buka 07:00–23:00 dengan Wi-Fi 1 Gbps, meja kerja, dan dua ruang meeting kecil yang bisa dipesan gratis lewat concierge, maksimal 2 jam per hari.
+        - generic [aria-hidden] [ref=f3e102]: ›
+      - link "03.04 Laundry dan housekeeping Housekeeping membersihkan unit dua kali seminggu dan mengganti sprei serta handuk sekali seminggu. Ruang laundry koin ada di lantai 3, dan layanan laundry kiloan bisa dipesan lewat concierge dengan selesai dalam 24 jam." [ref=f3e103] [cursor=pointer]:
+        - /url: http://127.0.0.1:8123/fts-apartment-ai/facilities/10?lang=id
+        - generic [ref=f3e111]:
+          - generic [ref=f3e112]: "03.04"
+          - generic [ref=f3e113]: Laundry dan housekeeping
+          - generic [ref=f3e114]: Housekeeping membersihkan unit dua kali seminggu dan mengganti sprei serta handuk sekali seminggu. Ruang laundry koin ada di lantai 3, dan layanan laundry kiloan bisa dipesan lewat concierge dengan selesai dalam 24 jam.
+        - generic [aria-hidden] [ref=f3e115]: ›
+      - link "03.05 Parkir dan keamanan Setiap unit mendapat satu slot parkir mobil gratis di basement; slot tambahan Rp750.000 per bulan. Gedung dijaga keamanan 24 jam dengan CCTV di semua area bersama, dan lift hanya bisa dipakai dengan kartu akses." [ref=f3e116] [cursor=pointer]:
+        - /url: http://127.0.0.1:8123/fts-apartment-ai/facilities/11?lang=id
+        - generic [ref=f3e123]:
+          - generic [ref=f3e124]: "03.05"
+          - generic [ref=f3e125]: Parkir dan keamanan
+          - generic [ref=f3e126]: Setiap unit mendapat satu slot parkir mobil gratis di basement; slot tambahan Rp750.000 per bulan. Gedung dijaga keamanan 24 jam dengan CCTV di semua area bersama, dan lift hanya bisa dipakai dengan kartu akses.
+        - generic [aria-hidden] [ref=f3e127]: ›
+      - link "03.06 Kafe lobi dan minimarket 24 jam Kafe di lobi buka 06:30–22:00 dengan menu sarapan, kopi, dan makan siang; sarapan tidak termasuk tarif dan bisa dipesan per hari. Minimarket 24 jam ada di lantai dasar, dan kurir pesan-antar diterima di meja concierge." [ref=f3e128] [cursor=pointer]:
+        - /url: http://127.0.0.1:8123/fts-apartment-ai/facilities/12?lang=id
+        - generic [ref=f3e134]:
+          - generic [ref=f3e135]: "03.06"
+          - generic [ref=f3e136]: Kafe lobi dan minimarket 24 jam
+          - generic [ref=f3e137]: Kafe di lobi buka 06:30–22:00 dengan menu sarapan, kopi, dan makan siang; sarapan tidak termasuk tarif dan bisa dipesan per hari. Minimarket 24 jam ada di lantai dasar, dan kurir pesan-antar diterima di meja concierge.
+        - generic [aria-hidden] [ref=f3e138]: ›
+      - link "03.07 MRT dan transportasi Stasiun MRT ASEAN berjarak 8 menit jalan kaki, dan dari sana hanya 2 stasiun ke Senayan atau 5 stasiun ke Bundaran HI. SCBD sekitar 5 menit berkendara. Taksi dan ojek online bisa menjemput di drop-off lobi." [ref=f3e139] [cursor=pointer]:
+        - /url: http://127.0.0.1:8123/fts-apartment-ai/facilities/13?lang=id
+        - generic [ref=f3e145]:
+          - generic [ref=f3e146]: "03.07"
+          - generic [ref=f3e147]: MRT dan transportasi
+          - generic [ref=f3e148]: Stasiun MRT ASEAN berjarak 8 menit jalan kaki, dan dari sana hanya 2 stasiun ke Senayan atau 5 stasiun ke Bundaran HI. SCBD sekitar 5 menit berkendara. Taksi dan ojek online bisa menjemput di drop-off lobi.
+        - generic [aria-hidden] [ref=f3e149]: ›
+      - link "03.08 Antar-jemput bandara Antar-jemput dari Bandara Soekarno-Hatta tersedia dengan biaya Rp450.000 sekali jalan (sekitar 45–75 menit tergantung lalu lintas), atau dari Halim Perdanakusuma Rp300.000. Pesan minimal 24 jam sebelumnya dengan nomor penerbangan." [ref=f3e150] [cursor=pointer]:
+        - /url: http://127.0.0.1:8123/fts-apartment-ai/facilities/14?lang=id
+        - generic [ref=f3e155]:
+          - generic [ref=f3e156]: "03.08"
+          - generic [ref=f3e157]: Antar-jemput bandara
+          - generic [ref=f3e158]: Antar-jemput dari Bandara Soekarno-Hatta tersedia dengan biaya Rp450.000 sekali jalan (sekitar 45–75 menit tergantung lalu lintas), atau dari Halim Perdanakusuma Rp300.000. Pesan minimal 24 jam sebelumnya dengan nomor penerbangan.
+        - generic [aria-hidden] [ref=f3e159]: ›
+  - button "AI Concierge Ngobrol dengan AI Concierge" [ref=f3e162] [cursor=pointer]:
+    - generic [ref=f3e164]:
+      - generic [ref=f3e165]: AI Concierge
+      - generic [ref=f3e166]: Ngobrol dengan AI Concierge
+    - generic [aria-hidden] [ref=f3e167]: ↗

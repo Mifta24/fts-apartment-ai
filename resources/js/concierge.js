@@ -30,6 +30,9 @@ function initConcierge() {
             maxGuests: root.dataset.labelMaxGuests,
             unitOnly: root.dataset.labelUnitOnly,
             night: root.dataset.labelNight,
+            month: root.dataset.labelMonth,
+            year: root.dataset.labelYear,
+            deposit: root.dataset.labelDeposit,
             studio: root.dataset.labelStudio,
             bedrooms: root.dataset.labelBedrooms,
             discount: root.dataset.labelDiscount,
@@ -335,6 +338,12 @@ function initConcierge() {
         return Number(unit.bedrooms) === 0 ? config.labels.studio : `${unit.bedrooms} ${config.labels.bedrooms}`;
     }
 
+    /** "6 month(s)" or "2 year(s)" for a lease; null for a nightly stay. */
+    function leaseTerm(item) {
+        if (!item.rental_type || item.rental_type === 'daily' || !item.lease_months) return null;
+        return item.rental_type === 'yearly' ? `${item.lease_months / 12} ${config.labels.year}` : `${item.lease_months} ${config.labels.month}`;
+    }
+
     function unitResultCard(unit) {
         const el = document.createElement('div');
         el.className = 'chat-card';
@@ -345,9 +354,10 @@ function initConcierge() {
                 <p class="chat-card-tag">${facts}</p>
                 <p class="mt-1 font-semibold">${unit.name}</p>
                 <p class="mt-1 text-sm font-semibold">${unit.total_price !== undefined && unit.total_price !== null
-                    ? `${money(unit.total_price)} <span class="font-normal opacity-60">/ ${unit.nights} ${config.labels.night}</span>`
+                    ? `${money(unit.total_price)} <span class="font-normal opacity-60">/ ${leaseTerm(unit) || `${unit.nights} ${config.labels.night}`}</span>`
                     : `${money(unit.starting_price)} <span class="font-normal opacity-60">/ ${config.labels.night}</span>`}</p>
                 ${unit.discount_percent > 0 ? `<p class="chat-card-tag mt-1">−${unit.discount_percent}% ${config.labels.discount}</p>` : ''}
+                ${leaseTerm(unit) && unit.deposit_total ? `<p class="chat-card-tag mt-1">${config.labels.deposit}: ${money(unit.deposit_total)}</p>` : ''}
                 <button type="button" class="chat-card-button" data-detail-slug="${unit.unit_type_slug}">
                     ${config.labels.viewDetails}
                 </button>
@@ -403,9 +413,10 @@ function initConcierge() {
         const q = payload.quote;
         el.innerHTML = `
             <p class="font-semibold">${q.name}</p>
-            <p class="chat-card-tag mt-1">${q.check_in} → ${q.check_out} · ${q.nights} ${config.labels.night}</p>
+            <p class="chat-card-tag mt-1">${q.check_in} → ${q.check_out} · ${leaseTerm(q) || `${q.nights} ${config.labels.night}`}</p>
             ${q.discount_percent > 0 ? `<p class="mt-1 text-xs opacity-70"><s>${money(q.subtotal)}</s> · −${q.discount_percent}% ${config.labels.discount}</p>` : ''}
             <p class="mt-1 text-base font-semibold">${money(q.grand_total)}</p>
+            ${leaseTerm(q) && q.deposit_total ? `<p class="mt-1 text-xs opacity-70">${config.labels.deposit}: ${money(q.deposit_total)}</p>` : ''}
         `;
         return el;
     }
@@ -418,8 +429,9 @@ function initConcierge() {
         el.innerHTML = `
             <p class="text-sm font-semibold">${config.labels.bookingReceived}</p>
             <p class="chat-card-tag mt-1">${config.labels.reference}: ${b.booking_reference}</p>
-            <p class="mt-1 text-xs opacity-70">${b.name} · ${b.check_in} → ${b.check_out} · ${b.nights} ${config.labels.night}</p>
+            <p class="mt-1 text-xs opacity-70">${b.name} · ${b.check_in} → ${b.check_out} · ${leaseTerm(b) || `${b.nights} ${config.labels.night}`}</p>
             <p class="mt-1 text-sm font-semibold">${money(b.total_price)}</p>
+            ${leaseTerm(b) && b.deposit_total ? `<p class="mt-1 text-xs opacity-70">${config.labels.deposit}: ${money(b.deposit_total)}</p>` : ''}
         `;
         return el;
     }

@@ -45,6 +45,8 @@ class ApartmentSettingController extends Controller
             'check_out_time' => ['required', 'date_format:H:i'],
             'weekly_discount_percent' => ['required', 'integer', 'min:0', 'max:90'],
             'monthly_discount_percent' => ['required', 'integer', 'min:0', 'max:90', 'gte:weekly_discount_percent'],
+            'security_deposit_months' => ['sometimes', 'integer', 'min:0', 'max:12'],
+            'min_monthly_lease_months' => ['sometimes', 'integer', 'min:1', 'max:'.Apartment::MAX_MONTHLY_LEASE_MONTHS],
             'public_status' => ['required', Rule::in(['draft', 'published'])],
         ], [
             'monthly_discount_percent.gte' => 'The monthly discount cannot be smaller than the weekly discount.',

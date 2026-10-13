@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\Hash;
 
 class DemoApartmentSeeder extends Seeder
 {
-    /** Long stays need inventory far enough ahead to quote a three-month request. */
-    private const INVENTORY_DAYS = 180;
+    /** Yearly leases of up to three years need inventory for every night of the lease, so this reaches about three years ahead. */
+    private const INVENTORY_DAYS = 1100;
 
     public function run(): void
     {
@@ -53,6 +53,8 @@ class DemoApartmentSeeder extends Seeder
                 'check_out_time' => '12:00',
                 'weekly_discount_percent' => 10,
                 'monthly_discount_percent' => 25,
+                'security_deposit_months' => 2,
+                'min_monthly_lease_months' => 3,
                 'cover_path' => 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1920&q=80',
                 'public_status' => 'published',
             ]
@@ -120,6 +122,8 @@ class DemoApartmentSeeder extends Seeder
                 'extra_bed_available' => false,
                 'extra_bed_price' => null,
                 'base_price' => 650000,
+                'monthly_price' => 13500000,
+                'yearly_price' => 150000000,
                 'amenities' => ['air_conditioning', 'wifi', 'kitchenette', 'workspace', 'smart_tv', 'smart_lock', 'water_heater'],
                 'total_units' => 24,
                 'images' => [
@@ -149,6 +153,8 @@ class DemoApartmentSeeder extends Seeder
                 'extra_bed_available' => true,
                 'extra_bed_price' => 150000,
                 'base_price' => 1050000,
+                'monthly_price' => 21000000,
+                'yearly_price' => 235000000,
                 'amenities' => ['air_conditioning', 'wifi', 'full_kitchen', 'washer_dryer', 'workspace', 'living_room', 'balcony', 'smart_tv', 'smart_lock'],
                 'total_units' => 16,
                 'images' => [
@@ -179,6 +185,8 @@ class DemoApartmentSeeder extends Seeder
                 'extra_bed_available' => true,
                 'extra_bed_price' => 150000,
                 'base_price' => 1750000,
+                'monthly_price' => 34000000,
+                'yearly_price' => 380000000,
                 'amenities' => ['air_conditioning', 'wifi', 'full_kitchen', 'dishwasher', 'washer_dryer', 'dining_area', 'living_room', 'balcony', 'bathtub', 'smart_tv', 'smart_lock'],
                 'total_units' => 10,
                 'images' => [
@@ -209,6 +217,8 @@ class DemoApartmentSeeder extends Seeder
                 'extra_bed_available' => true,
                 'extra_bed_price' => 200000,
                 'base_price' => 3400000,
+                'monthly_price' => 62000000,
+                'yearly_price' => 690000000,
                 'amenities' => ['air_conditioning', 'wifi', 'full_kitchen', 'dishwasher', 'washer_dryer', 'dining_area', 'living_room', 'workspace', 'bathtub', 'smart_tv', 'smart_lock', 'private_lift'],
                 'total_units' => 3,
                 'images' => [
@@ -279,12 +289,22 @@ class DemoApartmentSeeder extends Seeder
             [
                 'category' => ApartmentKnowledgeItem::CATEGORY_POLICIES,
                 'title' => 'Tarif menginap mingguan dan bulanan',
-                'body' => 'Menginap 7 malam atau lebih otomatis mendapat diskon 10%, dan 28 malam atau lebih mendapat diskon 25% dari tarif harian. Untuk sewa di atas 90 malam atau kontrak perusahaan, tim leasing akan membuatkan penawaran khusus.',
+                'body' => 'Menginap 7 malam atau lebih otomatis mendapat diskon 10%, dan 28 malam atau lebih mendapat diskon 25% dari tarif harian. Untuk tinggal lebih dari 90 malam, pilih sewa bulanan atau tahunan dengan tarif tersendiri; untuk kontrak perusahaan, tim leasing akan membuatkan penawaran khusus.',
                 'translations' => [
-                    'en' => ['title' => 'Weekly and monthly rates', 'body' => 'Stays of 7 nights or more automatically get 10% off the nightly rate, and stays of 28 nights or more get 25% off. For stays beyond 90 nights or corporate leases, our leasing team prepares a tailored quote.'],
-                    'ja' => ['title' => '週単位・月単位の料金', 'body' => '7泊以上のご滞在は1泊料金から自動的に10%、28泊以上は25%割引となります。90泊を超えるご滞在や法人契約は、リーシングチームが個別にお見積もりいたします。'],
+                    'en' => ['title' => 'Weekly and monthly rates', 'body' => 'Stays of 7 nights or more automatically get 10% off the nightly rate, and stays of 28 nights or more get 25% off. For stays beyond 90 nights, choose a monthly or yearly rental at its own rent; for corporate leases, our leasing team prepares a tailored quote.'],
+                    'ja' => ['title' => '週単位・月単位の料金', 'body' => '7泊以上のご滞在は1泊料金から自動的に10%、28泊以上は25%割引となります。90泊を超えるご滞在は専用賃料の月契約・年契約をお選びください。法人契約はリーシングチームが個別にお見積もりいたします。'],
                 ],
                 'tags' => ['long stay', 'monthly', 'weekly', 'discount', 'bulanan', 'corporate lease'],
+            ],
+            [
+                'category' => ApartmentKnowledgeItem::CATEGORY_POLICIES,
+                'title' => 'Sewa bulanan dan tahunan, deposit, dan pembayaran',
+                'body' => 'Selain harian, unit dapat disewa bulanan (3 sampai 11 bulan) atau tahunan (1 sampai 3 tahun) dengan tarif sewa tersendiri yang lebih hemat dari tarif harian; sewa tahunan umumnya lebih murah per bulan daripada sewa bulanan. Sewa dibayar di muka sesuai kesepakatan dengan tim leasing. Penyewa membayar deposit keamanan sebesar 2 bulan sewa yang dikembalikan saat masa sewa berakhir, setelah unit diperiksa dan tidak ada tagihan tertunggak. Permintaan sewa di sistem ini belum menjadi kontrak: tim leasing akan menghubungi Anda untuk surat perjanjian sewa dan serah terima unit.',
+                'translations' => [
+                    'en' => ['title' => 'Monthly and yearly rentals, deposit and payment', 'body' => 'Besides nightly stays, units can be rented by the month (3 to 11 months) or by the year (1 to 3 years) at their own rent, which is cheaper than the nightly rate; a yearly rental usually costs less per month than a monthly one. Rent is paid in advance as arranged with the leasing team. Tenants pay a security deposit of 2 months of rent, refunded when the lease ends after the unit is inspected and no bills are outstanding. A request made on this site is not a lease yet: the leasing team will contact you for the tenancy agreement and the unit handover.'],
+                    'ja' => ['title' => '月契約・年契約、敷金とお支払い', 'body' => '日単位のご滞在に加え、お部屋ごとの賃料で月契約（3〜11か月）または年契約（1〜3年）もご利用いただけます。日額より割安で、年契約は月契約より月あたりの賃料が低めです。賃料は前払いで、お支払い方法はリーシングチームとご相談のうえ決定します。敷金は賃料2か月分で、契約終了時にお部屋の確認と未払いがないことを確認のうえ返還します。このサイトからのお申し込みはまだ契約ではなく、賃貸契約書の締結とお部屋のお引き渡しについてリーシングチームがご連絡します。'],
+                ],
+                'tags' => ['monthly', 'yearly', 'annual', 'lease', 'deposit', 'bulanan', 'tahunan', 'sewa', 'kontrak', 'deposit keamanan'],
             ],
             [
                 'category' => ApartmentKnowledgeItem::CATEGORY_POLICIES,

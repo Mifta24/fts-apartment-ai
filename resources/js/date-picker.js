@@ -42,6 +42,8 @@ export function createDatePicker({ root, checkIn, checkOut, config, labels, form
 
     /** @type {Set<string>|null} Open nights, or null while unknown (then every future day is allowed). */
     let openNights = null;
+    /** A lease picks only its move-in date: its end follows from the term, so no move-out slot is shown. */
+    let single = false;
     let lastNight = null;
     let [year, month] = parse(config.today);
 
@@ -68,6 +70,8 @@ export function createDatePicker({ root, checkIn, checkOut, config, labels, form
     }
 
     function selectable(iso) {
+        if (single) return isOpenNight(iso);
+
         const from = checkIn.value;
         const choosingOut = from && !checkOut.value;
 
@@ -84,8 +88,12 @@ export function createDatePicker({ root, checkIn, checkOut, config, labels, form
     }
 
     function pick(iso) {
-        const from = checkIn.value;
+        if (single) {
+            if (isOpenNight(iso)) setDates(iso, '');
+            return;
+        }
 
+        const from = checkIn.value;
         if (from && !checkOut.value && iso > from) {
             setDates(from, iso);
         } else if (isOpenNight(iso)) {
@@ -154,10 +162,12 @@ export function createDatePicker({ root, checkIn, checkOut, config, labels, form
         const ceiling = (lastNight ? addDays(lastNight, 1) : addDays(config.today, 366)).slice(0, 7);
         nextButton.disabled = toIso(year, month, 1).slice(0, 7) >= ceiling;
 
+        slots.check_in.querySelector('span').textContent = single ? labels.move_in : labels.check_in;
         slots.check_in.querySelector('[data-slot-value]').textContent = from ? formatDate(from) : labels.cal_choose;
         slots.check_out.querySelector('[data-slot-value]').textContent = to ? formatDate(to) : labels.cal_choose;
-        slots.check_in.toggleAttribute('data-active', !from || Boolean(to));
-        slots.check_out.toggleAttribute('data-active', Boolean(from) && !to);
+        slots.check_out.hidden = single;
+        slots.check_in.toggleAttribute('data-active', single || !from || Boolean(to));
+        slots.check_out.toggleAttribute('data-active', !single && Boolean(from) && !to);
     }
 
     function step(delta) {
@@ -193,6 +203,12 @@ export function createDatePicker({ root, checkIn, checkOut, config, labels, form
         },
         get hasOpenNights() {
             return openNights === null || openNights.size > 0;
+        },
+        /** Switches between a move-in/move-out range (nightly) and a single move-in date (leases). */
+        setSingle(value) {
+            single = Boolean(value);
+            if (single) checkOut.value = '';
+            this.show();
         },
         /** Shows the month of the chosen move-in, or the current month. */
         show() {

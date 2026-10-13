@@ -100,6 +100,14 @@
                     <input type="number" step="1000" name="base_price" value="{{ old('base_price', $unitType->base_price) }}" required class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
                 </div>
                 <div>
+                    <label class="block text-sm font-medium text-stone-700">Monthly rent / month</label>
+                    <input type="number" step="1000" min="0" name="monthly_price" value="{{ old('monthly_price', $unitType->monthly_price) }}" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-stone-700">Yearly rent / year</label>
+                    <input type="number" step="1000" min="0" name="yearly_price" value="{{ old('yearly_price', $unitType->yearly_price) }}" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
+                </div>
+                <div>
                     <label class="block text-sm font-medium text-stone-700">Extra bed price / night</label>
                     <input type="number" step="1000" name="extra_bed_price" value="{{ old('extra_bed_price', $unitType->extra_bed_price) }}" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
                 </div>
@@ -108,6 +116,7 @@
                     <input type="number" name="sort_order" value="{{ old('sort_order', $unitType->sort_order) }}" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
                 </div>
             </div>
+            <p class="mt-3 text-xs text-stone-500">Leave the monthly or yearly rent empty if this unit is not rented that way. The yearly rent is the price for one full year; two or three years are charged as a multiple of it.</p>
             <div class="mt-4 flex flex-wrap gap-6">
                 <label class="flex items-center gap-2 text-sm text-stone-700">
                     <input type="checkbox" name="breakfast_included" value="1" @checked(old('breakfast_included', $unitType->breakfast_included)) class="rounded border-stone-300">

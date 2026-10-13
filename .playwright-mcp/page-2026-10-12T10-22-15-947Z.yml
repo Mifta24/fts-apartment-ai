@@ -1,0 +1,187 @@
+- main [ref=f2e2]:
+  - status:
+    - generic [aria-hidden]: "02"
+    - paragraph: Memanggil lift…
+  - generic [ref=f2e4]:
+    - link "FTS Apartment AI Jakarta Selatan · Indonesia" [ref=f2e5] [cursor=pointer]:
+      - /url: http://127.0.0.1:8123/fts-apartment-ai?lang=id
+      - generic [ref=f2e11]:
+        - generic [ref=f2e12]: FTS Apartment AI
+        - generic [ref=f2e13]: Jakarta Selatan · Indonesia
+    - generic [ref=f2e14]:
+      - generic [aria-hidden] [ref=f2e15]: ▲
+      - generic [ref=f2e16]: "02"
+      - generic [ref=f2e17]: Unit Hunian
+    - generic [ref=f2e18]:
+      - button "Suara aktif" [pressed] [ref=f2e19] [cursor=pointer]
+      - navigation "Language" [ref=f2e23]:
+        - link "Bahasa Indonesia" [ref=f2e24] [cursor=pointer]:
+          - /url: "?lang=id"
+          - text: id
+        - link "English" [ref=f2e25] [cursor=pointer]:
+          - /url: "?lang=en"
+          - text: en
+        - link "日本語" [ref=f2e26] [cursor=pointer]:
+          - /url: "?lang=ja"
+          - text: ja
+  - navigation "Direktori gedung" [ref=f2e27]:
+    - paragraph [ref=f2e28]: Direktori gedung
+    - list [ref=f2e29]:
+      - listitem [ref=f2e30]:
+        - link "Bicara dengan tim" [ref=f2e31] [cursor=pointer]:
+          - /url: http://127.0.0.1:8123/fts-apartment-ai/staff?lang=id
+          - generic [aria-hidden] [ref=f2e32]: "06"
+      - listitem [ref=f2e34]:
+        - link "Rencanakan menginap" [ref=f2e35] [cursor=pointer]:
+          - /url: http://127.0.0.1:8123/fts-apartment-ai/reservation?lang=id
+          - generic [aria-hidden] [ref=f2e36]: "05"
+      - listitem [ref=f2e38]:
+        - link "Informasi gedung" [ref=f2e39] [cursor=pointer]:
+          - /url: http://127.0.0.1:8123/fts-apartment-ai/info?lang=id
+          - generic [aria-hidden] [ref=f2e40]: "04"
+      - listitem [ref=f2e42]:
+        - link "Fasilitas bersama" [ref=f2e43] [cursor=pointer]:
+          - /url: http://127.0.0.1:8123/fts-apartment-ai/facilities?lang=id
+          - generic [aria-hidden] [ref=f2e44]: "03"
+      - listitem [ref=f2e46]:
+        - link "Unit Hunian" [ref=f2e47] [cursor=pointer]:
+          - /url: http://127.0.0.1:8123/fts-apartment-ai/units?lang=id
+          - generic [aria-hidden] [ref=f2e48]: "02"
+      - listitem [ref=f2e50]:
+        - link "Lobi" [ref=f2e51] [cursor=pointer]:
+          - /url: http://127.0.0.1:8123/fts-apartment-ai?lang=id
+          - generic [aria-hidden] [ref=f2e52]: L
+    - generic [ref=f2e54]: Concierge siaga 24 jam
+  - complementary "Unit Hunian" [ref=f2e56]:
+    - paragraph [ref=f2e57]:
+      - generic [ref=f2e58]: Unit Hunian
+      - generic [ref=f2e59]: "4"
+    - navigation [ref=f2e60]:
+      - link "Studio Studio Urban 28 m² mulai dari IDR 650.000 / malam" [ref=f2e61] [cursor=pointer]:
+        - /url: http://127.0.0.1:8123/fts-apartment-ai/units/studio-urban?lang=id
+        - generic [ref=f2e62]:
+          - generic [ref=f2e63]: Studio
+          - generic [ref=f2e64]:
+            - generic [ref=f2e65]: Studio Urban
+            - generic [ref=f2e66]: 28 m²
+          - generic [ref=f2e67]: mulai dari IDR 650.000 / malam
+        - generic [aria-hidden] [ref=f2e68]: →
+      - link "1 kamar tidur · 1 kamar mandi 1 Bedroom Executive 48 m² mulai dari IDR 1.050.000 / malam" [ref=f2e69] [cursor=pointer]:
+        - /url: http://127.0.0.1:8123/fts-apartment-ai/units/one-bedroom-executive?lang=id
+        - generic [ref=f2e70]:
+          - generic [ref=f2e71]: 1 kamar tidur · 1 kamar mandi
+          - generic [ref=f2e72]:
+            - generic [ref=f2e73]: 1 Bedroom Executive
+            - generic [ref=f2e74]: 48 m²
+          - generic [ref=f2e75]: mulai dari IDR 1.050.000 / malam
+        - generic [aria-hidden] [ref=f2e76]: →
+      - link "2 kamar tidur · 2 kamar mandi 2 Bedroom Family 82 m² mulai dari IDR 1.750.000 / malam" [ref=f2e77] [cursor=pointer]:
+        - /url: http://127.0.0.1:8123/fts-apartment-ai/units/two-bedroom-family?lang=id
+        - generic [ref=f2e78]:
+          - generic [ref=f2e79]: 2 kamar tidur · 2 kamar mandi
+          - generic [ref=f2e80]:
+            - generic [ref=f2e81]: 2 Bedroom Family
+            - generic [ref=f2e82]: 82 m²
+          - generic [ref=f2e83]: mulai dari IDR 1.750.000 / malam
+        - generic [aria-hidden] [ref=f2e84]: →
+      - link "3 kamar tidur · 3 kamar mandi 3 Bedroom Penthouse 145 m² mulai dari IDR 3.400.000 / malam" [ref=f2e85] [cursor=pointer]:
+        - /url: http://127.0.0.1:8123/fts-apartment-ai/units/three-bedroom-penthouse?lang=id
+        - generic [ref=f2e86]:
+          - generic [ref=f2e87]: 3 kamar tidur · 3 kamar mandi
+          - generic [ref=f2e88]:
+            - generic [ref=f2e89]: 3 Bedroom Penthouse
+            - generic [ref=f2e90]: 145 m²
+          - generic [ref=f2e91]: mulai dari IDR 3.400.000 / malam
+        - generic [aria-hidden] [ref=f2e92]: →
+  - region "1 Bedroom Executive" [ref=f2e94]:
+    - link "Unit Hunian" [ref=f2e95] [cursor=pointer]:
+      - /url: http://127.0.0.1:8123/fts-apartment-ai/units?lang=id
+      - generic [aria-hidden] [ref=f2e96]: ×
+    - article [ref=f2e97]:
+      - generic [ref=f2e98]:
+        - paragraph [ref=f2e99]: Tipe unit 02 / 04
+        - navigation "Detail unit" [ref=f2e100]:
+          - link "Sebelumnya" [ref=f2e101] [cursor=pointer]:
+            - /url: http://127.0.0.1:8123/fts-apartment-ai/units/studio-urban?lang=id
+            - generic [aria-hidden] [ref=f2e102]: ←
+            - text: Sebelumnya
+          - link "Berikutnya" [ref=f2e103] [cursor=pointer]:
+            - /url: http://127.0.0.1:8123/fts-apartment-ai/units/two-bedroom-family?lang=id
+            - text: Berikutnya
+            - generic [aria-hidden] [ref=f2e104]: →
+      - generic [ref=f2e105]:
+        - generic [ref=f2e106]:
+          - generic [ref=f2e107]:
+            - img "Kamar tidur 1 Bedroom Executive" [ref=f2e108]
+            - generic [ref=f2e109]: 1 kamar tidur · 1 kamar mandi
+          - list "Galeri foto" [ref=f2e110]:
+            - listitem [ref=f2e111]:
+              - button "Foto 1" [ref=f2e112] [cursor=pointer]
+            - listitem [ref=f2e113]:
+              - button "Foto 2" [ref=f2e114] [cursor=pointer]
+            - listitem [ref=f2e115]:
+              - button "Foto 3" [ref=f2e116] [cursor=pointer]
+            - listitem [ref=f2e117]:
+              - button "Foto 4" [ref=f2e118] [cursor=pointer]
+          - generic [ref=f2e121]:
+            - paragraph [ref=f2e122]: AI Concierge
+            - paragraph [ref=f2e129]: 1 Bedroom Executive. Kamar tidur terpisah, ruang tamu, dan dapur lengkap. Favorit pasangan dan tamu dinas jangka panjang. Unit ini punya 1 kamar tidur dan 1 kamar mandi dengan luas 48 m² untuk maksimal 3 penghuni. Lokasinya di lantai 10–20. Pemandangan skyline. Tarif mulai dari IDR 1.050.000 per malam, dan makin lama menginap makin hemat. Ketersediaan dan tarif final dikonfirmasi oleh tim kami.
+            - paragraph [aria-hidden] [ref=f2e130]: 1 Bedroom Executive. Kamar tidur terpisah, ruang tamu, dan dapur lengkap. Favorit pasangan dan tamu dinas jangka panjang. Unit ini punya 1 kamar tidur dan 1 kamar mandi dengan luas 48 m² untuk maksimal 3 penghuni. Lokasinya di lantai 10–20. Pemandangan skyline. Tarif mulai dari IDR 1.050.000 per malam, dan makin lama menginap makin hemat. Ketersediaan dan tarif final dikonfirmasi oleh tim kami.
+            - generic [ref=f2e131]:
+              - button "Dengarkan" [ref=f2e132] [cursor=pointer]
+              - button "Lewati" [ref=f2e133] [cursor=pointer]
+        - generic [ref=f2e134]:
+          - heading "1 Bedroom Executive" [level=2] [ref=f2e135]
+          - paragraph [ref=f2e136]: Kamar tidur terpisah, ruang tamu, dan dapur lengkap. Favorit pasangan dan tamu dinas jangka panjang.
+          - generic [ref=f2e137]:
+            - paragraph [ref=f2e138]:
+              - text: mulai dari
+              - generic [ref=f2e139]:
+                - strong [ref=f2e140]: IDR 1.050.000
+                - text: / malam
+            - paragraph [ref=f2e141]: Sewa bulanan mulai sekitar IDR 23.625.000 / bulan
+            - paragraph [ref=f2e142]: Ketersediaan dan tarif final dikonfirmasi oleh tim apartemen.
+          - generic [ref=f2e143]:
+            - link "Ajukan sewa unit ini" [ref=f2e144] [cursor=pointer]:
+              - /url: http://127.0.0.1:8123/fts-apartment-ai/reservation?lang=id&unit=one-bedroom-executive
+              - text: Ajukan sewa unit ini
+              - generic [aria-hidden] [ref=f2e145]: ↗
+            - button "Tanya tentang unit ini" [ref=f2e146] [cursor=pointer]
+          - generic [ref=f2e147]:
+            - generic [ref=f2e148]:
+              - term [ref=f2e149]: Denah
+              - definition [ref=f2e150]: 1 kamar tidur · 1 kamar mandi
+            - generic [ref=f2e151]:
+              - term [ref=f2e152]: Luas
+              - definition [ref=f2e153]: 48 m²
+            - generic [ref=f2e154]:
+              - term [ref=f2e155]: Lantai
+              - definition [ref=f2e156]: 10–20
+            - generic [ref=f2e157]:
+              - term [ref=f2e158]: Kapasitas
+              - definition [ref=f2e159]: 3 penghuni
+            - generic [ref=f2e160]:
+              - term [ref=f2e161]: Tempat tidur
+              - definition [ref=f2e162]: 1 × Tempat tidur king
+            - generic [ref=f2e163]:
+              - term [ref=f2e164]: Pemandangan
+              - definition [ref=f2e165]: Pemandangan skyline
+            - generic [ref=f2e166]:
+              - term [ref=f2e167]: Kasur lipat
+              - definition [ref=f2e168]: Tersedia (+IDR 150.000)
+          - heading "Di dalam unit" [level=3] [ref=f2e169]
+          - list [ref=f2e170]:
+            - listitem [ref=f2e171]: AC
+            - listitem [ref=f2e172]: Wi-Fi fiber
+            - listitem [ref=f2e173]: Dapur lengkap
+            - listitem [ref=f2e174]: Mesin cuci & pengering
+            - listitem [ref=f2e175]: Meja kerja
+            - listitem [ref=f2e176]: Ruang tamu
+            - listitem [ref=f2e177]: Balkon
+            - listitem [ref=f2e178]: Smart TV
+            - listitem [ref=f2e179]: Kunci pintar
+  - button "AI Concierge Ngobrol dengan AI Concierge" [ref=f2e182] [cursor=pointer]:
+    - generic [ref=f2e184]:
+      - generic [ref=f2e185]: AI Concierge
+      - generic [ref=f2e186]: Ngobrol dengan AI Concierge
+    - generic [aria-hidden] [ref=f2e187]: ↗

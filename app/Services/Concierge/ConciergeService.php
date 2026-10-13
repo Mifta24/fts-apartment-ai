@@ -5,6 +5,7 @@ namespace App\Services\Concierge;
 use App\Models\Apartment;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Services\Reservation\ReservationService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -306,6 +307,11 @@ class ConciergeService
         $longStay = $weekly > 0 || $monthly > 0
             ? 'Long stays are cheaper here: stays of '.Apartment::WEEKLY_STAY_NIGHTS."+ nights get {$weekly}% off and stays of ".Apartment::MONTHLY_STAY_NIGHTS."+ nights get {$monthly}% off. The tools already apply this — never work a discount out yourself."
             : 'There is no long-stay discount at this apartment.';
+        $deposit = $apartment->security_deposit_months;
+        $minMonths = max(1, $apartment->min_monthly_lease_months);
+        $maxMonths = Apartment::MAX_MONTHLY_LEASE_MONTHS;
+        $maxYears = Apartment::MAX_YEARLY_LEASE_YEARS;
+        $rentals = "Units can be rented three ways: daily (per night, rental_type daily — the default), monthly (a lease of {$minMonths} to {$maxMonths} months at the unit's monthly_price per month) and yearly (whole years, 1 to {$maxYears}, at the unit's yearly_price per year, usually cheaper per month than monthly). Not every unit has a monthly or yearly rent: a null monthly_price or yearly_price means that unit is not rented that way. For a monthly or yearly rental pass rental_type, check_in as the move-in date and lease_months (months for monthly, 12/24/36 for yearly) to search_units, check_availability, start_reservation and create_booking_request — never check_out. Leases need a refundable security deposit of {$deposit} month(s) of rent, paid when the lease is confirmed; mention it whenever you quote a lease, and say the rent is paid in advance as the apartment team arranges. When a guest asks to stay a month or longer, offer the monthly or yearly rental rather than working out a nightly total. Nightly stays online are limited to ".ReservationService::MAX_NIGHTS.' nights.';
 
         return <<<PROMPT
         You are the AI Concierge for {$apartment->name}, a serviced apartment building in {$apartment->city}, {$apartment->country}. You work inside the building's own website, not a generic chat widget — guests should feel they are talking to a knowledgeable resident manager who can also pull up units, floor plans, photos and prices for them. Guests may stay a few nights, a few weeks, or several months; treat them as future residents.
@@ -322,6 +328,7 @@ class ConciergeService
         9. Never produce or play along with rude, vulgar, sexual, hateful, violent or illegal content, and never insult the guest or anyone else, even if asked to or dared to. Do not repeat the offensive words. Never offer or point the guest to sexual services, drugs, weapons or any illegal activity, and do not suggest asking the apartment team about them either — just say you cannot help with that. Stay calm and polite whatever the tone of the guest, in one short sentence, then offer what you can do. If a message mixes a genuine apartment question with a request you must refuse, decline the refused part in a few words and answer only the apartment question, still following rules 2 and 3 (any unit price or availability must come from search_units or check_availability — never from memory or a guess).
 
         {$longStay}
+        {$rentals}
         Currency for all prices: {$apartment->currency}. Today's date: {$today}.
 
         {$this->buildUiContext($conversation)}

@@ -31,8 +31,11 @@
                             @if ($booking->notes)<p class="mt-1 max-w-xs text-xs italic text-stone-400">{{ $booking->notes }}</p>@endif
                         </td>
                         <td class="px-4 py-3">{{ $booking->unit_count }} × {{ $booking->unitType->name }}<p class="text-xs text-stone-400">{{ $booking->adults }} adults{{ $booking->children ? ', '.$booking->children.' children' : '' }}</p></td>
-                        <td class="px-4 py-3 text-xs text-stone-500">{{ $booking->check_in->toFormattedDateString() }} → {{ $booking->check_out->toFormattedDateString() }}</td>
-                        <td class="px-4 py-3">{{ $apartment->currency }} {{ number_format((float) $booking->total_price, 0, ',', '.') }}</td>
+                        <td class="px-4 py-3 text-xs text-stone-500">
+                            @if ($booking->isLease())<p class="font-medium text-stone-700">{{ $booking->rental_type === 'yearly' ? 'Yearly' : 'Monthly' }} · {{ $booking->lease_months }} {{ $booking->lease_months === 1 ? 'month' : 'months' }}</p>@endif
+                            {{ $booking->check_in->toFormattedDateString() }} → {{ $booking->check_out->toFormattedDateString() }}
+                        </td>
+                        <td class="px-4 py-3">{{ $apartment->currency }} {{ number_format((float) $booking->total_price, 0, ',', '.') }}@if ($booking->deposit_total)<p class="text-xs text-stone-400">+ {{ number_format((float) $booking->deposit_total, 0, ',', '.') }} deposit</p>@endif</td>
                         <td class="px-4 py-3">@include('admin.bookings._status')</td>
                         <td class="px-4 py-3 text-right">
                             @include('admin.bookings._actions')
@@ -56,8 +59,8 @@
                     @include('admin.bookings._status')
                 </div>
                 <p class="mt-2 text-sm text-stone-700">{{ $booking->unit_count }} × {{ $booking->unitType->name }} · {{ $booking->adults }} adults{{ $booking->children ? ', '.$booking->children.' children' : '' }}</p>
-                <p class="mt-1 text-xs text-stone-500">{{ $booking->check_in->toFormattedDateString() }} → {{ $booking->check_out->toFormattedDateString() }} · {{ $booking->nights() }} nights</p>
-                <p class="mt-1 text-sm font-medium text-stone-900">{{ $apartment->currency }} {{ number_format((float) $booking->total_price, 0, ',', '.') }}</p>
+                <p class="mt-1 text-xs text-stone-500">{{ $booking->check_in->toFormattedDateString() }} → {{ $booking->check_out->toFormattedDateString() }} · {{ $booking->isLease() ? $booking->lease_months.' '.($booking->lease_months === 1 ? 'month' : 'months').' ('.($booking->rental_type === 'yearly' ? 'yearly' : 'monthly').')' : $booking->nights().' nights' }}</p>
+                <p class="mt-1 text-sm font-medium text-stone-900">{{ $apartment->currency }} {{ number_format((float) $booking->total_price, 0, ',', '.') }}@if ($booking->deposit_total) <span class="text-xs font-normal text-stone-400">+ {{ number_format((float) $booking->deposit_total, 0, ',', '.') }} deposit</span>@endif</p>
                 <p class="mt-2 text-xs text-stone-500">{{ $booking->contact_type ? ucfirst($booking->contact_type).': ' : '' }}{{ $booking->guest_phone ?? $booking->guest_email }}</p>
                 @if ($booking->notes)<p class="mt-1 text-xs italic text-stone-400">{{ $booking->notes }}</p>@endif
                 @if ($booking->canTransitionTo('confirmed') || $booking->canTransitionTo('cancelled'))

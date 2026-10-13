@@ -33,6 +33,8 @@ use Illuminate\Support\Str;
     'check_out_time',
     'weekly_discount_percent',
     'monthly_discount_percent',
+    'security_deposit_months',
+    'min_monthly_lease_months',
     'logo_path',
     'cover_path',
     'public_status',
@@ -47,6 +49,12 @@ class Apartment extends Model
     /** Stays of at least this many nights get the monthly rate. */
     public const MONTHLY_STAY_NIGHTS = 28;
 
+    /** A monthly rental covers up to this many months; a full year or more is a yearly rental. */
+    public const MAX_MONTHLY_LEASE_MONTHS = 11;
+
+    /** A yearly rental covers up to this many years. */
+    public const MAX_YEARLY_LEASE_YEARS = 3;
+
     protected function casts(): array
     {
         return [
@@ -55,6 +63,8 @@ class Apartment extends Model
             'longitude' => 'decimal:7',
             'weekly_discount_percent' => 'integer',
             'monthly_discount_percent' => 'integer',
+            'security_deposit_months' => 'integer',
+            'min_monthly_lease_months' => 'integer',
         ];
     }
 
