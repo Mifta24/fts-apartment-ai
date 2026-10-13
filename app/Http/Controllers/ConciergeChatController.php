@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Apartment;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Models\HandoverRequest;
 use App\Services\Concierge\ConciergeService;
+use App\Services\Concierge\ConversationHandover;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,7 +18,18 @@ class ConciergeChatController extends Controller
 {
     private const SUPPORTED_LOCALES = ['id', 'en', 'ja'];
 
-    public function __construct(private readonly ConciergeService $concierge) {}
+    /**
+     * What a guest is told once their message is with the team, by language.
+     *
+     * @var array<string, string>
+     */
+    private const LEFT_MESSAGE_REPLIES = [
+        'en' => 'Your message is with the apartment team. They will answer you here, and by email if you left an address.',
+        'id' => 'Pesan Anda sudah diteruskan ke tim apartemen. Mereka akan membalas di sini, dan lewat email bila Anda mengisinya.',
+        'ja' => 'メッセージをスタッフに送りました。こちらのチャット、またはメールでご返信します。',
+    ];
+
+    public function __construct(private readonly ConciergeService $concierge, private readonly ConversationHandover $handover) {}
 
     public function start(Request $request, string $apartmentSlug): JsonResponse
     {
@@ -77,6 +90,39 @@ class ConciergeChatController extends Controller
             'message' => $this->formatMessage($assistantMessage),
             'status' => $conversation->fresh()->status,
         ]);
+    }
+
+    /**
+     * The way out when the AI cannot answer: the guest's message goes straight
+     * to the team without touching the model.
+     */
+    public function leaveMessage(Request $request, string $apartmentSlug): JsonResponse
+    {
+        $apartment = $this->publishedApartment($apartmentSlug);
+
+        $data = $request->validate([
+            'guest_token' => ['required', 'uuid'],
+            'message' => ['required', 'string', 'max:2000'],
+            'email' => ['nullable', 'email', 'max:255'],
+        ]);
+
+        $conversation = $this->findConversation($apartment, $data['guest_token']);
+
+        $conversation->messages()->create(['role' => ConversationMessage::ROLE_GUEST, 'content' => $data['message']]);
+
+        if (! $conversation->isHandedOver()) {
+            $this->handover->open($apartment, $conversation, HandoverRequest::REASON_AI_UNAVAILABLE, $data['message'], $data['email'] ?? null);
+        } elseif (filled($data['email'] ?? null)) {
+            $conversation->update(['guest_email' => $data['email']]);
+        }
+
+        $reply = $conversation->messages()->create([
+            'role' => ConversationMessage::ROLE_SYSTEM,
+            'content' => self::LEFT_MESSAGE_REPLIES[$conversation->locale] ?? self::LEFT_MESSAGE_REPLIES['en'],
+        ]);
+        $conversation->update(['last_message_at' => now()]);
+
+        return response()->json(['message' => $this->formatMessage($reply), 'status' => $conversation->status], 201);
     }
 
     public function history(Request $request, string $apartmentSlug): JsonResponse

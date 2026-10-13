@@ -30,6 +30,9 @@ class HandoverRequest extends Model
 
     public const REASON_LOW_CONFIDENCE = 'low_confidence';
 
+    /** The model was down, so the guest left a message for the team instead. */
+    public const REASON_AI_UNAVAILABLE = 'ai_unavailable';
+
     public const STATUS_OPEN = 'open';
 
     public const STATUS_RESOLVED = 'resolved';

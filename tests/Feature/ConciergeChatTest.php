@@ -5,11 +5,15 @@ namespace Tests\Feature;
 use App\Models\Apartment;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Models\HandoverRequest;
 use App\Models\UnitType;
+use App\Models\User;
+use App\Notifications\NewHandoverRequest;
 use App\Services\Concierge\ContentGuard;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -119,6 +123,58 @@ class ConciergeChatTest extends TestCase
             ->assertJsonPath('messages.1.content', 'Welcome to Demo!');
 
         Http::assertSent(fn (Request $request) => $request->hasHeader('Authorization', 'Bearer test-key') && $request['model'] === 'test-model' && $request['reasoning_effort'] === 'none');
+    }
+
+    public function test_a_guest_can_leave_a_message_for_the_team_without_the_model(): void
+    {
+        Http::fake();
+        Notification::fake();
+        $staff = User::factory()->create();
+        $this->apartment->users()->attach($staff->id, ['role' => 'staff', 'status' => 'active']);
+        $token = $this->startConversation('id');
+
+        $this->postJson('/demo/concierge/handover', ['guest_token' => $token, 'message' => 'Apakah ada unit kosong bulan depan?', 'email' => 'ayu@example.test'])
+            ->assertCreated()
+            ->assertJsonPath('message.role', 'system')
+            ->assertJsonPath('status', Conversation::STATUS_HANDED_OVER)
+            ->assertJsonPath('message.content', fn (string $content) => str_contains($content, 'tim apartemen'));
+
+        Http::assertNothingSent();
+        $conversation = Conversation::where('guest_token', $token)->firstOrFail();
+        $handover = HandoverRequest::firstOrFail();
+        $this->assertSame(HandoverRequest::REASON_AI_UNAVAILABLE, $handover->reason);
+        $this->assertSame('Apakah ada unit kosong bulan depan?', $handover->summary);
+        $this->assertSame('ayu@example.test', $conversation->guest_email);
+        $this->assertSame(['guest', 'system'], $conversation->messages()->pluck('role')->all());
+        Notification::assertSentTo($staff, NewHandoverRequest::class);
+    }
+
+    public function test_leaving_another_message_keeps_the_single_open_handover(): void
+    {
+        Notification::fake();
+        $token = $this->startConversation();
+
+        $this->postJson('/demo/concierge/handover', ['guest_token' => $token, 'message' => 'First'])->assertCreated();
+        $this->postJson('/demo/concierge/handover', ['guest_token' => $token, 'message' => 'Second', 'email' => 'late@example.test'])->assertCreated();
+
+        $this->assertSame(1, HandoverRequest::count());
+        $this->assertSame('late@example.test', Conversation::where('guest_token', $token)->value('guest_email'));
+        $this->assertSame(2, ConversationMessage::where('role', ConversationMessage::ROLE_GUEST)->count());
+    }
+
+    public function test_leaving_a_message_validates_the_token_and_the_input(): void
+    {
+        $token = $this->startConversation();
+
+        $this->postJson('/demo/concierge/handover', ['guest_token' => (string) Str::uuid(), 'message' => 'Hi'])->assertUnprocessable()->assertJsonValidationErrors('guest_token');
+        $this->postJson('/demo/concierge/handover', ['guest_token' => $token, 'message' => ''])->assertUnprocessable()->assertJsonValidationErrors('message');
+        $this->postJson('/demo/concierge/handover', ['guest_token' => $token, 'message' => 'Hi', 'email' => 'nope'])->assertUnprocessable()->assertJsonValidationErrors('email');
+        $this->assertSame(0, HandoverRequest::count());
+    }
+
+    public function test_the_chat_offers_to_leave_a_message_when_the_model_fails(): void
+    {
+        $this->get('/demo')->assertOk()->assertSee(route('concierge.handover', 'demo'), false)->assertSee('data-label-leave-message', false);
     }
 
     public function test_a_staff_reply_reaches_the_guest_in_history_in_order(): void

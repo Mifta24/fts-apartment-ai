@@ -19,9 +19,13 @@ function initConcierge() {
         lobbyUrl: root.dataset.lobbyUrl,
         unitUrlTemplate: root.dataset.unitUrl,
         staffUrl: root.dataset.staffUrl,
+        leaveUrl: root.dataset.leaveUrl,
         reservationUrlTemplate: root.dataset.reservationUrl,
         labels: {
             placeholder: root.dataset.labelPlaceholder,
+            leaveMessage: root.dataset.labelLeaveMessage,
+            leaveEmail: root.dataset.labelLeaveEmail,
+            leaveSend: root.dataset.labelLeaveSend,
             send: root.dataset.labelSend,
             open: root.dataset.labelOpen,
             close: root.dataset.labelClose,
@@ -737,8 +741,67 @@ function initConcierge() {
         });
 
         actions.append(retry, staff);
+
+        if (err.status !== 429) {
+            const leave = document.createElement('button');
+            leave.type = 'button';
+            leave.className = 'chat-mini-button';
+            leave.textContent = config.labels.leaveMessage;
+            leave.addEventListener('click', () => {
+                actions.remove();
+                el.appendChild(leaveMessageForm(text, el));
+            });
+            actions.appendChild(leave);
+        }
+
         el.append(message, actions);
         return el;
+    }
+
+    /**
+     * When the AI cannot answer, the guest's message goes straight to the team.
+     */
+    function leaveMessageForm(text, errorEl) {
+        const form = document.createElement('form');
+        form.className = 'mt-3 flex flex-wrap gap-2';
+
+        const email = document.createElement('input');
+        email.type = 'email';
+        email.maxLength = 255;
+        email.autocomplete = 'email';
+        email.placeholder = config.labels.leaveEmail;
+        email.setAttribute('aria-label', config.labels.leaveEmail);
+        email.className = 'min-w-0 flex-1 rounded border px-2 py-1 text-sm';
+
+        const send = document.createElement('button');
+        send.type = 'submit';
+        send.className = 'chat-mini-button is-primary';
+        send.textContent = config.labels.leaveSend;
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            send.disabled = true;
+
+            try {
+                const data = await api(config.leaveUrl, {
+                    guest_token: localStorage.getItem(config.storageKey),
+                    message: text,
+                    email: email.value.trim() || null,
+                });
+                errorEl.remove();
+                renderMessage(data.message, { live: true });
+                knownMessageCount += 2; // the guest message just left + the confirmation just rendered
+                showHandedOverBanner();
+            } catch {
+                send.disabled = false;
+                email.setCustomValidity(config.labels.error);
+                email.reportValidity();
+                email.setCustomValidity('');
+            }
+        });
+
+        form.append(email, send);
+        return form;
     }
 
     async function sendMessage(text, { retry = false } = {}) {

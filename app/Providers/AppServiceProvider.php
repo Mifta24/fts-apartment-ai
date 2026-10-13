@@ -38,6 +38,8 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(40)->by('ip:'.$request->ip()),
         ]);
 
+        RateLimiter::for('concierge-handover', fn (Request $request) => Limit::perMinute(5)->by('handover:'.$request->ip()));
+
         RateLimiter::for('concierge-history', fn (Request $request) => Limit::perMinute(60)->by('history:'.$request->ip()));
     }
 }

@@ -62,6 +62,7 @@ Route::prefix('{apartmentSlug}')->group(function () {
     Route::prefix('concierge')->name('concierge.')->group(function () {
         Route::post('start', [ConciergeChatController::class, 'start'])->middleware('throttle:concierge-start')->name('start');
         Route::post('message', [ConciergeChatController::class, 'message'])->middleware('throttle:concierge-message')->name('message');
+        Route::post('handover', [ConciergeChatController::class, 'leaveMessage'])->middleware('throttle:concierge-handover')->name('handover');
         Route::get('history', [ConciergeChatController::class, 'history'])->middleware('throttle:concierge-history')->name('history');
     });
 });

@@ -6,9 +6,7 @@ use App\Models\Apartment;
 use App\Models\ApartmentKnowledgeItem;
 use App\Models\Booking;
 use App\Models\Conversation;
-use App\Models\HandoverRequest;
 use App\Models\UnitType;
-use App\Notifications\NewHandoverRequest;
 use App\Services\Reservation\ReservationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
@@ -703,20 +701,7 @@ class ApartmentConciergeTools
         $email = trim((string) ($input['guest_email'] ?? ''));
         $emailIsValid = $email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
 
-        $handover = HandoverRequest::create([
-            'conversation_id' => $this->conversation->id,
-            'reason' => $reason,
-            'summary' => $summary,
-            'status' => HandoverRequest::STATUS_OPEN,
-        ]);
-
-        $this->apartment->notifyStaff(new NewHandoverRequest($handover));
-
-        $this->conversation->update([
-            'status' => Conversation::STATUS_HANDED_OVER,
-            'handover_summary' => $summary,
-            ...($emailIsValid ? ['guest_email' => $email] : []),
-        ]);
+        (new ConversationHandover)->open($this->apartment, $this->conversation, $reason, $summary, $emailIsValid ? $email : null);
 
         return [
             'text' => json_encode([
