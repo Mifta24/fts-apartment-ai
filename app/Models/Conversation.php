@@ -73,6 +73,17 @@ class Conversation extends Model
         return $this->hasOne(HandoverRequest::class)->latestOfMany();
     }
 
+    /**
+     * Where to reach a guest who left the chat: the address they gave the
+     * concierge, or failing that the one on their latest stay request.
+     */
+    public function guestEmail(): ?string
+    {
+        return filled($this->guest_email)
+            ? $this->guest_email
+            : $this->bookings()->whereNotNull('guest_email')->latest('id')->value('guest_email');
+    }
+
     public function isHandedOver(): bool
     {
         return $this->status === self::STATUS_HANDED_OVER;

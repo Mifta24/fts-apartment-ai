@@ -7,8 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\HandoverRequest;
+use App\Notifications\StaffReplied;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
 
 class HandoverController extends Controller
@@ -48,12 +50,23 @@ class HandoverController extends Controller
 
         $data = $request->validate(['message' => ['required', 'string', 'max:2000']]);
 
-        $handover->conversation->messages()->create([
+        $conversation = $handover->conversation;
+
+        $conversation->messages()->create([
             'role' => ConversationMessage::ROLE_STAFF,
             'content' => $data['message'],
         ]);
+        $conversation->update(['last_message_at' => now()]);
 
-        return back()->with('status', 'Reply sent to the guest.');
+        $email = $conversation->guestEmail();
+
+        if (! $email) {
+            return back()->with('status', 'Reply sent. The guest sees it in the chat; we have no email address to notify them.');
+        }
+
+        Notification::route('mail', $email)->notify((new StaffReplied($conversation, $data['message']))->locale($conversation->locale));
+
+        return back()->with('status', "Reply sent to the guest and emailed to {$email}.");
     }
 
     public function resolve(Request $request, HandoverRequest $handover): RedirectResponse

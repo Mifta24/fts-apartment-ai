@@ -13,6 +13,7 @@ use App\Notifications\BookingRequestReceived;
 use App\Notifications\BookingStatusChanged;
 use App\Notifications\NewBookingRequest;
 use App\Notifications\NewHandoverRequest;
+use App\Notifications\StaffReplied;
 use App\Services\Concierge\ApartmentConciergeTools;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -112,6 +113,72 @@ class StaffAndGuestNotificationTest extends TestCase
         Notification::assertSentTo($this->owner, NewBookingRequest::class);
         Notification::assertSentOnDemand(BookingRequestReceived::class, fn ($notification, $channels, AnonymousNotifiable $notifiable) => $notifiable->routes['mail'] === 'aki@example.test');
         $this->assertSame('ja', Booking::firstOrFail()->locale);
+    }
+
+    private function handedOverConversation(array $attributes = []): HandoverRequest
+    {
+        $conversation = Conversation::create(['apartment_id' => $this->apartment->id, 'guest_token' => (string) Str::uuid(), 'locale' => 'id', 'status' => Conversation::STATUS_HANDED_OVER, ...$attributes]);
+
+        return HandoverRequest::create(['conversation_id' => $conversation->id, 'reason' => HandoverRequest::REASON_COMPLAINT, 'summary' => 'Noisy unit']);
+    }
+
+    public function test_a_staff_reply_is_emailed_to_the_guest_who_left_an_address(): void
+    {
+        Notification::fake();
+        $handover = $this->handedOverConversation(['guest_email' => 'ayu@example.test']);
+
+        $this->actingAs($this->owner)->post(route('admin.handovers.reply', $handover), ['message' => 'Kami segera cek.'])
+            ->assertSessionHas('status', fn (string $status) => str_contains($status, 'ayu@example.test'));
+
+        Notification::assertSentOnDemand(StaffReplied::class, function (StaffReplied $notification, array $channels, AnonymousNotifiable $notifiable) {
+            $mail = $notification->toMail($notifiable);
+
+            return $notifiable->routes['mail'] === 'ayu@example.test'
+                && $notification->locale === 'id'
+                && str_contains(implode(' ', $mail->introLines), 'Kami segera cek.')
+                && str_contains($mail->actionUrl, '/demo?lang=id');
+        });
+    }
+
+    public function test_a_staff_reply_falls_back_to_the_email_on_the_guests_stay_request(): void
+    {
+        Notification::fake();
+        $handover = $this->handedOverConversation();
+        Booking::unguard();
+        Booking::create(['reference' => 'BK-AAAAAA', 'apartment_id' => $this->apartment->id, 'unit_type_id' => $this->unitType->id, 'conversation_id' => $handover->conversation_id, 'guest_name' => 'Ayu', 'guest_email' => 'booked@example.test', 'check_in' => $this->checkIn, 'check_out' => $this->checkIn->addDays(2), 'total_price' => 1, 'status' => Booking::STATUS_PENDING]);
+        Booking::reguard();
+
+        $this->actingAs($this->owner)->post(route('admin.handovers.reply', $handover), ['message' => 'Halo'])->assertRedirect();
+
+        Notification::assertSentOnDemand(StaffReplied::class, fn ($notification, $channels, $notifiable) => $notifiable->routes['mail'] === 'booked@example.test');
+    }
+
+    public function test_a_staff_reply_without_any_guest_email_is_only_shown_in_the_chat(): void
+    {
+        Notification::fake();
+        $handover = $this->handedOverConversation();
+
+        $this->actingAs($this->owner)->post(route('admin.handovers.reply', $handover), ['message' => 'Halo'])
+            ->assertSessionHas('status', fn (string $status) => str_contains($status, 'no email'));
+
+        Notification::assertNothingSent();
+        $this->assertSame('Halo', $handover->conversation->messages()->value('content'));
+    }
+
+    public function test_a_handover_keeps_a_valid_guest_email_and_ignores_an_invalid_one(): void
+    {
+        Notification::fake();
+        $conversation = Conversation::create(['apartment_id' => $this->apartment->id, 'guest_token' => (string) Str::uuid(), 'locale' => 'en']);
+        $tools = new ApartmentConciergeTools($this->apartment, $conversation, 'en');
+
+        $result = $tools->dispatch('request_human_handover', ['reason' => 'complaint', 'summary' => 'Noisy', 'guest_email' => 'not-an-email']);
+        $this->assertNull($conversation->fresh()->guest_email);
+        $this->assertStringContainsString('not valid', $result['text']);
+        $this->assertTrue($conversation->fresh()->isHandedOver());
+
+        $other = Conversation::create(['apartment_id' => $this->apartment->id, 'guest_token' => (string) Str::uuid(), 'locale' => 'en']);
+        (new ApartmentConciergeTools($this->apartment, $other, 'en'))->dispatch('request_human_handover', ['reason' => 'complaint', 'summary' => 'Noisy', 'guest_email' => 'ayu@example.test']);
+        $this->assertSame('ayu@example.test', $other->fresh()->guest_email);
     }
 
     public function test_a_handover_notifies_active_staff_with_a_link_to_the_conversation(): void

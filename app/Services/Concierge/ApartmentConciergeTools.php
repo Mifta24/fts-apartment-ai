@@ -150,6 +150,7 @@ class ApartmentConciergeTools
                                 'enum' => ['special_request', 'complaint', 'group_booking', 'negotiated_rate', 'unusual_cancellation', 'payment_issue', 'low_confidence'],
                             ],
                             'summary' => ['type' => 'string', 'description' => 'What the guest wants and the relevant context gathered so far, written for a staff member who has not seen this conversation'],
+                            'guest_email' => ['type' => 'string', 'description' => 'Optional: the email address the guest gave, so the team can answer even after they leave the chat'],
                         ],
                         'required' => ['reason', 'summary'],
                     ],
@@ -699,6 +700,8 @@ class ApartmentConciergeTools
 
         $reason = $input['reason'];
         $summary = $input['summary'];
+        $email = trim((string) ($input['guest_email'] ?? ''));
+        $emailIsValid = $email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
 
         $handover = HandoverRequest::create([
             'conversation_id' => $this->conversation->id,
@@ -712,12 +715,13 @@ class ApartmentConciergeTools
         $this->conversation->update([
             'status' => Conversation::STATUS_HANDED_OVER,
             'handover_summary' => $summary,
+            ...($emailIsValid ? ['guest_email' => $email] : []),
         ]);
 
         return [
             'text' => json_encode([
                 'ok' => true,
-                'message' => 'A staff member has been notified and will join this conversation shortly.',
+                'message' => 'A staff member has been notified and will join this conversation shortly.'.($email !== '' && ! $emailIsValid ? ' The email address given was not valid and was not saved; ask the guest to type it again.' : ''),
             ], JSON_UNESCAPED_UNICODE),
             'ui' => ['type' => 'handover', 'reason' => $reason, 'summary' => $summary],
         ];
