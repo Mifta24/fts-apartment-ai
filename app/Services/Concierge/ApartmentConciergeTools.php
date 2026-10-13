@@ -623,7 +623,7 @@ class ApartmentConciergeTools
             return ['text' => 'This household does not fit that unit type for the requested number of units. Suggest a unit with more bedrooms or more units.', 'ui' => null];
         }
 
-        $booking = $this->reservations->createRequest($this->apartment, $unitType, [
+        $booking = $this->pendingDuplicate($unitType, $stay, $units, $guestPhone) ?? $this->reservations->createRequest($this->apartment, $unitType, [
             'rental_type' => $stay['rental_type'],
             'lease_months' => $stay['lease_months'],
             'check_in' => $stay['check_in'],
@@ -654,8 +654,8 @@ class ApartmentConciergeTools
             'lease_months' => $booking->lease_months,
             'check_in' => $booking->check_in->toDateString(),
             'check_out' => $booking->check_out->toDateString(),
-            'nights' => $stay['nights'],
-            'units' => $units,
+            'nights' => (int) $booking->check_in->diffInDays($booking->check_out),
+            'units' => $booking->unit_count,
             'total_price' => (float) $booking->total_price,
             'deposit_total' => $booking->deposit_total === null ? null : (float) $booking->deposit_total,
             'currency' => $this->apartment->currency,
@@ -668,8 +668,35 @@ class ApartmentConciergeTools
         ];
     }
 
+    /**
+     * The request this conversation already made for the same unit, dates and
+     * phone. A turn that failed after the booking was saved is retried by the
+     * guest, and the retry must not hold the units a second time.
+     *
+     * @param  array{rental_type: string, check_in: CarbonImmutable, check_out: CarbonImmutable}  $stay
+     */
+    private function pendingDuplicate(UnitType $unitType, array $stay, int $units, string $guestPhone): ?Booking
+    {
+        return $this->conversation->bookings()
+            ->where('status', Booking::STATUS_PENDING)
+            ->where('unit_type_id', $unitType->id)
+            ->where('rental_type', $stay['rental_type'])
+            ->whereDate('check_in', $stay['check_in']->toDateString())
+            ->whereDate('check_out', $stay['check_out']->toDateString())
+            ->where('unit_count', $units)
+            ->where('guest_phone', $guestPhone)
+            ->first();
+    }
+
     private function requestHumanHandover(array $input): array
     {
+        if ($this->conversation->isHandedOver()) {
+            return [
+                'text' => json_encode(['ok' => true, 'message' => 'The team already has this conversation and will join shortly.'], JSON_UNESCAPED_UNICODE),
+                'ui' => null,
+            ];
+        }
+
         $reason = $input['reason'];
         $summary = $input['summary'];
 

@@ -46,9 +46,47 @@ class ConciergeBookingToolTest extends TestCase
         $this->assertSame(4000000.0, (float) $booking->total_price);
         $this->assertSame([2, 2], UnitInventory::orderBy('stay_date')->pluck('booked_units')->all());
 
-        $tooMany = $tools->dispatch('create_booking_request', [...$input, 'units' => 2]);
+        $tooMany = $tools->dispatch('create_booking_request', [...$input, 'units' => 3]);
         $this->assertNull($tooMany['ui']);
         $this->assertSame(1, Booking::count());
+    }
+
+    public function test_a_retried_booking_request_does_not_hold_the_units_twice(): void
+    {
+        $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
+        $unit = $apartment->unitTypes()->create(['name' => 'Studio', 'slug' => 'studio', 'base_price' => 500000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
+        $conversation = Conversation::create(['apartment_id' => $apartment->id, 'guest_token' => (string) Str::uuid(), 'locale' => 'en']);
+
+        $checkIn = CarbonImmutable::now()->addDays(3)->startOfDay();
+        foreach ([0, 1] as $offset) {
+            UnitInventory::create(['unit_type_id' => $unit->id, 'stay_date' => $checkIn->addDays($offset)->toDateString(), 'total_units' => 5, 'booked_units' => 0, 'price' => 500000]);
+        }
+
+        $tools = new ApartmentConciergeTools($apartment, $conversation, 'en');
+        $input = ['unit_type_slug' => 'studio', 'check_in' => $checkIn->toDateString(), 'check_out' => $checkIn->addDays(2)->toDateString(), 'adults' => 1, 'guest_name' => 'Ayu', 'guest_phone' => '0811111222'];
+
+        $first = $tools->dispatch('create_booking_request', $input);
+        $retry = $tools->dispatch('create_booking_request', $input);
+
+        $this->assertSame($first['ui']['booking']['booking_reference'], $retry['ui']['booking']['booking_reference']);
+        $this->assertSame(1, Booking::count());
+        $this->assertSame([1, 1], UnitInventory::orderBy('stay_date')->pluck('booked_units')->all());
+
+        $other = $tools->dispatch('create_booking_request', [...$input, 'guest_phone' => '0899999999']);
+        $this->assertNotSame($first['ui']['booking']['booking_reference'], $other['ui']['booking']['booking_reference']);
+        $this->assertSame(2, Booking::count());
+    }
+
+    public function test_a_second_handover_in_the_same_conversation_does_not_notify_staff_again(): void
+    {
+        $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
+        $conversation = Conversation::create(['apartment_id' => $apartment->id, 'guest_token' => (string) Str::uuid(), 'locale' => 'en']);
+        $tools = new ApartmentConciergeTools($apartment, $conversation, 'en');
+        $input = ['reason' => 'complaint', 'summary' => 'Noisy unit'];
+
+        $this->assertSame('handover', $tools->dispatch('request_human_handover', $input)['ui']['type']);
+        $this->assertStringContainsString('already', $tools->dispatch('request_human_handover', $input)['text']);
+        $this->assertSame(1, HandoverRequest::count());
     }
 
     public function test_ai_booking_tool_applies_the_same_rules_as_the_reservation_form(): void

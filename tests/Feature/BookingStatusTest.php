@@ -73,6 +73,36 @@ class BookingStatusTest extends TestCase
         $this->assertSame([1, 1], $this->bookedUnits());
     }
 
+    public function test_unanswered_pending_requests_expire_and_give_their_units_back(): void
+    {
+        config(['reservation.pending_expiry_hours' => 48]);
+        UnitInventory::query()->update(['total_units' => 5]);
+
+        $stale = $this->holdUnit();
+        $stale->forceFill(['created_at' => now()->subHours(49)])->save();
+        $fresh = $this->holdUnit();
+        $confirmed = $this->holdUnit();
+        $confirmed->forceFill(['status' => Booking::STATUS_CONFIRMED, 'created_at' => now()->subHours(100)])->save();
+
+        $this->artisan('bookings:expire-pending')->assertSuccessful();
+
+        $this->assertSame(Booking::STATUS_CANCELLED, $stale->fresh()->status);
+        $this->assertSame(Booking::STATUS_PENDING, $fresh->fresh()->status);
+        $this->assertSame(Booking::STATUS_CONFIRMED, $confirmed->fresh()->status);
+        $this->assertSame([2, 2], $this->bookedUnits());
+    }
+
+    public function test_pending_requests_never_expire_unless_a_limit_is_set(): void
+    {
+        $booking = $this->holdUnit();
+        $booking->forceFill(['created_at' => now()->subDays(30)])->save();
+
+        $this->artisan('bookings:expire-pending')->assertSuccessful();
+
+        $this->assertSame(Booking::STATUS_PENDING, $booking->fresh()->status);
+        $this->assertSame([1, 1], $this->bookedUnits());
+    }
+
     public function test_cancelling_a_confirmed_booking_gives_its_units_back(): void
     {
         $booking = $this->holdUnit();
