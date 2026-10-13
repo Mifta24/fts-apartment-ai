@@ -23,8 +23,6 @@ class ReservationController extends Controller
     /** How far ahead the date picker looks for open nights. */
     private const AVAILABILITY_DAYS = 366;
 
-    private const PHONE_PATTERN = '/^\+?[0-9\s\-().]{6,20}$/';
-
     /**
      * Guest-facing validation messages, keyed by locale.
      *
@@ -168,7 +166,7 @@ class ReservationController extends Controller
             throw ValidationException::withMessages(['contact_value' => $messages['contact_email']]);
         }
 
-        if (! $isEmail && ! preg_match(self::PHONE_PATTERN, $data['contact_value'])) {
+        if (! $isEmail && ! preg_match(ReservationService::PHONE_PATTERN, $data['contact_value'])) {
             throw ValidationException::withMessages(['contact_value' => $messages['contact_phone']]);
         }
 

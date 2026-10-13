@@ -26,6 +26,9 @@ class ReservationService
     /** Apartments take long stays, so a request may cover up to about three months. */
     public const MAX_NIGHTS = 90;
 
+    /** What a guest's phone or WhatsApp number may look like. */
+    public const PHONE_PATTERN = '/^\+?[0-9\s\-().]{6,20}$/';
+
     /**
      * Whether the requested party fits the unit type across the requested units.
      */

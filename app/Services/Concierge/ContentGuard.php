@@ -21,7 +21,7 @@ class ContentGuard
         // Indonesian insults and vulgarity
         '(?:goblok|tolol|bangsat|brengsek|kampret|bajingan|jancok|jancuk|kontol|memek|ngentot|entot|ngewe|pepek|itil|peler|lonte|jablay|pelacur|perek|sialan)',
         '(?:dasar|lu|lo|loe|elu|kamu|kau|dasar)\s+(?:anjing|anjir|asu|babi|monyet|bodoh|bego|idiot|sampah)',
-        '(?:anjing|asu|babi|monyet)\s+(?:lu|lo|loe|elu|kamu|kau|banget|kau)',
+        '(?:anjing|asu|babi|monyet)\s+(?:lu|lo|loe|elu|banget)',
         '(?:maki|caci|hina)(?:-|\s)?(?:maki|caci|hina)?\s*(?:saya|aku|gue|gw)',
         '(?:pemilik|owner)\w*\s+(?:apartment\s+)?(?:ini\s+)?(?:babi|anjing|bangsat)',
         // Indonesian sexual
@@ -29,7 +29,7 @@ class ContentGuard
         '(?:cewek|wanita|perempuan|cowok|pria|lelaki)\s+(?:panggilan|bayaran|sewaan)',
         '(?:plus[\s-]?plus|pijat\s+(?:plus|mesum|erotis)|open\s+bo|bo\s+an)',
         // Indonesian illegal
-        '(?:narkoba|narkotika|sabu|kokain|heroin|ekstasi|inex|putau|beli\s+ganja|jual\s+ganja|senjata\s+api|jual\s+senjata)',
+        '(?:narkoba|narkotika|(?<!sabu-)sabu(?!-sabu)|kokain|heroin|ekstasi|inex|putau|beli\s+ganja|jual\s+ganja|senjata\s+api|jual\s+senjata)',
         '(?:membuat|bikin|cara\s+buat|cara\s+membuat|rakit|merakit)\s+(?:bom|senjata|racun|peledak)',
         '(?:lelucon|guyon|candaan|humor|joke)\s+(?:sara|rasis|rasial)',
         // English
@@ -40,12 +40,14 @@ class ContentGuard
     ];
 
     /**
-     * Japanese has no word boundaries, so these are plain substrings.
+     * Japanese has no word boundaries, so these are substring patterns. The
+     * lookaheads keep everyday words (バカンス "vacation", ばかり "about") apart
+     * from the insults they begin with.
      *
      * @var list<string>
      */
     private const JAPANESE_TERMS = [
-        'くそ', 'クソ', 'バカ', 'ばか', '馬鹿', '死ね', 'ちんこ', 'チンコ', 'まんこ', 'マンコ',
+        'くそ', 'クソ', 'バカ(?!ンス)', 'ばか(?!り)', '馬鹿', '死ね', 'ちんこ', 'チンコ', 'まんこ', 'マンコ',
         'エロ', 'セックス', 'ポルノ', 'アダルト', '風俗', 'デリヘル', '売春', '麻薬', '覚醒剤', '爆弾',
     ];
 
@@ -69,7 +71,7 @@ class ContentGuard
         }
 
         foreach (self::JAPANESE_TERMS as $term) {
-            if (str_contains($text, $term)) {
+            if (preg_match('/'.$term.'/u', $text) === 1) {
                 return true;
             }
         }

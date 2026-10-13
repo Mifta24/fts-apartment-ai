@@ -159,11 +159,35 @@ class ApartmentConciergeTools
     }
 
     /**
+     * Arguments each tool cannot run without. The model sometimes leaves one
+     * out, and it should hear that as a tool result rather than crash the turn.
+     *
+     * @var array<string, list<string>>
+     */
+    private const REQUIRED_INPUT = [
+        'search_knowledge' => ['query'],
+        'get_unit_detail' => ['unit_type_slug'],
+        'check_availability' => ['unit_type_slug', 'check_in'],
+        'start_reservation' => ['unit_type_slug'],
+        'create_booking_request' => ['unit_type_slug', 'check_in', 'adults', 'guest_name', 'guest_phone'],
+        'request_human_handover' => ['reason', 'summary'],
+    ];
+
+    /**
      * @param  array<string, mixed>  $input
      * @return array{text: string, ui: array|null}
      */
     public function dispatch(string $name, array $input): array
     {
+        $missing = array_filter(
+            self::REQUIRED_INPUT[$name] ?? [],
+            fn (string $key) => ! is_scalar($input[$key] ?? null) || ! filled($input[$key]),
+        );
+
+        if ($missing !== []) {
+            return ['text' => 'Missing or invalid argument(s): '.implode(', ', $missing).'. Call the tool again with them, or ask the guest for what you still need.', 'ui' => null];
+        }
+
         return match ($name) {
             'search_knowledge' => $this->searchKnowledge($input),
             'search_units' => $this->searchUnits($input),
@@ -574,9 +598,28 @@ class ApartmentConciergeTools
             return ['text' => 'This unit type is not rented '.$stay['rental_type'].'. Offer another rental type or unit.', 'ui' => null];
         }
 
-        $units = max(1, (int) ($input['units'] ?? 1));
+        $units = (int) ($input['units'] ?? 1);
+        $adults = (int) $input['adults'];
+        $children = (int) ($input['children'] ?? 0);
+        $guestName = trim((string) $input['guest_name']);
+        $guestPhone = trim((string) $input['guest_phone']);
+        $guestEmail = trim((string) ($input['guest_email'] ?? ''));
 
-        if (! $this->reservations->fitsOccupancy($unitType, (int) $input['adults'], (int) ($input['children'] ?? 0), $units)) {
+        $problem = match (true) {
+            $units < 1 || $units > 10 => 'units must be between 1 and 10.',
+            $adults < 1 || $adults > 20 => 'adults must be between 1 and 20.',
+            $children < 0 || $children > 10 => 'children must be between 0 and 10.',
+            $guestName === '' || mb_strlen($guestName) > 100 => 'guest_name must be the guest\'s name, at most 100 characters.',
+            preg_match(ReservationService::PHONE_PATTERN, $guestPhone) !== 1 => 'guest_phone is not a valid phone or WhatsApp number. Ask the guest to type it again.',
+            $guestEmail !== '' && ! filter_var($guestEmail, FILTER_VALIDATE_EMAIL) => 'guest_email is not a valid email address. Ask the guest to type it again or leave it out.',
+            default => null,
+        };
+
+        if ($problem) {
+            return ['text' => "The request was not created: {$problem}", 'ui' => null];
+        }
+
+        if (! $this->reservations->fitsOccupancy($unitType, $adults, $children, $units)) {
             return ['text' => 'This household does not fit that unit type for the requested number of units. Suggest a unit with more bedrooms or more units.', 'ui' => null];
         }
 
@@ -585,15 +628,15 @@ class ApartmentConciergeTools
             'lease_months' => $stay['lease_months'],
             'check_in' => $stay['check_in'],
             'check_out' => $stay['check_out'],
-            'adults' => (int) $input['adults'],
-            'children' => (int) ($input['children'] ?? 0),
+            'adults' => $adults,
+            'children' => $children,
             'units' => $units,
             'extra_bed' => (bool) ($input['extra_bed'] ?? false),
-            'guest_name' => $input['guest_name'],
-            'guest_email' => $input['guest_email'] ?? null,
-            'guest_phone' => $input['guest_phone'],
+            'guest_name' => $guestName,
+            'guest_email' => $guestEmail !== '' ? $guestEmail : null,
+            'guest_phone' => $guestPhone,
             'locale' => $this->locale,
-            'notes' => $input['notes'] ?? null,
+            'notes' => isset($input['notes']) && is_string($input['notes']) ? Str::limit($input['notes'], 500, '') : null,
         ], $this->conversation);
 
         if (! $booking) {
@@ -657,7 +700,7 @@ class ApartmentConciergeTools
 
     private function findUnitType(string $slug): ?UnitType
     {
-        return $this->apartment->unitTypes()->where('slug', $slug)->first();
+        return $this->apartment->unitTypes()->where('is_active', true)->where('slug', $slug)->first();
     }
 
     private function rentalType(array $input): string
@@ -676,31 +719,60 @@ class ApartmentConciergeTools
     private function stayFromInput(array $input): array|string
     {
         $rentalType = $this->rentalType($input);
+        $checkIn = $this->parseDate($input['check_in'] ?? null);
 
         if ($rentalType === Booking::RENTAL_DAILY) {
-            if (empty($input['check_in']) || empty($input['check_out'])) {
-                return 'check_in and check_out are required for a daily rental.';
+            $checkOut = $this->parseDate($input['check_out'] ?? null);
+
+            if (! $checkIn || ! $checkOut) {
+                return 'check_in and check_out are required for a daily rental, written as YYYY-MM-DD.';
             }
 
-            [$checkIn, $checkOut, $nights] = $this->parseStay($input['check_in'], $input['check_out']);
+            $nights = (int) $checkIn->diffInDays($checkOut, false);
 
-            return $nights < 1
-                ? 'check_out must be after check_in.'
-                : ['rental_type' => $rentalType, 'lease_months' => null, 'check_in' => $checkIn, 'check_out' => $checkOut, 'nights' => $nights];
+            if ($nights < 1) {
+                return 'check_out must be after check_in.';
+            }
+
+            if ($nights > ReservationService::MAX_NIGHTS) {
+                return 'Online stays are limited to '.ReservationService::MAX_NIGHTS.' nights. For a longer stay offer a monthly or yearly rental, or call request_human_handover.';
+            }
+
+            $stay = ['rental_type' => $rentalType, 'lease_months' => null, 'check_in' => $checkIn, 'check_out' => $checkOut, 'nights' => $nights];
+        } else {
+            $months = (int) ($input['lease_months'] ?? 0);
+
+            if (! $checkIn || ! $this->reservations->isValidLeaseTerm($this->apartment, $rentalType, $months)) {
+                return $rentalType === Booking::RENTAL_YEARLY
+                    ? 'A yearly rental needs a move-in date (check_in, YYYY-MM-DD) and lease_months of 12, 24 or 36.'
+                    : 'A monthly rental needs a move-in date (check_in, YYYY-MM-DD) and lease_months from '.max(1, $this->apartment->min_monthly_lease_months).' to '.Apartment::MAX_MONTHLY_LEASE_MONTHS.'. Twelve months or more is a yearly rental.';
+            }
+
+            $checkOut = $this->reservations->leaseEnd($checkIn, $months);
+            $stay = ['rental_type' => $rentalType, 'lease_months' => $months, 'check_in' => $checkIn, 'check_out' => $checkOut, 'nights' => (int) $checkIn->diffInDays($checkOut)];
         }
 
-        $months = (int) ($input['lease_months'] ?? 0);
+        $today = CarbonImmutable::now($this->apartment->timezone)->startOfDay();
 
-        if (empty($input['check_in']) || ! $this->reservations->isValidLeaseTerm($this->apartment, $rentalType, $months)) {
-            return $rentalType === Booking::RENTAL_YEARLY
-                ? 'A yearly rental needs a move-in date (check_in) and lease_months of 12, 24 or 36.'
-                : 'A monthly rental needs a move-in date (check_in) and lease_months from '.max(1, $this->apartment->min_monthly_lease_months).' to '.Apartment::MAX_MONTHLY_LEASE_MONTHS.'. Twelve months or more is a yearly rental.';
+        if ($checkIn->toDateString() < $today->toDateString()) {
+            return "check_in is in the past. Today is {$today->toDateString()}; ask the guest for a date from today on.";
         }
 
-        $checkIn = CarbonImmutable::parse($input['check_in'])->startOfDay();
-        $checkOut = $this->reservations->leaseEnd($checkIn, $months);
+        return $stay;
+    }
 
-        return ['rental_type' => $rentalType, 'lease_months' => $months, 'check_in' => $checkIn, 'check_out' => $checkOut, 'nights' => (int) $checkIn->diffInDays($checkOut)];
+    /**
+     * A real calendar date written as YYYY-MM-DD, or null for anything else.
+     */
+    private function parseDate(mixed $value): ?CarbonImmutable
+    {
+        if (! is_string($value) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) !== 1) {
+            return null;
+        }
+
+        $date = CarbonImmutable::createFromFormat('!Y-m-d', $value);
+
+        return $date && $date->toDateString() === $value ? $date : null;
     }
 
     /**
@@ -712,16 +784,5 @@ class ApartmentConciergeTools
         return $stay['rental_type'] === Booking::RENTAL_DAILY
             ? $this->reservations->quote($unitType, $stay['check_in'], $stay['check_out'], $units, $extraBed)
             : $this->reservations->quoteLease($unitType, $stay['rental_type'], $stay['check_in'], $stay['lease_months'], $units);
-    }
-
-    /**
-     * @return array{0: CarbonImmutable, 1: CarbonImmutable, 2: int}
-     */
-    private function parseStay(string $checkIn, string $checkOut): array
-    {
-        $in = CarbonImmutable::parse($checkIn)->startOfDay();
-        $out = CarbonImmutable::parse($checkOut)->startOfDay();
-
-        return [$in, $out, $in->diffInDays($out)];
     }
 }

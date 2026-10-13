@@ -146,6 +146,17 @@ class BookingStatusTest extends TestCase
         $this->actingAs($this->staff)->get(route('admin.bookings.index'))->assertOk()->assertSee($booking->reference)->assertSee('Studio');
     }
 
+    public function test_a_unit_type_can_be_created_again_under_the_name_of_a_deleted_one(): void
+    {
+        $this->unitType->delete();
+
+        $this->actingAs($this->staff)->post(route('admin.unit-types.store'), [
+            'name' => 'Studio', 'bedrooms' => 0, 'bathrooms' => 1, 'max_adults' => 2, 'max_children' => 0, 'base_price' => 500000, 'is_active' => 1,
+        ])->assertRedirect(route('admin.unit-types.index'));
+
+        $this->assertSame('studio-1', $this->apartment->unitTypes()->latest('id')->value('slug'));
+    }
+
     public function test_a_unit_type_whose_open_bookings_ended_in_the_past_can_be_deleted(): void
     {
         $booking = $this->holdUnit();

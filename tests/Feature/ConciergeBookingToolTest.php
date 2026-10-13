@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\Apartment;
 use App\Models\Booking;
 use App\Models\Conversation;
+use App\Models\HandoverRequest;
 use App\Models\UnitInventory;
 use App\Services\Concierge\ApartmentConciergeTools;
+use App\Services\Reservation\ReservationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -47,6 +49,75 @@ class ConciergeBookingToolTest extends TestCase
         $tooMany = $tools->dispatch('create_booking_request', [...$input, 'units' => 2]);
         $this->assertNull($tooMany['ui']);
         $this->assertSame(1, Booking::count());
+    }
+
+    public function test_ai_booking_tool_applies_the_same_rules_as_the_reservation_form(): void
+    {
+        $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
+        $unit = $apartment->unitTypes()->create(['name' => 'Studio', 'slug' => 'studio', 'base_price' => 500000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
+        $conversation = Conversation::create(['apartment_id' => $apartment->id, 'guest_token' => (string) Str::uuid(), 'locale' => 'en']);
+
+        $start = CarbonImmutable::now()->subDays(5)->startOfDay();
+        foreach (range(0, 130) as $offset) {
+            UnitInventory::create(['unit_type_id' => $unit->id, 'stay_date' => $start->addDays($offset)->toDateString(), 'total_units' => 3, 'booked_units' => 0, 'price' => 500000]);
+        }
+
+        $tools = new ApartmentConciergeTools($apartment, $conversation, 'en');
+        $tomorrow = CarbonImmutable::now()->addDay()->startOfDay();
+        $valid = [
+            'unit_type_slug' => 'studio', 'check_in' => $tomorrow->toDateString(), 'check_out' => $tomorrow->addDays(2)->toDateString(),
+            'adults' => 1, 'guest_name' => 'Ayu', 'guest_phone' => '+62 811 111 222',
+        ];
+
+        $rejected = [
+            'a past check-in' => [...$valid, 'check_in' => $start->toDateString(), 'check_out' => $start->addDays(2)->toDateString()],
+            'a stay over the online limit' => [...$valid, 'check_out' => $tomorrow->addDays(ReservationService::MAX_NIGHTS + 1)->toDateString()],
+            'a phone that is not a number' => [...$valid, 'guest_phone' => 'abc'],
+            'an invalid email' => [...$valid, 'guest_email' => 'not-an-email'],
+            'too many units' => [...$valid, 'units' => 11],
+            'a blank name' => [...$valid, 'guest_name' => '  '],
+            'a date that is not a date' => [...$valid, 'check_in' => 'besok'],
+            'an impossible date' => [...$valid, 'check_in' => '2099-02-31'],
+        ];
+
+        foreach ($rejected as $case => $input) {
+            $result = $tools->dispatch('create_booking_request', $input);
+            $this->assertNull($result['ui'], "Created a booking with {$case}.");
+        }
+
+        $this->assertSame(0, Booking::count());
+
+        $unit->update(['is_active' => false]);
+        $this->assertNull($tools->dispatch('create_booking_request', $valid)['ui']);
+        $this->assertSame('Unit type not found.', $tools->dispatch('check_availability', $valid)['text']);
+        $this->assertSame(0, Booking::count());
+
+        $unit->update(['is_active' => true]);
+        $this->assertSame('booking_confirmation', $tools->dispatch('create_booking_request', $valid)['ui']['type']);
+        $this->assertSame(1, Booking::count());
+    }
+
+    public function test_ai_tools_report_missing_or_malformed_arguments_instead_of_failing(): void
+    {
+        $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
+        $conversation = Conversation::create(['apartment_id' => $apartment->id, 'guest_token' => (string) Str::uuid(), 'locale' => 'en']);
+        $tools = new ApartmentConciergeTools($apartment, $conversation, 'en');
+
+        foreach ([
+            'create_booking_request' => ['unit_type_slug' => 'studio', 'check_in' => '2099-01-01'],
+            'check_availability' => ['check_in' => '2099-01-01'],
+            'get_unit_detail' => [],
+            'request_human_handover' => ['reason' => 'complaint'],
+            'start_reservation' => ['unit_type_slug' => ['studio']],
+        ] as $tool => $input) {
+            $result = $tools->dispatch($tool, $input);
+
+            $this->assertNull($result['ui'], $tool);
+            $this->assertStringContainsString('Missing or invalid', $result['text'], $tool);
+        }
+
+        $this->assertStringContainsString('YYYY-MM-DD', $tools->dispatch('search_units', ['check_in' => 'besok', 'check_out' => 'lusa'])['text']);
+        $this->assertSame(0, HandoverRequest::count());
     }
 
     public function test_ai_tools_quote_long_stays_with_the_discount_and_filter_by_bedrooms(): void

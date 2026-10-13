@@ -42,6 +42,10 @@ class ContentGuardTest extends TestCase
             'analysis' => ['Tolong analisis ketersediaan kamar untuk 2 dewasa'],
             'english' => ['Do you have a family unit with a pool view?'],
             'Japanese' => ['朝食は何時からですか？'],
+            'Japanese about' => ['3日ばかり滞在したいです'],
+            'Japanese vacation' => ['バカンスで利用できますか'],
+            'your dog' => ['anjing kamu boleh masuk?'],
+            'sabu-sabu' => ['Ada restoran sabu-sabu di dekat sini?'],
         ];
     }
 

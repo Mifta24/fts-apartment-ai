@@ -262,6 +262,7 @@ class ConciergeService
         return $conversation->messages()
             ->whereIn('role', [ConversationMessage::ROLE_GUEST, ConversationMessage::ROLE_ASSISTANT])
             ->orderBy('created_at')
+            ->orderBy('id')
             ->get()
             ->map(fn (ConversationMessage $message) => [
                 'role' => $message->role === ConversationMessage::ROLE_GUEST ? 'user' : 'assistant',

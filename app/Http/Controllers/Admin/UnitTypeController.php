@@ -164,7 +164,7 @@ class UnitTypeController extends Controller
         $slug = $base;
         $suffix = 1;
 
-        while ($apartment->unitTypes()->where('slug', $slug)->exists()) {
+        while ($apartment->unitTypes()->withTrashed()->where('slug', $slug)->exists()) {
             $slug = "{$base}-{$suffix}";
             $suffix++;
         }

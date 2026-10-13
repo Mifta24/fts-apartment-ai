@@ -121,6 +121,24 @@ class ConciergeChatTest extends TestCase
         Http::assertSent(fn (Request $request) => $request->hasHeader('Authorization', 'Bearer test-key') && $request['model'] === 'test-model' && $request['reasoning_effort'] === 'none');
     }
 
+    public function test_a_staff_reply_reaches_the_guest_in_history_in_order(): void
+    {
+        $token = $this->startConversation();
+        $conversation = Conversation::where('guest_token', $token)->firstOrFail();
+
+        $this->freezeTime();
+        foreach ([ConversationMessage::ROLE_GUEST => 'Noisy unit', ConversationMessage::ROLE_STAFF => 'We are on it.', ConversationMessage::ROLE_SYSTEM => 'Handed over.'] as $role => $content) {
+            $conversation->messages()->create(['role' => $role, 'content' => $content]);
+        }
+
+        $this->getJson('/demo/concierge/history?guest_token='.$token)
+            ->assertOk()
+            ->assertJsonPath('messages.0.content', 'Noisy unit')
+            ->assertJsonPath('messages.1.role', 'staff')
+            ->assertJsonPath('messages.1.content', 'We are on it.')
+            ->assertJsonPath('messages.2.content', 'Handed over.');
+    }
+
     public function test_apartment_facts_come_from_the_knowledge_tool_and_never_from_the_model(): void
     {
         $this->apartment->knowledgeItems()->create(['category' => 'facilities', 'title' => 'Breakfast', 'body' => 'Served 06:30 to 10:00 in the garden restaurant.', 'is_active' => true]);
