@@ -85,7 +85,10 @@ class DemoApartmentSeeder extends Seeder
                 ]);
             }
 
-            $this->seedInventory($unitType, $totalUnits);
+            // Units that are only for sale are not rented, so they hold no nightly stock.
+            if ($unitType->isForRent()) {
+                $this->seedInventory($unitType, $totalUnits);
+            }
         }
 
         $this->seedKnowledgeBase($apartment);
@@ -226,6 +229,103 @@ class DemoApartmentSeeder extends Seeder
                     ['url' => $photo('1600607687939-ce8a6c25118c'), 'tags' => ['living_room'], 'alt' => 'Ruang keluarga penthouse'],
                     ['url' => $photo('1617806118233-18e1de247200'), 'tags' => ['dining_area'], 'alt' => 'Ruang makan penthouse'],
                     ['url' => $photo('1616594039964-ae9021a400a0'), 'tags' => ['bedroom'], 'alt' => 'Kamar tidur kedua penthouse'],
+                ],
+            ],
+            [
+                'slug' => 'office-suite-senopati',
+                'name' => 'Kantor Suite Senopati',
+                'category' => UnitType::CATEGORY_OFFICE,
+                'listing_type' => UnitType::LISTING_RENT,
+                'description' => 'Ruang kantor siap pakai di lantai podium dengan ruang rapat kecil dan area kerja terbuka, disewakan bulanan atau tahunan.',
+                'translations' => [
+                    'id' => ['name' => 'Kantor Suite Senopati', 'description' => 'Ruang kantor siap pakai di lantai podium dengan ruang rapat kecil dan area kerja terbuka, disewakan bulanan atau tahunan.'],
+                    'en' => ['name' => 'Senopati Office Suite', 'description' => 'A ready-to-use office on the podium floors with a small meeting room and open work area, rented monthly or yearly.'],
+                    'ja' => ['name' => 'セノパティ オフィススイート', 'description' => '低層階にある、小会議室とオープンワークエリア付きの即入居可能なオフィス。月単位または年単位で賃貸します。'],
+                ],
+                'size_sqm' => 60,
+                'bedrooms' => 0,
+                'bathrooms' => 1,
+                'floor_range' => '2–5',
+                'max_adults' => 10,
+                'max_children' => 0,
+                'bed_config' => [],
+                'view_type' => 'city',
+                'breakfast_included' => false,
+                'extra_bed_available' => false,
+                'extra_bed_price' => null,
+                'base_price' => 0,
+                'monthly_price' => 38000000,
+                'yearly_price' => 420000000,
+                'amenities' => ['air_conditioning', 'wifi', 'workspace', 'smart_lock', 'water_heater'],
+                'total_units' => 6,
+                'images' => [
+                    ['url' => $photo('1497366811353-6870744d04b2'), 'tags' => ['workspace'], 'alt' => 'Area kerja terbuka kantor'],
+                    ['url' => $photo('1524758631624-e2822e304c36'), 'tags' => ['workspace'], 'alt' => 'Ruang rapat kantor'],
+                ],
+            ],
+            [
+                'slug' => 'retail-kiosk-podium',
+                'name' => 'Kios Retail Podium',
+                'category' => UnitType::CATEGORY_COMMERCIAL,
+                'listing_type' => UnitType::LISTING_BOTH,
+                'description' => 'Kios di lantai dasar podium yang menghadap lobi utama, cocok untuk kafe, klinik, atau toko kebutuhan harian. Bisa disewa atau dibeli.',
+                'translations' => [
+                    'id' => ['name' => 'Kios Retail Podium', 'description' => 'Kios di lantai dasar podium yang menghadap lobi utama, cocok untuk kafe, klinik, atau toko kebutuhan harian. Bisa disewa atau dibeli.'],
+                    'en' => ['name' => 'Podium Retail Kiosk', 'description' => 'A ground-floor podium kiosk facing the main lobby, suited to a café, clinic or convenience shop. Available to rent or to buy.'],
+                    'ja' => ['name' => 'ポディウム リテールキオスク', 'description' => 'メインロビーに面した1階の店舗区画。カフェ、クリニック、日用品店に最適です。賃貸・購入のどちらも可能です。'],
+                ],
+                'size_sqm' => 35,
+                'bedrooms' => 0,
+                'bathrooms' => 1,
+                'floor_range' => 'G',
+                'max_adults' => 8,
+                'max_children' => 0,
+                'bed_config' => [],
+                'view_type' => null,
+                'breakfast_included' => false,
+                'extra_bed_available' => false,
+                'extra_bed_price' => null,
+                'base_price' => 0,
+                'monthly_price' => 45000000,
+                'yearly_price' => 500000000,
+                'sale_price' => 4800000000,
+                'amenities' => ['air_conditioning', 'wifi', 'water_heater'],
+                'total_units' => 4,
+                'images' => [
+                    ['url' => $photo('1441986300917-64674bd600d8'), 'tags' => ['storefront'], 'alt' => 'Kios retail di podium'],
+                ],
+            ],
+            [
+                'slug' => 'two-bedroom-residence-for-sale',
+                'name' => '2 Bedroom Residence (Dijual)',
+                'category' => UnitType::CATEGORY_RESIDENTIAL,
+                'listing_type' => UnitType::LISTING_SALE,
+                'description' => 'Unit dua kamar tidur di lantai tinggi yang dijual lengkap dengan furnitur, siap dihuni atau disewakan kembali.',
+                'translations' => [
+                    'id' => ['name' => '2 Bedroom Residence (Dijual)', 'description' => 'Unit dua kamar tidur di lantai tinggi yang dijual lengkap dengan furnitur, siap dihuni atau disewakan kembali.'],
+                    'en' => ['name' => '2 Bedroom Residence (For Sale)', 'description' => 'A high-floor two-bedroom unit sold fully furnished, ready to live in or to let out again.'],
+                    'ja' => ['name' => '2ベッドルーム レジデンス（販売）', 'description' => '高層階の2ベッドルーム。家具付きで販売しており、すぐにお住まいいただくことも、賃貸に出すことも可能です。'],
+                ],
+                'size_sqm' => 88,
+                'bedrooms' => 2,
+                'bathrooms' => 2,
+                'floor_range' => '24–28',
+                'max_adults' => 4,
+                'max_children' => 2,
+                'bed_config' => [['type' => 'king', 'count' => 1], ['type' => 'queen', 'count' => 1]],
+                'view_type' => 'skyline',
+                'breakfast_included' => false,
+                'extra_bed_available' => false,
+                'extra_bed_price' => null,
+                'base_price' => 0,
+                'monthly_price' => null,
+                'yearly_price' => null,
+                'sale_price' => 7900000000,
+                'amenities' => ['air_conditioning', 'wifi', 'full_kitchen', 'washer_dryer', 'living_room', 'dining_area', 'balcony', 'smart_lock'],
+                'total_units' => 0,
+                'images' => [
+                    ['url' => $photo('1600607687939-ce8a6c25118c'), 'tags' => ['living_room'], 'alt' => 'Ruang tamu unit dijual'],
+                    ['url' => $photo('1560185007-cde436f6a4d0'), 'tags' => ['dining_area', 'kitchen'], 'alt' => 'Ruang makan dan dapur unit dijual'],
                 ],
             ],
         ];

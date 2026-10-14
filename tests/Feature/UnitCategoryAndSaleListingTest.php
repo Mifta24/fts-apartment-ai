@@ -9,6 +9,7 @@ use App\Models\UnitType;
 use App\Models\User;
 use App\Services\Concierge\ApartmentConciergeTools;
 use Carbon\CarbonImmutable;
+use Database\Seeders\DemoApartmentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -208,5 +209,24 @@ class UnitCategoryAndSaleListingTest extends TestCase
         $this->actingAs($this->staff())
             ->post(route('admin.unit-types.store'), $this->unitPayload(['category' => 'warehouse']))
             ->assertSessionHasErrors('category');
+    }
+
+    public function test_the_demo_seeder_adds_an_office_a_commercial_unit_and_a_unit_for_sale(): void
+    {
+        $this->seed(DemoApartmentSeeder::class);
+
+        $demo = Apartment::where('name', 'FTS Apartment AI')->firstOrFail();
+        $units = $demo->unitTypes()->get()->keyBy('slug');
+
+        $this->assertSame(UnitType::CATEGORY_OFFICE, $units['office-suite-senopati']->category);
+        $this->assertFalse($units['office-suite-senopati']->offersDailyRental());
+        $this->assertTrue($units['office-suite-senopati']->offersMonthlyRental());
+        $this->assertTrue($units['retail-kiosk-podium']->isForRent() && $units['retail-kiosk-podium']->offersSalePrice());
+        $this->assertFalse($units['two-bedroom-residence-for-sale']->isForRent());
+        $this->assertTrue($units['two-bedroom-residence-for-sale']->offersSalePrice());
+        $this->assertSame(0, $units['two-bedroom-residence-for-sale']->inventory()->count());
+        $this->assertGreaterThan(0, $units['office-suite-senopati']->inventory()->count());
+
+        $this->get('/'.$demo->slug.'/units')->assertOk();
     }
 }
