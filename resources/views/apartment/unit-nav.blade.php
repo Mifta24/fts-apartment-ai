@@ -10,12 +10,26 @@
                     <img class="unit-nav-thumb" src="{{ $item->images->first()->image_source }}" alt="" loading="lazy">
                 @endif
                 <span class="unit-nav-text">
-                    <span class="unit-nav-layout">{{ $item->isStudio() ? $lobby['studio'] : str_replace([':count', ':baths'], [$item->bedrooms, $item->bathrooms], $lobby['bedrooms']) }}</span>
+                    <span class="unit-nav-layout">{{ match (true) {
+                        ! $item->isResidential() => $lobby['cat_'.$item->category],
+                        $item->isStudio() => $lobby['studio'],
+                        default => str_replace([':count', ':baths'], [$item->bedrooms, $item->bathrooms], $lobby['bedrooms']),
+                    } }}</span>
                     <span class="unit-nav-name-row">
                         <span class="unit-nav-name">{{ $item->translatedName($locale) }}</span>
                         @if ($item->size_sqm)<span class="unit-nav-size">{{ $item->size_sqm }}&nbsp;m²</span>@endif
                     </span>
-                    <span class="unit-nav-price">{{ $labels['from'] }} {{ $apartment->currency }}&nbsp;{{ number_format((float) $item->base_price, 0, ',', '.') }} {{ $labels['per_night'] }}</span>
+                    <span class="unit-nav-price">
+                        @if ($item->offersDailyRental())
+                            {{ $labels['from'] }} {{ $apartment->currency }}&nbsp;{{ number_format((float) $item->base_price, 0, ',', '.') }} {{ $labels['per_night'] }}
+                        @elseif ($item->offersMonthlyRental())
+                            {{ str_replace(':price', $apartment->currency."\u{00A0}".number_format((float) $item->monthly_price, 0, ',', '.'), $lobby['rent_from_monthly']) }}
+                        @elseif ($item->offersSalePrice())
+                            {{ str_replace(':price', $apartment->currency."\u{00A0}".number_format((float) $item->sale_price, 0, ',', '.'), $lobby['sale_price']) }}
+                        @else
+                            {{ $item->isForSale() ? $lobby['for_sale'] : '' }}
+                        @endif
+                    </span>
                 </span>
                 <span class="unit-nav-go" aria-hidden="true">→</span>
             </a>

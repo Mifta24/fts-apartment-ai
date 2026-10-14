@@ -4,9 +4,11 @@
     $beds = collect($unitType->bed_config ?? [])
         ->map(fn ($bed) => $bed['count'].' × '.($unitTerms['bed'][$bed['type']] ?? Str::headline($bed['type'])))
         ->implode(', ');
-    $layout = $unitType->isStudio()
-        ? $lobby['studio']
-        : str_replace([':count', ':baths'], [$unitType->bedrooms, $unitType->bathrooms], $lobby['bedrooms']);
+    $layout = match (true) {
+        ! $unitType->isResidential() => $lobby['cat_'.$unitType->category],
+        $unitType->isStudio() => $lobby['studio'],
+        default => str_replace([':count', ':baths'], [$unitType->bedrooms, $unitType->bathrooms], $lobby['bedrooms']),
+    };
     $monthlyRate = $unitType->base_price * $nightsPerMonth * (100 - $apartment->longStayDiscountPercent($nightsPerMonth)) / 100;
     $primaryImage = $unitType->images->first();
     $unitUrl = fn ($unit) => route('apartment.unit', ['apartmentSlug' => $apartment->slug, 'unitSlug' => $unit->slug, 'lang' => $locale]);
@@ -54,10 +56,23 @@
                 <p class="unit-scene-description">{{ $unitType->translatedDescription($locale) }}</p>
 
                 <div class="unit-scene-rate">
+                    @if ($unitType->isForSale())
+                        <p>
+                            <span class="unit-scene-rate-label">{{ $lobby['sale_from'] }}</span>
+                            @if ($unitType->offersSalePrice())
+                                <span class="unit-scene-rate-amount"><strong>{{ $money($unitType->sale_price) }}</strong></span>
+                            @else
+                                <span class="unit-scene-rate-amount"><strong>{{ $lobby['for_sale'] }}</strong></span>
+                            @endif
+                        </p>
+                        <p class="unit-scene-note">{{ $lobby['sale_note'] }}</p>
+                    @endif
+                    @if ($unitType->offersDailyRental())
                     <p><span class="unit-scene-rate-label">{{ $labels['from'] }}</span> <span class="unit-scene-rate-amount"><strong>{{ $money($unitType->base_price) }}</strong> <span class="unit-scene-rate-label">{{ $labels['per_night'] }}</span></span></p>
+                    @endif
                     @if ($unitType->offersMonthlyRental())
                         <p class="unit-scene-monthly">{{ str_replace(':price', $money($unitType->monthly_price), $lobby['rent_monthly']) }}</p>
-                    @elseif ($apartment->monthly_discount_percent > 0 || $apartment->weekly_discount_percent > 0)
+                    @elseif ($unitType->offersDailyRental() && ($apartment->monthly_discount_percent > 0 || $apartment->weekly_discount_percent > 0))
                         <p class="unit-scene-monthly">{{ str_replace(':price', $money($monthlyRate), $lobby['monthly_estimate']) }}</p>
                     @endif
                     @if ($unitType->offersYearlyRental())
@@ -66,11 +81,18 @@
                     @if ($unitType->offersMonthlyRental() || $unitType->offersYearlyRental())
                         <p class="unit-scene-note">{{ str_replace([':months', ':min', ':max', ':years'], [$apartment->security_deposit_months, max(1, $apartment->min_monthly_lease_months), \App\Models\Apartment::MAX_MONTHLY_LEASE_MONTHS, \App\Models\Apartment::MAX_YEARLY_LEASE_YEARS], $lobby['lease_note']) }}</p>
                     @endif
-                    <p class="unit-scene-note">{{ $lobby['availability_note'] }}</p>
+                    @if ($unitType->isForRent())
+                        <p class="unit-scene-note">{{ $lobby['availability_note'] }}</p>
+                    @endif
                 </div>
 
                 <div class="mt-5 flex flex-wrap gap-3">
-                    <a href="{{ route('apartment.reservation', ['apartmentSlug' => $apartment->slug, 'lang' => $locale, 'unit' => $unitType->slug]) }}" data-stage-exit data-tour-line="{{ $narration['tour_reservation'] }}" class="lobby-action">{{ $lobby['reserve_unit'] }} <span aria-hidden="true">↗</span></a>
+                    @if ($unitType->isForRent())
+                        <a href="{{ route('apartment.reservation', ['apartmentSlug' => $apartment->slug, 'lang' => $locale, 'unit' => $unitType->slug]) }}" data-stage-exit data-tour-line="{{ $narration['tour_reservation'] }}" class="lobby-action">{{ $lobby['reserve_unit'] }} <span aria-hidden="true">↗</span></a>
+                    @endif
+                    @if ($unitType->isForSale())
+                        <button type="button" class="{{ $unitType->isForRent() ? 'unit-scene-step' : 'lobby-action' }}" data-hero-quick-message="{{ str_replace(':name', $unitName, $lobby['ask_sale_q']) }}">{{ $lobby['ask_sale'] }}</button>
+                    @endif
                     <button type="button" class="unit-scene-step" data-hero-quick-message="{{ str_replace(':name', $unitName, $lobby['ask_unit_q']) }}">{{ $lobby['ask_unit'] }}</button>
                 </div>
 
@@ -89,6 +111,7 @@
                     @if ($unitType->view_type)
                         <div><dt>{{ $lobby['view'] }}</dt><dd>{{ $unitTerms['view'][$unitType->view_type] ?? Str::headline($unitType->view_type) }}</dd></div>
                     @endif
+                    @if ($unitType->isResidential() && $unitType->isForRent())
                     <div>
                         <dt>{{ $lobby['extra_bed'] }}</dt>
                         <dd>
@@ -99,6 +122,7 @@
                             @endif
                         </dd>
                     </div>
+                    @endif
                     @if ($unitType->breakfast_included)
                         <div><dt>&nbsp;</dt><dd>{{ $labels['breakfast_included'] }}</dd></div>
                     @endif

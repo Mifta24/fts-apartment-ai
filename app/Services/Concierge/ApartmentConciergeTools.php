@@ -157,6 +157,9 @@ class ApartmentConciergeTools
         );
     }
 
+    /** What the model is told when a guest tries to book a unit that is only for sale. */
+    private const SALE_ONLY_NOTE = 'This unit is for sale, not for rent, so it cannot be booked online. Give the sale_price from get_unit_detail if it is not null, say the apartment team handles sale enquiries and viewings, and call request_human_handover with the unit and the guest\'s contact details.';
+
     /**
      * Arguments each tool cannot run without. The model sometimes leaves one
      * out, and it should hear that as a tool result rather than crash the turn.
@@ -259,6 +262,7 @@ class ApartmentConciergeTools
         $bedrooms = isset($input['bedrooms']) ? (int) $input['bedrooms'] : null;
 
         $candidates = $this->apartment->unitTypes()
+            ->forRent()
             ->where('is_active', true)
             ->with('images')
             ->get()
@@ -346,7 +350,10 @@ class ApartmentConciergeTools
             ->get()
             ->when($viewType, fn ($c) => $c->filter(fn (UnitType $rt) => $rt->view_type === $viewType))
             ->when($bedrooms !== null, fn ($c) => $c->filter(fn (UnitType $rt) => $rt->bedrooms >= $bedrooms))
-            ->sortBy('base_price')
+            ->sortBy([
+                fn (UnitType $a, UnitType $b) => $b->offersDailyRental() <=> $a->offersDailyRental(),
+                ['base_price', 'asc'],
+            ])
             ->values();
 
         if ($unitTypes->isEmpty()) {
@@ -363,6 +370,9 @@ class ApartmentConciergeTools
             'name' => $unit['name'],
             'size_sqm' => $unit['size_sqm'],
             'bedrooms' => $unit['bedrooms'],
+            'category' => $unit['category'],
+            'listing_type' => $unit['listing_type'],
+            'sale_price' => $unit['sale_price'],
             'max_adults' => $unit['max_adults'],
             'max_children' => $unit['max_children'],
             'starting_price_per_night' => $unit['starting_price'],
@@ -414,6 +424,10 @@ class ApartmentConciergeTools
         $unitType = $this->findUnitType($input['unit_type_slug']);
         if (! $unitType) {
             return ['text' => 'Unit type not found.', 'ui' => null];
+        }
+
+        if (! $unitType->isForRent()) {
+            return ['text' => self::SALE_ONLY_NOTE, 'ui' => null];
         }
 
         $adults = max(1, (int) ($input['adults'] ?? 1));
@@ -489,7 +503,10 @@ class ApartmentConciergeTools
             'extra_bed_available' => $unitType->extra_bed_available,
             'extra_bed_price' => $unitType->extra_bed_price,
             'amenities' => $unitType->amenities,
-            'starting_price' => $unitType->base_price,
+            'category' => $unitType->category,
+            'listing_type' => $unitType->listing_type,
+            'sale_price' => $unitType->offersSalePrice() ? $unitType->sale_price : null,
+            'starting_price' => $unitType->offersDailyRental() ? $unitType->base_price : null,
             'monthly_price' => $unitType->offersMonthlyRental() ? $unitType->monthly_price : null,
             'yearly_price' => $unitType->offersYearlyRental() ? $unitType->yearly_price : null,
             'yearly_monthly_equivalent' => $unitType->yearlyMonthlyEquivalent(),
@@ -530,7 +547,11 @@ class ApartmentConciergeTools
         $isLease = $stay['rental_type'] !== Booking::RENTAL_DAILY;
         $extraBed = ! $isLease && (bool) ($input['extra_bed'] ?? false);
 
-        if ($isLease && ! $unitType->offersRental($stay['rental_type'])) {
+        if (! $unitType->isForRent()) {
+            return ['text' => self::SALE_ONLY_NOTE, 'ui' => null];
+        }
+
+        if (! $unitType->offersRental($stay['rental_type'])) {
             return ['text' => 'This unit type is not rented '.$stay['rental_type'].'. Offer the rental types it does have (see monthly_price / yearly_price from get_unit_detail) or another unit.', 'ui' => null];
         }
 
@@ -591,6 +612,10 @@ class ApartmentConciergeTools
         $stay = $this->stayFromInput($input);
         if (is_string($stay)) {
             return ['text' => $stay, 'ui' => null];
+        }
+
+        if (! $unitType->isForRent()) {
+            return ['text' => self::SALE_ONLY_NOTE, 'ui' => null];
         }
 
         if (! $unitType->offersRental($stay['rental_type'])) {

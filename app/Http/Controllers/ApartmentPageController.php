@@ -92,6 +92,10 @@ class ApartmentPageController extends Controller
         'en' => [
             'units' => 'This is the residences floor. We have :count unit types, from :price per night. Open any of them and I will walk you through the layout, or ask me anything.',
             'units_one' => 'This is the residences floor. We have one unit type, from :price per night. Open it and I will walk you through the layout, or ask me anything.',
+            'units_any' => 'This is the residences floor. We have :count unit types, for rent or for sale. Open any of them and I will walk you through it, or ask me anything.',
+            'category_layout' => 'It is a unit for :category use',
+            'monthly' => 'Rent starts from :price per month. Final availability and rates are confirmed by our team.',
+            'sale' => 'It is for sale at :price. Our team arranges enquiries and viewings.',
             'studio' => 'It is a studio',
             'bedrooms' => 'It is a :count-bedroom, :baths-bathroom layout',
             'size_guests' => 'with :size m² for up to :guests residents.',
@@ -115,6 +119,10 @@ class ApartmentPageController extends Controller
         'id' => [
             'units' => 'Ini lantai hunian. Ada :count tipe unit, mulai dari :price per malam. Buka salah satu, nanti saya jelaskan denahnya — atau tanyakan apa saja kepada saya.',
             'units_one' => 'Ini lantai hunian. Ada satu tipe unit, mulai dari :price per malam. Buka unitnya, nanti saya jelaskan denahnya — atau tanyakan apa saja kepada saya.',
+            'units_any' => 'Ini lantai hunian. Ada :count tipe unit, untuk disewa maupun dijual. Buka salah satu, nanti saya jelaskan — atau tanyakan apa saja kepada saya.',
+            'category_layout' => 'Unit ini diperuntukkan untuk :category',
+            'monthly' => 'Sewa mulai dari :price per bulan. Ketersediaan dan tarif final dikonfirmasi oleh tim kami.',
+            'sale' => 'Unit ini dijual dengan harga :price. Pertanyaan dan jadwal kunjungan diatur oleh tim kami.',
             'studio' => 'Unit ini bertipe studio',
             'bedrooms' => 'Unit ini punya :count kamar tidur dan :baths kamar mandi',
             'size_guests' => 'dengan luas :size m² untuk maksimal :guests penghuni.',
@@ -138,6 +146,10 @@ class ApartmentPageController extends Controller
         'ja' => [
             'units' => 'こちらはレジデンスフロアです。:count タイプのお部屋を、1泊 :price からご用意しています。お部屋を開いていただければ、間取りをご案内します。ご質問もお気軽にどうぞ。',
             'units_one' => 'こちらはレジデンスフロアです。1タイプのお部屋を、1泊 :price からご用意しています。お部屋を開いていただければ、間取りをご案内します。ご質問もお気軽にどうぞ。',
+            'units_any' => 'こちらはレジデンスフロアです。:count タイプのお部屋を、賃貸または販売でご用意しています。お部屋を開いていただければご案内します。ご質問もお気軽にどうぞ。',
+            'category_layout' => ':category用のユニットで',
+            'monthly' => '賃料は月 :price から。空室状況と料金は、スタッフが最終確認いたします。',
+            'sale' => ':price で販売中です。お問い合わせと内覧はスタッフが承ります。',
             'studio' => 'スタジオタイプのお部屋で',
             'bedrooms' => ':count ベッドルーム・:baths バスルームの間取りで',
             'size_guests' => '広さは:size m²、最大:guests名様までご入居いただけます。',
@@ -163,20 +175,23 @@ class ApartmentPageController extends Controller
     /**
      * Guest-facing names for the coded unit values stored in the database.
      *
-     * @var array<string, array{bed: array<string, string>, view: array<string, string>, amenity: array<string, string>}>
+     * @var array<string, array{category: array<string, string>, bed: array<string, string>, view: array<string, string>, amenity: array<string, string>}>
      */
     private const UNIT_TERMS = [
         'en' => [
+            'category' => ['residential' => 'residential', 'office' => 'office', 'commercial' => 'commercial'],
             'bed' => ['king' => 'King bed', 'queen' => 'Queen bed', 'twin' => 'Twin bed', 'single' => 'Single bed', 'double' => 'Double bed', 'sofa_bed' => 'Sofa bed'],
             'view' => ['city' => 'City view', 'skyline' => 'Skyline view', 'park' => 'Park view', 'pool' => 'Pool view', 'garden' => 'Garden view'],
             'amenity' => ['air_conditioning' => 'Air conditioning', 'wifi' => 'Fibre Wi-Fi', 'kitchenette' => 'Kitchenette', 'full_kitchen' => 'Full kitchen', 'washer_dryer' => 'Washer-dryer', 'dishwasher' => 'Dishwasher', 'workspace' => 'Work desk', 'smart_tv' => 'Smart TV', 'smart_lock' => 'Smart lock', 'water_heater' => 'Water heater', 'balcony' => 'Balcony', 'bathtub' => 'Bathtub', 'living_room' => 'Living room', 'dining_area' => 'Dining area', 'safe_deposit_box' => 'Safe', 'private_lift' => 'Private lift lobby'],
         ],
         'id' => [
+            'category' => ['residential' => 'hunian', 'office' => 'kantor', 'commercial' => 'komersial'],
             'bed' => ['king' => 'Tempat tidur king', 'queen' => 'Tempat tidur queen', 'twin' => 'Tempat tidur twin', 'single' => 'Tempat tidur single', 'double' => 'Tempat tidur double', 'sofa_bed' => 'Sofa bed'],
             'view' => ['city' => 'Pemandangan kota', 'skyline' => 'Pemandangan skyline', 'park' => 'Pemandangan taman', 'pool' => 'Pemandangan kolam', 'garden' => 'Pemandangan taman'],
             'amenity' => ['air_conditioning' => 'AC', 'wifi' => 'Wi-Fi fiber', 'kitchenette' => 'Dapur kecil', 'full_kitchen' => 'Dapur lengkap', 'washer_dryer' => 'Mesin cuci & pengering', 'dishwasher' => 'Mesin cuci piring', 'workspace' => 'Meja kerja', 'smart_tv' => 'Smart TV', 'smart_lock' => 'Kunci pintar', 'water_heater' => 'Pemanas air', 'balcony' => 'Balkon', 'bathtub' => 'Bathtub', 'living_room' => 'Ruang tamu', 'dining_area' => 'Ruang makan', 'safe_deposit_box' => 'Brankas', 'private_lift' => 'Lobi lift pribadi'],
         ],
         'ja' => [
+            'category' => ['residential' => '居住', 'office' => 'オフィス', 'commercial' => '商業'],
             'bed' => ['king' => 'キングベッド', 'queen' => 'クイーンベッド', 'twin' => 'ツインベッド', 'single' => 'シングルベッド', 'double' => 'ダブルベッド', 'sofa_bed' => 'ソファベッド'],
             'view' => ['city' => 'シティビュー', 'skyline' => 'スカイラインビュー', 'park' => 'パークビュー', 'pool' => 'プールビュー', 'garden' => 'ガーデンビュー'],
             'amenity' => ['air_conditioning' => 'エアコン', 'wifi' => '光Wi-Fi', 'kitchenette' => 'ミニキッチン', 'full_kitchen' => 'フルキッチン', 'washer_dryer' => '洗濯乾燥機', 'dishwasher' => '食洗機', 'workspace' => 'ワークデスク', 'smart_tv' => 'スマートTV', 'smart_lock' => 'スマートロック', 'water_heater' => '給湯器', 'balcony' => 'バルコニー', 'bathtub' => 'バスタブ', 'living_room' => 'リビングルーム', 'dining_area' => 'ダイニング', 'safe_deposit_box' => 'セーフティボックス', 'private_lift' => '専用エレベーターホール'],
@@ -452,18 +467,24 @@ class ApartmentPageController extends Controller
             return ['units' => null, 'unit' => []];
         }
 
-        $intro = str_replace(
-            [':count', ':price'],
-            [(string) $unitTypes->count(), $money($unitTypes->min('base_price'))],
-            $templates[$unitTypes->count() === 1 ? 'units_one' : 'units']
-        );
+        $nightlyUnits = $unitTypes->filter(fn (UnitType $unitType) => $unitType->offersDailyRental());
+
+        $intro = $nightlyUnits->count() === $unitTypes->count()
+            ? str_replace(
+                [':count', ':price'],
+                [(string) $unitTypes->count(), $money($nightlyUnits->min('base_price'))],
+                $templates[$unitTypes->count() === 1 ? 'units_one' : 'units']
+            )
+            : str_replace(':count', (string) $unitTypes->count(), $templates['units_any']);
 
         $units = $unitTypes->mapWithKeys(function (UnitType $unitType) use ($templates, $terms, $money, $sentence, $locale, $join) {
             $parts = [$unitType->translatedName($locale).'.', filled($unitType->translatedDescription($locale)) ? $sentence(trim($unitType->translatedDescription($locale))) : null];
 
-            $layout = $unitType->isStudio()
-                ? $templates['studio']
-                : str_replace([':count', ':baths'], [(string) $unitType->bedrooms, (string) $unitType->bathrooms], $templates['bedrooms']);
+            $layout = match (true) {
+                ! $unitType->isResidential() => str_replace(':category', $terms['category'][$unitType->category] ?? $unitType->category, $templates['category_layout']),
+                $unitType->isStudio() => $templates['studio'],
+                default => str_replace([':count', ':baths'], [(string) $unitType->bedrooms, (string) $unitType->bathrooms], $templates['bedrooms']),
+            };
 
             $capacity = $unitType->size_sqm
                 ? str_replace([':size', ':guests'], [(string) $unitType->size_sqm, (string) $unitType->maxOccupancy()], $templates['size_guests'])
@@ -479,7 +500,15 @@ class ApartmentPageController extends Controller
                 $parts[] = $sentence($terms['view'][$unitType->view_type] ?? Str::headline($unitType->view_type));
             }
 
-            $parts[] = str_replace(':price', $money($unitType->base_price), $templates['price']);
+            if ($unitType->offersDailyRental()) {
+                $parts[] = str_replace(':price', $money($unitType->base_price), $templates['price']);
+            } elseif ($unitType->offersMonthlyRental()) {
+                $parts[] = str_replace(':price', $money($unitType->monthly_price), $templates['monthly']);
+            }
+
+            if ($unitType->offersSalePrice()) {
+                $parts[] = str_replace(':price', $money($unitType->sale_price), $templates['sale']);
+            }
 
             return [$unitType->slug => implode(' ', array_filter($parts))];
         })->all();
@@ -653,6 +682,9 @@ class ApartmentPageController extends Controller
                 'sound_on' => 'Sound on', 'sound_off' => 'Sound off',
                 'unit_scene' => 'Unit details', 'unit_counter' => 'Unit type', 'gallery' => 'Photo gallery', 'photo' => 'Photo',
                 'no_photo' => 'Photos coming soon', 'prev_unit' => 'Previous', 'next_unit' => 'Next',
+                'for_sale' => 'For sale', 'sale_price' => 'For sale · :price', 'sale_from' => 'Sale price', 'sale_note' => 'Viewings and purchase enquiries are arranged by the apartment team.',
+                'ask_sale' => 'Ask about buying', 'ask_sale_q' => 'I am interested in buying :name. Can you tell me more?', 'rent_from_monthly' => 'Rent from :price / month',
+                'cat_residential' => 'Residence', 'cat_office' => 'Office', 'cat_commercial' => 'Commercial space',
                 'ask_unit' => 'Ask about this unit', 'reserve_unit' => 'Request this unit',
                 'size' => 'Size', 'bed' => 'Beds', 'guests' => 'Residents', 'view' => 'View', 'extra_bed' => 'Rollaway bed', 'layout' => 'Layout', 'floors' => 'Floors',
                 'studio' => 'Studio', 'bedrooms' => ':count bed · :baths bath',
@@ -686,6 +718,9 @@ class ApartmentPageController extends Controller
                 'sound_on' => 'サウンドオン', 'sound_off' => 'サウンドオフ',
                 'unit_scene' => 'お部屋のご案内', 'unit_counter' => 'タイプ', 'gallery' => 'フォトギャラリー', 'photo' => '写真',
                 'no_photo' => '写真は準備中です', 'prev_unit' => '前へ', 'next_unit' => '次へ',
+                'for_sale' => '販売中', 'sale_price' => '販売価格 · :price', 'sale_from' => '販売価格', 'sale_note' => '内覧とご購入のお問い合わせは、スタッフが承ります。',
+                'ask_sale' => '購入について聞く', 'ask_sale_q' => ':name の購入を検討しています。詳しく教えてください。', 'rent_from_monthly' => '賃料 :price / 月から',
+                'cat_residential' => 'レジデンス', 'cat_office' => 'オフィス', 'cat_commercial' => '商業スペース',
                 'ask_unit' => 'このお部屋について聞く', 'reserve_unit' => 'このお部屋をリクエスト',
                 'size' => '広さ', 'bed' => 'ベッド', 'guests' => '定員', 'view' => '眺望', 'extra_bed' => '簡易ベッド', 'layout' => '間取り', 'floors' => 'フロア',
                 'studio' => 'スタジオ', 'bedrooms' => ':count ベッドルーム · :baths バスルーム',
@@ -719,6 +754,9 @@ class ApartmentPageController extends Controller
                 'sound_on' => 'Suara aktif', 'sound_off' => 'Suara mati',
                 'unit_scene' => 'Detail unit', 'unit_counter' => 'Tipe unit', 'gallery' => 'Galeri foto', 'photo' => 'Foto',
                 'no_photo' => 'Foto segera tersedia', 'prev_unit' => 'Sebelumnya', 'next_unit' => 'Berikutnya',
+                'for_sale' => 'Dijual', 'sale_price' => 'Dijual · :price', 'sale_from' => 'Harga jual', 'sale_note' => 'Kunjungan dan pertanyaan pembelian diatur oleh tim apartemen.',
+                'ask_sale' => 'Tanya tentang pembelian', 'ask_sale_q' => 'Saya tertarik membeli :name. Bisa dijelaskan lebih lanjut?', 'rent_from_monthly' => 'Sewa mulai :price / bulan',
+                'cat_residential' => 'Hunian', 'cat_office' => 'Kantor', 'cat_commercial' => 'Ruang komersial',
                 'ask_unit' => 'Tanya tentang unit ini', 'reserve_unit' => 'Ajukan sewa unit ini',
                 'size' => 'Luas', 'bed' => 'Tempat tidur', 'guests' => 'Kapasitas', 'view' => 'Pemandangan', 'extra_bed' => 'Kasur lipat', 'layout' => 'Denah', 'floors' => 'Lantai',
                 'studio' => 'Studio', 'bedrooms' => ':count kamar tidur · :baths kamar mandi',

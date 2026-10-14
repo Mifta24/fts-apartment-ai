@@ -18,8 +18,8 @@
             @endif
 
             <dl class="lobby-stats">
-                @if ($unitTypes->isNotEmpty())
-                    <div><dt>{{ $lobby['stat_from'] }}</dt><dd>{{ $money($unitTypes->min('base_price')) }}</dd></div>
+                @if ($unitTypes->contains(fn ($unitType) => $unitType->offersDailyRental()))
+                    <div><dt>{{ $lobby['stat_from'] }}</dt><dd>{{ $money($unitTypes->filter(fn ($unitType) => $unitType->offersDailyRental())->min('base_price')) }}</dd></div>
                 @endif
                 @if ($unitTypes->contains(fn ($unitType) => $unitType->offersMonthlyRental()))
                     <div><dt>{{ $lobby['stat_rent_monthly'] }}</dt><dd>{{ $money($unitTypes->filter(fn ($unitType) => $unitType->offersMonthlyRental())->min('monthly_price')) }}</dd></div>

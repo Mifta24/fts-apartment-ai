@@ -11,7 +11,7 @@
                 <tr>
                     <th class="px-4 py-3">Name</th>
                     <th class="px-4 py-3">Layout</th>
-                    <th class="px-4 py-3">Base price</th>
+                    <th class="px-4 py-3">Price</th>
                     <th class="px-4 py-3">Occupancy</th>
                     <th class="px-4 py-3">Images</th>
                     <th class="px-4 py-3">Status</th>
@@ -21,9 +21,16 @@
             <tbody class="divide-y divide-stone-100">
                 @forelse ($unitTypes as $unitType)
                     <tr>
-                        <td class="px-4 py-3 font-medium text-stone-900">{{ $unitType->name }}</td>
-                        <td class="px-4 py-3">{{ $unitType->isStudio() ? 'Studio' : $unitType->bedrooms.' BR' }} · {{ $unitType->bathrooms }} BA @if($unitType->floor_range)<span class="text-stone-400">· fl. {{ $unitType->floor_range }}</span>@endif</td>
-                        <td class="px-4 py-3">{{ $apartment->currency }} {{ number_format((float) $unitType->base_price, 0, ',', '.') }}</td>
+                        <td class="px-4 py-3 font-medium text-stone-900">
+                            {{ $unitType->name }}
+                            <span class="block text-xs font-normal text-stone-400">{{ ucfirst($unitType->category) }} · {{ ['rent' => 'For rent', 'sale' => 'For sale', 'both' => 'Rent & sale'][$unitType->listing_type] ?? $unitType->listing_type }}</span>
+                        </td>
+                        <td class="px-4 py-3">@if ($unitType->isResidential()){{ $unitType->isStudio() ? 'Studio' : $unitType->bedrooms.' BR' }} · @endif{{ $unitType->bathrooms }} BA @if($unitType->floor_range)<span class="text-stone-400">· fl. {{ $unitType->floor_range }}</span>@endif</td>
+                        <td class="px-4 py-3">
+                            @if ($unitType->offersDailyRental()){{ $apartment->currency }} {{ number_format((float) $unitType->base_price, 0, ',', '.') }} / night<br>@endif
+                            @if ($unitType->offersMonthlyRental())<span class="text-xs text-stone-500">{{ number_format((float) $unitType->monthly_price, 0, ',', '.') }} / month</span><br>@endif
+                            @if ($unitType->offersSalePrice())<span class="text-xs text-stone-500">Sale {{ number_format((float) $unitType->sale_price, 0, ',', '.') }}</span>@endif
+                        </td>
                         <td class="px-4 py-3">{{ $unitType->max_adults }}A / {{ $unitType->max_children }}C</td>
                         <td class="px-4 py-3">{{ $unitType->images_count }}</td>
                         <td class="px-4 py-3">
@@ -32,7 +39,9 @@
                             </span>
                         </td>
                         <td class="px-4 py-3 text-right">
-                            <a href="{{ route('admin.unit-types.inventory.index', $unitType) }}" class="text-stone-600 hover:underline">Inventory</a>
+                            @if ($unitType->isForRent())
+                                <a href="{{ route('admin.unit-types.inventory.index', $unitType) }}" class="text-stone-600 hover:underline">Inventory</a>
+                            @endif
                             <a href="{{ route('admin.unit-types.edit', $unitType) }}" class="ml-3 text-stone-600 hover:underline">Edit</a>
                             <form method="POST" action="{{ route('admin.unit-types.destroy', $unitType) }}" class="inline" onsubmit="return confirm('Delete this unit type?')">
                                 @csrf @method('DELETE')

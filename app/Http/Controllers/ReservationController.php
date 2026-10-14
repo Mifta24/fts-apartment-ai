@@ -91,7 +91,7 @@ class ReservationController extends Controller
         $today = CarbonImmutable::now($apartment->timezone)->startOfDay();
         $until = $today->addDays(self::AVAILABILITY_DAYS);
 
-        $dates = UnitInventory::whereIn('unit_type_id', $apartment->unitTypes()->where('is_active', true)->select('id'))
+        $dates = UnitInventory::whereIn('unit_type_id', $apartment->unitTypes()->forRent()->where('is_active', true)->select('id'))
             ->whereRaw('total_units > booked_units')
             ->whereDate('stay_date', '>=', $today->toDateString())
             ->whereDate('stay_date', '<=', $until->toDateString())
@@ -301,7 +301,7 @@ class ReservationController extends Controller
     {
         $messages = self::MESSAGES[$locale];
 
-        $unitType = $apartment->unitTypes()->where('is_active', true)->where('slug', $data['unit_type_slug'])->first();
+        $unitType = $apartment->unitTypes()->forRent()->where('is_active', true)->where('slug', $data['unit_type_slug'])->first();
 
         if (! $unitType) {
             throw ValidationException::withMessages(['unit_type_slug' => $messages['unit_unknown']]);
@@ -313,6 +313,10 @@ class ReservationController extends Controller
 
         if (! $this->reservations->fitsOccupancy($unitType, (int) $data['adults'], (int) ($data['children'] ?? 0), $units)) {
             throw ValidationException::withMessages(['adults' => $messages['capacity']]);
+        }
+
+        if (! $unitType->offersRental($rentalType)) {
+            throw ValidationException::withMessages(['unit_type_slug' => $messages['rental_not_offered']]);
         }
 
         if ($rentalType === Booking::RENTAL_DAILY) {
@@ -328,10 +332,6 @@ class ReservationController extends Controller
                 'unitType' => $unitType, 'rentalType' => $rentalType, 'leaseMonths' => null,
                 'checkIn' => $checkIn, 'checkOut' => $checkOut, 'units' => $units, 'extraBed' => (bool) ($data['extra_bed'] ?? false),
             ];
-        }
-
-        if (! $unitType->offersRental($rentalType)) {
-            throw ValidationException::withMessages(['unit_type_slug' => $messages['rental_not_offered']]);
         }
 
         $months = (int) $data['lease_months'];
@@ -378,6 +378,7 @@ class ReservationController extends Controller
         $children = (int) ($data['children'] ?? 0);
 
         $alternatives = $apartment->unitTypes()
+            ->forRent()
             ->where('is_active', true)
             ->whereKeyNot($requested->id)
             ->orderBy('sort_order')

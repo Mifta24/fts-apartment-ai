@@ -1,6 +1,7 @@
 @php
+    $unitTypes = $unitTypes->filter(fn ($unitType) => $unitType->isForRent())->values();
     $rentalTypes = array_values(array_filter([
-        'daily',
+        $unitTypes->contains(fn ($unitType) => $unitType->offersDailyRental()) ? 'daily' : null,
         $unitTypes->contains(fn ($unitType) => $unitType->offersMonthlyRental()) ? 'monthly' : null,
         $unitTypes->contains(fn ($unitType) => $unitType->offersYearlyRental()) ? 'yearly' : null,
     ]));
@@ -42,7 +43,7 @@
                     <input type="hidden" name="check_in" required>
                     <input type="hidden" name="check_out">
 
-                    @if (count($rentalTypes) > 1)
+                    @if (count($rentalTypes) > 1 || ($rentalTypes[0] ?? 'daily') !== 'daily')
                         <fieldset class="wizard-rental">
                             <legend>{{ $wizard['rental_title'] }}</legend>
                             <div class="wizard-pills">
@@ -108,7 +109,7 @@
                                     data-max-adults="{{ $unitType->max_adults }}"
                                     data-max-occupancy="{{ $unitType->maxOccupancy() }}"
                                     data-extra-bed="{{ $unitType->extra_bed_available ? 1 : 0 }}"
-                                    data-price-daily="{{ $priceText($unitType->base_price, $labels['per_night']) }}"
+                                    data-price-daily="{{ $unitType->offersDailyRental() ? $priceText($unitType->base_price, $labels['per_night']) : '' }}"
                                     data-price-monthly="{{ $unitType->offersMonthlyRental() ? $priceText($unitType->monthly_price, $labels['per_month']) : '' }}"
                                     data-price-yearly="{{ $unitType->offersYearlyRental() ? $priceText($unitType->yearly_price, $labels['per_year']) : '' }}"
                                 >
@@ -116,7 +117,7 @@
                                     <span class="wizard-unit-body">
                                         <strong>{{ $unitType->translatedName($locale) }}</strong>
                                         <span>{{ str_replace(':count', (string) $unitType->maxOccupancy(), $wizard['fits']) }}</span>
-                                        <span class="wizard-unit-price" data-unit-price>{{ $priceText($unitType->base_price, $labels['per_night']) }}</span>
+                                        <span class="wizard-unit-price" data-unit-price>{{ $unitType->offersDailyRental() ? $priceText($unitType->base_price, $labels['per_night']) : '' }}</span>
                                         <span class="wizard-unit-hint" data-unit-hint></span>
                                     </span>
                                 </label>
