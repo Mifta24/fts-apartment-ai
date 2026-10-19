@@ -35,6 +35,17 @@ class ConciergeService
      */
     private const REPLY_BUDGET_SECONDS = 85;
 
+    /**
+     * What a guest is told when they write in a conversation the team has taken over, by language.
+     *
+     * @var array<string, string>
+     */
+    private const HANDED_OVER_REPLIES = [
+        'en' => 'This conversation is with the apartment team now. A team member will respond shortly.',
+        'id' => 'Percakapan ini sedang ditangani tim apartemen. Salah satu anggota tim akan segera membalas.',
+        'ja' => 'この会話は現在スタッフが対応しています。まもなく担当者が返信します。',
+    ];
+
     private const UNBACKED_DATA_PATTERN = '/(?:rp\.?|idr|usd|jpy|¥|\$)\s?\d|\d[\d.,]*\s?(?:rb|ribu|juta|jt)\b|\[[^\]]+\]/iu';
 
     public function __construct(private readonly ContentGuard $contentGuard) {}
@@ -100,7 +111,7 @@ class ConciergeService
         if ($conversation->isHandedOver()) {
             return $conversation->messages()->create([
                 'role' => ConversationMessage::ROLE_SYSTEM,
-                'content' => 'This conversation is with the apartment team now. A team member will respond shortly.',
+                'content' => self::HANDED_OVER_REPLIES[$conversation->locale] ?? self::HANDED_OVER_REPLIES['en'],
             ]);
         }
 

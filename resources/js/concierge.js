@@ -30,6 +30,8 @@ function initConcierge() {
             open: root.dataset.labelOpen,
             close: root.dataset.labelClose,
             intro: root.dataset.labelIntro,
+            newChatConfirm: root.dataset.labelNewChatConfirm,
+            askUnit: root.dataset.labelAskUnit,
             breakfastIncluded: root.dataset.labelBreakfastIncluded,
             maxGuests: root.dataset.labelMaxGuests,
             unitOnly: root.dataset.labelUnitOnly,
@@ -272,6 +274,7 @@ function initConcierge() {
     // Cloudflare drops a request that is still unanswered after 100s, so give
     // up just before that and let the guest retry instead of waiting forever.
     const API_TIMEOUT_MS = 95000;
+    const CONVERSATION_MAX_IDLE_MS = 7 * 24 * 60 * 60 * 1000;
 
     async function api(url, body) {
         let response;
@@ -856,6 +859,12 @@ function initConcierge() {
             if (!response.ok) throw new Error('history_unavailable');
 
             const data = await response.json();
+            const lastAt = data.messages.at(-1)?.created_at;
+
+            if (data.status !== 'handed_over' && lastAt && Date.now() - Date.parse(lastAt) > CONVERSATION_MAX_IDLE_MS) {
+                localStorage.removeItem(config.storageKey);
+                return boot();
+            }
 
             if (!data.messages.length) {
                 messagesEl.appendChild(bubble('assistant', config.labels.intro));
@@ -887,6 +896,7 @@ function initConcierge() {
      */
     async function startNewChat() {
         if (busy || !ready) return;
+        if (handedOver && !window.confirm(config.labels.newChatConfirm)) return;
 
         ready = false;
         stopPolling();
@@ -903,8 +913,8 @@ function initConcierge() {
         try {
             await boot();
             ready = true;
-        } catch {
-            statusBanner.textContent = root.dataset.labelConnectionError;
+        } catch (err) {
+            statusBanner.textContent = err.status === 429 ? config.labels.slow : root.dataset.labelConnectionError;
             statusBanner.classList.remove('hidden');
             messagesEl.appendChild(bubble('assistant', config.labels.intro));
         } finally {
@@ -933,7 +943,7 @@ function initConcierge() {
             const unitCard = button.closest('[data-unit-card]');
             const unitName = unitCard?.dataset.unitName || '';
             openPanel();
-            sendMessage(`Tell me more about the ${unitName}`);
+            sendMessage(config.labels.askUnit.replace(':unit', unitName));
         });
     });
 
@@ -966,8 +976,8 @@ function initConcierge() {
     boot().then(() => {
         ready = true;
         scrollToBottom();
-    }).catch(() => {
-        statusBanner.textContent = root.dataset.labelConnectionError;
+    }).catch((err) => {
+        statusBanner.textContent = err.status === 429 ? config.labels.slow : root.dataset.labelConnectionError;
         statusBanner.classList.remove('hidden');
         messagesEl.appendChild(bubble('assistant', config.labels.intro));
     }).finally(() => {

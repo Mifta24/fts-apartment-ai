@@ -31,7 +31,7 @@ class AppServiceProvider extends ServiceProvider
      */
     private function configureRateLimiting(): void
     {
-        RateLimiter::for('concierge-start', fn (Request $request) => Limit::perMinute(10)->by('start:'.$request->ip()));
+        RateLimiter::for('concierge-start', fn (Request $request) => Limit::perMinute(30)->by('start:'.$request->ip()));
 
         RateLimiter::for('concierge-message', fn (Request $request) => [
             Limit::perMinute(12)->by('conversation:'.($request->input('guest_token') ?: $request->ip())),

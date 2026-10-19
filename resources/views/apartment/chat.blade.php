@@ -19,6 +19,8 @@
             data-label-open="{{ $labels['chat_open'] }}"
             data-label-close="{{ $labels['chat_close'] }}"
             data-label-new-chat="{{ $labels['chat_new'] }}"
+            data-label-new-chat-confirm="{{ $labels['chat_new_confirm'] }}"
+            data-label-ask-unit="{{ $labels['chat_ask_unit'] }}"
             data-label-intro="{{ $labels['chat_intro'] }}"
             data-label-breakfast-included="{{ $labels['breakfast_included'] }}"
             data-label-max-guests="{{ $labels['max_guests'] }}"

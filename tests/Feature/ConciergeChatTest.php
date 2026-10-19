@@ -421,6 +421,17 @@ class ConciergeChatTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_a_handed_over_conversation_answers_in_the_guests_language(): void
+    {
+        $this->fakeReply();
+        $token = $this->startConversation('id');
+        Conversation::where('guest_token', $token)->update(['status' => Conversation::STATUS_HANDED_OVER]);
+
+        $this->postJson('/demo/concierge/message', ['guest_token' => $token, 'message' => 'Ada kabar?'])
+            ->assertOk()
+            ->assertJsonPath('message.content', 'Percakapan ini sedang ditangani tim apartemen. Salah satu anggota tim akan segera membalas.');
+    }
+
     public function test_messages_are_rate_limited_per_conversation(): void
     {
         $this->fakeReply();
@@ -438,7 +449,7 @@ class ConciergeChatTest extends TestCase
 
     public function test_starting_conversations_is_rate_limited(): void
     {
-        foreach (range(1, 10) as $attempt) {
+        foreach (range(1, 30) as $attempt) {
             $this->postJson('/demo/concierge/start')->assertOk();
         }
 
