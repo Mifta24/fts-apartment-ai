@@ -21,6 +21,13 @@
             data-label-new-chat="{{ $labels['chat_new'] }}"
             data-label-new-chat-confirm="{{ $labels['chat_new_confirm'] }}"
             data-label-ask-unit="{{ $labels['chat_ask_unit'] }}"
+            data-label-rate-up="{{ $labels['chat_rate_up'] }}"
+            data-label-rate-down="{{ $labels['chat_rate_down'] }}"
+            data-label-email="{{ $labels['chat_email'] }}"
+            data-label-email-send="{{ $labels['chat_email_send'] }}"
+            data-label-email-sent="{{ $labels['chat_email_sent'] }}"
+            data-rate-url="{{ route('concierge.rate', $apartment->slug) }}"
+            data-transcript-url="{{ route('concierge.transcript', $apartment->slug) }}"
             data-label-intro="{{ $labels['chat_intro'] }}"
             data-label-breakfast-included="{{ $labels['breakfast_included'] }}"
             data-label-max-guests="{{ $labels['max_guests'] }}"
@@ -81,6 +88,9 @@
                         <p class="chat-log-subtitle">{{ $labels['chat_subtitle'] }}</p>
                         <p data-chat-status class="chat-status" aria-live="polite" hidden></p>
                     </div>
+                    <button type="button" data-chat-email class="chat-log-close chat-log-new" aria-label="{{ $labels['chat_email'] }}" title="{{ $labels['chat_email'] }}">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                    </button>
                     <button type="button" data-chat-new class="chat-log-close chat-log-new" aria-label="{{ $labels['chat_new'] }}" title="{{ $labels['chat_new'] }}">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
                     </button>

@@ -207,6 +207,7 @@ class ConciergeService
         }
 
         $text = trim((string) ($message['content'] ?? ''));
+        $text = $this->inGuestLanguage($text, $messages, $definitions, $deadline, $this->lastGuestMessage($conversation));
 
         if ($this->contentGuard->isOffensive($text)) {
             return $this->refuse($conversation, $this->lastGuestMessage($conversation));
@@ -223,6 +224,37 @@ class ConciergeService
             'ui_payload' => $uiPayloads !== [] ? $uiPayloads : null,
             'tool_calls' => $toolLog !== [] ? $toolLog : null,
         ]);
+    }
+
+    /**
+     * The model sometimes answers in another language than the guest wrote in.
+     * When both languages are clear and differ, asks it once to say the same
+     * thing in the guest's language; the original reply stands if that fails.
+     *
+     * @param  list<array<string, mixed>>  $messages
+     * @param  list<array<string, mixed>>  $definitions
+     */
+    private function inGuestLanguage(string $text, array $messages, array $definitions, float $deadline, string $guestMessage): string
+    {
+        $expected = $this->contentGuard->detectLocale($guestMessage, '');
+        $actual = $this->contentGuard->detectLocale($text, '');
+
+        if ($text === '' || $expected === '' || $actual === '' || $expected === $actual || $deadline - microtime(true) < 15) {
+            return $text;
+        }
+
+        $language = ['id' => 'Bahasa Indonesia', 'en' => 'English', 'ja' => 'Japanese (日本語)'][$expected];
+
+        $messages[] = ['role' => 'assistant', 'content' => $text];
+        $messages[] = ['role' => 'user', 'content' => "[System notice: that reply is in the wrong language. Write exactly the same reply again, entirely in {$language}. Do not call any tool and do not add anything else.]"];
+
+        try {
+            $rewritten = trim((string) ($this->chatCompletion($messages, $definitions, $deadline)['content'] ?? ''));
+        } catch (\Throwable) {
+            return $text;
+        }
+
+        return $rewritten !== '' && $this->contentGuard->detectLocale($rewritten, '') !== $actual ? $rewritten : $text;
     }
 
     /**

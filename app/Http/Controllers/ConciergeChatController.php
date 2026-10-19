@@ -6,11 +6,13 @@ use App\Models\Apartment;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\HandoverRequest;
+use App\Notifications\ChatTranscript;
 use App\Services\Concierge\ConciergeService;
 use App\Services\Concierge\ConversationHandover;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -54,6 +56,7 @@ class ConciergeChatController extends Controller
         $data = $request->validate([
             'guest_token' => ['required', 'uuid'],
             'message' => ['required', 'string', 'max:2000'],
+            'locale' => ['nullable', Rule::in(self::SUPPORTED_LOCALES)],
             'scene' => ['nullable', Rule::in(Conversation::SCENES)],
             'selected_unit' => ['nullable', 'string', 'max:120'],
             'selected_facility' => ['nullable', 'integer', 'min:1'],
@@ -67,6 +70,10 @@ class ConciergeChatController extends Controller
         ]);
 
         $conversation = $this->findConversation($apartment, $data['guest_token']);
+
+        if (filled($data['locale'] ?? null) && $data['locale'] !== $conversation->locale) {
+            $conversation->update(['locale' => $data['locale']]);
+        }
 
         $this->concierge->rememberContext($apartment, $conversation, [
             'scene' => $data['scene'] ?? null,
@@ -125,6 +132,54 @@ class ConciergeChatController extends Controller
         return response()->json(['message' => $this->formatMessage($reply), 'status' => $conversation->status], 201);
     }
 
+    /**
+     * A thumbs up or down on one of the concierge's answers; sending the same
+     * rating again takes it back.
+     */
+    public function rate(Request $request, string $apartmentSlug): JsonResponse
+    {
+        $apartment = $this->publishedApartment($apartmentSlug);
+
+        $data = $request->validate([
+            'guest_token' => ['required', 'uuid'],
+            'message_id' => ['required', 'integer'],
+            'rating' => ['required', Rule::in([ConversationMessage::RATING_UP, ConversationMessage::RATING_DOWN])],
+        ]);
+
+        $conversation = $this->findConversation($apartment, $data['guest_token']);
+
+        $message = $conversation->messages()
+            ->where('role', ConversationMessage::ROLE_ASSISTANT)
+            ->whereKey($data['message_id'])
+            ->firstOrFail();
+
+        $rating = $message->rating === (int) $data['rating'] ? null : (int) $data['rating'];
+        $message->update(['rating' => $rating]);
+
+        return response()->json(['rating' => $rating]);
+    }
+
+    /**
+     * Emails the guest a copy of their conversation.
+     */
+    public function sendTranscript(Request $request, string $apartmentSlug): JsonResponse
+    {
+        $apartment = $this->publishedApartment($apartmentSlug);
+
+        $data = $request->validate([
+            'guest_token' => ['required', 'uuid'],
+            'email' => ['required', 'email', 'max:255'],
+        ]);
+
+        $conversation = $this->findConversation($apartment, $data['guest_token']);
+
+        abort_if($conversation->messages()->where('role', ConversationMessage::ROLE_GUEST)->doesntExist(), 422, 'There is nothing to send yet.');
+
+        Notification::route('mail', $data['email'])->notify(new ChatTranscript($conversation));
+
+        return response()->json(['sent' => true]);
+    }
+
     public function history(Request $request, string $apartmentSlug): JsonResponse
     {
         $apartment = $this->publishedApartment($apartmentSlug);
@@ -174,7 +229,9 @@ class ConciergeChatController extends Controller
     private function formatMessage(ConversationMessage $message): array
     {
         return [
+            'id' => $message->id,
             'role' => $message->role,
+            'rating' => $message->rating,
             'content' => $message->content,
             'ui_payload' => $message->ui_payload,
             'suggested_actions' => $this->suggestedActions($message->ui_payload),

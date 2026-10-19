@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'content',
     'ui_payload',
     'tool_calls',
+    'rating',
 ])]
 class ConversationMessage extends Model
 {
@@ -22,6 +23,10 @@ class ConversationMessage extends Model
     public const ROLE_STAFF = 'staff';
 
     public const ROLE_SYSTEM = 'system';
+
+    public const RATING_UP = 1;
+
+    public const RATING_DOWN = -1;
 
     protected function casts(): array
     {

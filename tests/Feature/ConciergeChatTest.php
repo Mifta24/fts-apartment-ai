@@ -8,10 +8,12 @@ use App\Models\ConversationMessage;
 use App\Models\HandoverRequest;
 use App\Models\UnitType;
 use App\Models\User;
+use App\Notifications\ChatTranscript;
 use App\Notifications\NewHandoverRequest;
 use App\Services\Concierge\ContentGuard;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
@@ -430,6 +432,98 @@ class ConciergeChatTest extends TestCase
         $this->postJson('/demo/concierge/message', ['guest_token' => $token, 'message' => 'Ada kabar?'])
             ->assertOk()
             ->assertJsonPath('message.content', 'Percakapan ini sedang ditangani tim apartemen. Salah satu anggota tim akan segera membalas.');
+    }
+
+    public function test_a_reply_in_the_wrong_language_is_rewritten_once(): void
+    {
+        Http::fake(['llm.test/*' => Http::sequence()
+            ->push($this->completion('Tentu, saya bisa bantu. Apa yang ingin Anda ketahui tentang kamar ini?'))
+            ->push($this->completion('Sure, I can help. What would you like to know about this room?'))]);
+        $token = $this->startConversation();
+
+        $this->postJson('/demo/concierge/message', ['guest_token' => $token, 'message' => 'what can you do for me, and do you have a room?'])
+            ->assertOk()
+            ->assertJsonPath('message.content', 'Sure, I can help. What would you like to know about this room?');
+
+        Http::assertSentCount(2);
+    }
+
+    public function test_a_reply_in_the_right_language_is_left_alone(): void
+    {
+        Http::fake(['llm.test/*' => Http::response($this->completion('Sure, what would you like to know about the room?'))]);
+        $token = $this->startConversation();
+
+        $this->postJson('/demo/concierge/message', ['guest_token' => $token, 'message' => 'what can you do for me, and do you have a room?'])->assertOk();
+
+        Http::assertSentCount(1);
+    }
+
+    public function test_the_page_language_follows_the_guest_when_they_switch_it(): void
+    {
+        $this->fakeReply();
+        $token = $this->startConversation('id');
+
+        $this->postJson('/demo/concierge/message', ['guest_token' => $token, 'message' => 'Hi', 'locale' => 'en'])->assertOk();
+
+        $this->assertSame('en', Conversation::where('guest_token', $token)->value('locale'));
+        $this->postJson('/demo/concierge/message', ['guest_token' => $token, 'message' => 'Hi', 'locale' => 'xx'])->assertUnprocessable();
+    }
+
+    public function test_a_guest_can_rate_an_answer_and_take_the_rating_back(): void
+    {
+        $this->fakeReply();
+        $token = $this->startConversation();
+        $messageId = $this->postJson('/demo/concierge/message', ['guest_token' => $token, 'message' => 'Hi'])->json('message.id');
+
+        $this->postJson('/demo/concierge/rate', ['guest_token' => $token, 'message_id' => $messageId, 'rating' => 1])->assertOk()->assertJsonPath('rating', 1);
+        $this->assertSame(1, ConversationMessage::find($messageId)->rating);
+
+        $this->postJson('/demo/concierge/rate', ['guest_token' => $token, 'message_id' => $messageId, 'rating' => -1])->assertJsonPath('rating', -1);
+        $this->postJson('/demo/concierge/rate', ['guest_token' => $token, 'message_id' => $messageId, 'rating' => -1])->assertJsonPath('rating', null);
+        $this->assertNull(ConversationMessage::find($messageId)->rating);
+    }
+
+    public function test_only_answers_in_the_guests_own_conversation_can_be_rated(): void
+    {
+        $this->fakeReply();
+        $token = $this->startConversation();
+        $other = $this->startConversation();
+        $messageId = $this->postJson('/demo/concierge/message', ['guest_token' => $token, 'message' => 'Hi'])->json('message.id');
+        $guestMessageId = ConversationMessage::where('role', ConversationMessage::ROLE_GUEST)->value('id');
+
+        $this->postJson('/demo/concierge/rate', ['guest_token' => $other, 'message_id' => $messageId, 'rating' => 1])->assertNotFound();
+        $this->postJson('/demo/concierge/rate', ['guest_token' => $token, 'message_id' => $guestMessageId, 'rating' => 1])->assertNotFound();
+        $this->postJson('/demo/concierge/rate', ['guest_token' => $token, 'message_id' => $messageId, 'rating' => 5])->assertUnprocessable();
+    }
+
+    public function test_a_guest_can_email_themselves_the_chat(): void
+    {
+        Notification::fake();
+        $this->fakeReply();
+        $token = $this->startConversation();
+
+        $this->postJson('/demo/concierge/transcript', ['guest_token' => $token, 'email' => 'guest@example.com'])->assertUnprocessable();
+
+        $this->postJson('/demo/concierge/message', ['guest_token' => $token, 'message' => 'Hi'])->assertOk();
+        $this->postJson('/demo/concierge/transcript', ['guest_token' => $token, 'email' => 'not-an-email'])->assertUnprocessable();
+        $this->postJson('/demo/concierge/transcript', ['guest_token' => $token, 'email' => 'guest@example.com'])->assertOk();
+
+        Notification::assertSentOnDemand(ChatTranscript::class, fn ($notification, $channels, $notifiable) => $notifiable->routes['mail'] === 'guest@example.com');
+    }
+
+    public function test_the_emailed_chat_lists_the_conversation_in_the_guests_language(): void
+    {
+        $this->fakeReply('Siap, saya bantu.');
+        $token = $this->startConversation('id');
+        $this->postJson('/demo/concierge/message', ['guest_token' => $token, 'message' => 'Halo'])->assertOk();
+
+        $mail = (new ChatTranscript(Conversation::where('guest_token', $token)->first()))->toMail(new AnonymousNotifiable);
+        $html = (string) $mail->render();
+
+        $this->assertSame('Chat Anda dengan Demo', $mail->subject);
+
+        $this->assertStringContainsString('Anda:', $html);
+        $this->assertStringContainsString('Siap, saya bantu.', $html);
     }
 
     public function test_messages_are_rate_limited_per_conversation(): void

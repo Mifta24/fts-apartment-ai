@@ -20,6 +20,8 @@ function initConcierge() {
         unitUrlTemplate: root.dataset.unitUrl,
         staffUrl: root.dataset.staffUrl,
         leaveUrl: root.dataset.leaveUrl,
+        rateUrl: root.dataset.rateUrl,
+        transcriptUrl: root.dataset.transcriptUrl,
         reservationUrlTemplate: root.dataset.reservationUrl,
         labels: {
             placeholder: root.dataset.labelPlaceholder,
@@ -32,6 +34,11 @@ function initConcierge() {
             intro: root.dataset.labelIntro,
             newChatConfirm: root.dataset.labelNewChatConfirm,
             askUnit: root.dataset.labelAskUnit,
+            rateUp: root.dataset.labelRateUp,
+            rateDown: root.dataset.labelRateDown,
+            email: root.dataset.labelEmail,
+            emailSend: root.dataset.labelEmailSend,
+            emailSent: root.dataset.labelEmailSent,
             breakfastIncluded: root.dataset.labelBreakfastIncluded,
             maxGuests: root.dataset.labelMaxGuests,
             unitOnly: root.dataset.labelUnitOnly,
@@ -96,6 +103,7 @@ function initConcierge() {
     const chatLog = root.querySelector('#concierge-chat-log');
     const closeButton = widget.querySelector('[data-chat-close]');
     const newChatButton = widget.querySelector('[data-chat-new]');
+    const emailButton = widget.querySelector('[data-chat-email]');
     const launcher = widget.querySelector('[data-chat-launcher]');
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
@@ -518,6 +526,7 @@ function initConcierge() {
         if (disabled) stopListening();
         if (launcher) launcher.disabled = busy || !ready;
         if (newChatButton) newChatButton.disabled = busy || !ready;
+        if (emailButton) emailButton.disabled = busy || !ready;
         root.setAttribute('aria-busy', String(busy));
         document.body.classList.toggle('is-thinking', busy);
         if (thinkingIndicator) {
@@ -594,6 +603,7 @@ function initConcierge() {
         } else if (message.role === 'assistant') {
             if (message.content) {
                 messagesEl.appendChild(bubble('assistant', message.content));
+                if (message.id) messagesEl.appendChild(ratingBar(message));
             }
             renderUiPayload(message.ui_payload, { caption: message.content || '', live });
             const chips = actionChips(message.suggested_actions);
@@ -605,6 +615,107 @@ function initConcierge() {
             messagesEl.appendChild(bubble('assistant', message.content));
         }
     }
+
+    /**
+     * Thumbs up / down under an answer. Pressing the active one again takes the rating back.
+     */
+    function ratingBar(message) {
+        const bar = document.createElement('div');
+        bar.className = 'chat-rating';
+
+        const buttons = [[1, '👍', config.labels.rateUp], [-1, '👎', config.labels.rateDown]].map(([value, icon, label]) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'chat-rating-button';
+            button.textContent = icon;
+            button.title = label;
+            button.setAttribute('aria-label', label);
+
+            button.addEventListener('click', async () => {
+                try {
+                    const data = await api(config.rateUrl, {
+                        guest_token: localStorage.getItem(config.storageKey),
+                        message_id: message.id,
+                        rating: value,
+                    });
+                    paint(data.rating);
+                } catch {
+                    // A missed rating is not worth interrupting the chat for.
+                }
+            });
+
+            return { value, button };
+        });
+
+        function paint(rating) {
+            buttons.forEach(({ value, button }) => {
+                button.classList.toggle('is-active', rating === value);
+                button.setAttribute('aria-pressed', String(rating === value));
+            });
+        }
+
+        paint(message.rating ?? null);
+        bar.append(...buttons.map(({ button }) => button));
+
+        return bar;
+    }
+
+    /**
+     * Asks for an email address and sends the guest a copy of this chat.
+     */
+    function showEmailTranscriptForm() {
+        if (messagesEl.querySelector('[data-transcript-form]')) return;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'chat-card p-3 text-sm';
+        wrap.dataset.transcriptForm = '';
+
+        const title = document.createElement('p');
+        title.textContent = config.labels.email;
+
+        const form = document.createElement('form');
+        form.className = 'mt-2 flex flex-wrap gap-2';
+
+        const email = document.createElement('input');
+        email.type = 'email';
+        email.required = true;
+        email.maxLength = 255;
+        email.autocomplete = 'email';
+        email.placeholder = config.labels.leaveEmail;
+        email.setAttribute('aria-label', config.labels.leaveEmail);
+        email.className = 'min-w-0 flex-1 rounded border px-2 py-1 text-sm';
+
+        const send = document.createElement('button');
+        send.type = 'submit';
+        send.className = 'chat-mini-button is-primary';
+        send.textContent = config.labels.emailSend;
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            send.disabled = true;
+
+            try {
+                await api(config.transcriptUrl, { guest_token: localStorage.getItem(config.storageKey), email: email.value.trim() });
+                form.remove();
+                title.textContent = config.labels.emailSent;
+            } catch (err) {
+                send.disabled = false;
+                email.setCustomValidity(err.status === 429 ? config.labels.slow : config.labels.error);
+                email.reportValidity();
+                email.setCustomValidity('');
+            }
+        });
+
+        form.append(email, send);
+        wrap.append(title, form);
+        messagesEl.appendChild(wrap);
+        scrollToBottom();
+        email.focus({ preventScroll: true });
+    }
+
+    emailButton?.addEventListener('click', () => {
+        if (!busy && ready) showEmailTranscriptForm();
+    });
 
     function quickMenuCard() {
         const template = document.querySelector('[data-quick-menu-items]');
@@ -822,7 +933,7 @@ function initConcierge() {
         setBusy(true);
 
         try {
-            const data = await api(config.messageUrl, { guest_token: guestToken, message: text, ...uiContext() });
+            const data = await api(config.messageUrl, { guest_token: guestToken, message: text, locale: config.locale, ...uiContext() });
             renderMessage(data.message, { live: true });
             setChatStatus(config.labels.statusSent, 'sent');
             window.apartmentSound?.play('incoming');
