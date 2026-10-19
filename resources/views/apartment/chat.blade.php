@@ -18,6 +18,7 @@
             data-speech-lang="{{ ['id' => 'id-ID', 'en' => 'en-US', 'ja' => 'ja-JP'][$locale] }}"
             data-label-open="{{ $labels['chat_open'] }}"
             data-label-close="{{ $labels['chat_close'] }}"
+            data-label-new-chat="{{ $labels['chat_new'] }}"
             data-label-intro="{{ $labels['chat_intro'] }}"
             data-label-breakfast-included="{{ $labels['breakfast_included'] }}"
             data-label-max-guests="{{ $labels['max_guests'] }}"
@@ -78,6 +79,9 @@
                         <p class="chat-log-subtitle">{{ $labels['chat_subtitle'] }}</p>
                         <p data-chat-status class="chat-status" aria-live="polite" hidden></p>
                     </div>
+                    <button type="button" data-chat-new class="chat-log-close chat-log-new" aria-label="{{ $labels['chat_new'] }}" title="{{ $labels['chat_new'] }}">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                    </button>
                     <button type="button" data-chat-close class="chat-log-close" aria-label="{{ $labels['chat_close'] }}"><span aria-hidden="true">×</span></button>
                 </header>
 

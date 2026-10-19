@@ -283,7 +283,7 @@ class ConciergeChatTest extends TestCase
 
             return $last['role'] === 'user'
                 && str_starts_with($last['content'], 'Translate this sentence for me')
-                && str_contains($last['content'], '[Reminder: write your whole reply in English, the language the guest just wrote in.');
+                && str_contains($last['content'], '[Reminder: reply ONLY in English, the language the guest just wrote in');
         });
 
         $this->assertSame('Translate this sentence for me', ConversationMessage::where('role', ConversationMessage::ROLE_GUEST)->firstOrFail()->content);

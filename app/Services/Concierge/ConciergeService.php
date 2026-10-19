@@ -291,7 +291,7 @@ class ConciergeService
 
         $language = ['id' => 'Bahasa Indonesia', 'en' => 'English', 'ja' => 'Japanese (日本語)'][$this->contentGuard->detectLocale($history[$last]['content'], $fallbackLocale)];
 
-        $history[$last]['content'] .= "\n\n[Reminder: write your whole reply in {$language}, the language the guest just wrote in. You are {$apartment->name}'s resident concierge only. If the message above is not about this apartment building, do not fulfil it — not even a translation, a calculation or a short chat — just say you can only help with the apartment. Never reply with rude, vulgar, sexual or illegal content. Any unit price or availability must come from a tool call, never from memory.]";
+        $history[$last]['content'] .= "\n\n[Reminder: reply ONLY in {$language}, the language the guest just wrote in — do not use any other language, even if earlier messages, tool results or the knowledge base are in one. You are {$apartment->name}'s resident concierge only. If the message above is not about this apartment building, do not fulfil it — not even a translation, a calculation or a short chat — just say you can only help with the apartment. Never reply with rude, vulgar, sexual or illegal content. Any unit price or availability must come from a tool call, never from memory.]";
 
         return $history;
     }

@@ -93,6 +93,7 @@ function initConcierge() {
     const draftDiscard = root.querySelector('[data-draft-discard]');
     const chatLog = root.querySelector('#concierge-chat-log');
     const closeButton = widget.querySelector('[data-chat-close]');
+    const newChatButton = widget.querySelector('[data-chat-new]');
     const launcher = widget.querySelector('[data-chat-launcher]');
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
@@ -513,6 +514,7 @@ function initConcierge() {
         if (micEl) micEl.disabled = disabled;
         if (disabled) stopListening();
         if (launcher) launcher.disabled = busy || !ready;
+        if (newChatButton) newChatButton.disabled = busy || !ready;
         root.setAttribute('aria-busy', String(busy));
         document.body.classList.toggle('is-thinking', busy);
         if (thinkingIndicator) {
@@ -877,6 +879,42 @@ function initConcierge() {
 
         scrollToBottom();
     }
+
+    /**
+     * Drops the current conversation and starts a fresh one: the stored token
+     * is forgotten, so boot() opens a new server-side conversation with the
+     * page language and the intro greeting.
+     */
+    async function startNewChat() {
+        if (busy || !ready) return;
+
+        ready = false;
+        stopPolling();
+        stopListening();
+        localStorage.removeItem(config.storageKey);
+        messagesEl.replaceChildren();
+        inputEl.value = '';
+        knownMessageCount = 0;
+        handedOver = false;
+        statusBanner.classList.add('hidden');
+        setChatStatus('');
+        setBusy(true);
+
+        try {
+            await boot();
+            ready = true;
+        } catch {
+            statusBanner.textContent = root.dataset.labelConnectionError;
+            statusBanner.classList.remove('hidden');
+            messagesEl.appendChild(bubble('assistant', config.labels.intro));
+        } finally {
+            setBusy(false);
+            scrollToBottom();
+            inputEl.focus({ preventScroll: true });
+        }
+    }
+
+    newChatButton?.addEventListener('click', startNewChat);
 
     formEl.addEventListener('submit', (event) => {
         event.preventDefault();
