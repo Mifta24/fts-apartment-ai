@@ -8,8 +8,8 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('bookings:expire-pending {--hours= : Cancel requests pending longer than this many hours (default: reservation.pending_expiry_hours)}')]
-#[Description('Cancel stay requests nobody answered in time, so they stop holding units.')]
+#[Signature('bookings:expire-pending {--hours= : Cancel applications pending longer than this many hours (default: reservation.pending_expiry_hours)}')]
+#[Description('Cancel rental applications nobody answered in time, so they stop holding units.')]
 class ExpirePendingBookings extends Command
 {
     public function handle(ReservationService $reservations): int
@@ -17,7 +17,7 @@ class ExpirePendingBookings extends Command
         $hours = $this->option('hours') ?? config('reservation.pending_expiry_hours');
 
         if (! filled($hours) || (int) $hours < 1) {
-            $this->info('Pending requests do not expire (BOOKING_PENDING_EXPIRY_HOURS is not set).');
+            $this->info('Pending applications do not expire (BOOKING_PENDING_EXPIRY_HOURS is not set).');
 
             return self::SUCCESS;
         }
@@ -32,7 +32,7 @@ class ExpirePendingBookings extends Command
                 }
             });
 
-        $this->info("Cancelled {$expired} pending request(s) older than {$hours} hours.");
+        $this->info("Cancelled {$expired} pending application(s) older than {$hours} hours.");
 
         return self::SUCCESS;
     }

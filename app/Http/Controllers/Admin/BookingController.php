@@ -8,6 +8,7 @@ use App\Models\Booking;
 use App\Services\Reservation\ReservationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class BookingController extends Controller
@@ -20,7 +21,7 @@ class BookingController extends Controller
     {
         $apartment = $this->currentApartment($request);
 
-        $status = in_array($request->query('status'), [Booking::STATUS_PENDING, Booking::STATUS_CONFIRMED, Booking::STATUS_CANCELLED], true)
+        $status = in_array($request->query('status'), Booking::STATUSES, true)
             ? $request->query('status')
             : null;
 
@@ -40,13 +41,13 @@ class BookingController extends Controller
         abort_if($booking->apartment_id !== $apartment->id, 404);
 
         $data = $request->validate([
-            'status' => ['required', 'in:'.implode(',', [Booking::STATUS_CONFIRMED, Booking::STATUS_CANCELLED])],
+            'status' => ['required', Rule::in(array_diff(Booking::STATUSES, [Booking::STATUS_PENDING]))],
         ]);
 
         if (! $this->reservations->changeStatus($booking, $data['status'])) {
-            return back()->with('error', "Booking {$booking->reference} is {$booking->status} and cannot be marked as {$data['status']}.");
+            return back()->with('error', "Application {$booking->reference} is {$booking->statusLabel()} and cannot be marked as ".Booking::statusName($data['status']).'.');
         }
 
-        return back()->with('status', "Booking {$booking->reference} marked as {$data['status']}.");
+        return back()->with('status', "Application {$booking->reference} marked as ".Booking::statusName($data['status']).'.');
     }
 }

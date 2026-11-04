@@ -74,12 +74,12 @@ class UnitTypeController extends Controller
         abort_if($unitType->apartment_id !== $apartment->id, 404);
 
         $openBookings = $unitType->bookings()
-            ->whereIn('status', [Booking::STATUS_PENDING, Booking::STATUS_CONFIRMED])
+            ->whereIn('status', Booking::HOLDING_STATUSES)
             ->whereDate('check_out', '>=', now($apartment->timezone)->toDateString())
             ->count();
 
         if ($openBookings > 0) {
-            return back()->with('error', "\"{$unitType->name}\" still has {$openBookings} pending or confirmed booking(s). Cancel them first, or hide the unit type instead.");
+            return back()->with('error', "\"{$unitType->name}\" still has {$openBookings} open rental application(s) or lease(s). Reject or cancel them first, or hide the unit type instead.");
         }
 
         $unitType->delete();
@@ -109,10 +109,6 @@ class UnitTypeController extends Controller
             'bed_type_2' => ['nullable', 'string', 'max:50'],
             'bed_count_2' => ['nullable', 'integer', 'min:1'],
             'view_type' => ['nullable', 'string', 'max:50'],
-            'breakfast_included' => ['sometimes', 'boolean'],
-            'extra_bed_available' => ['sometimes', 'boolean'],
-            'extra_bed_price' => ['nullable', 'numeric', 'min:0'],
-            'base_price' => ['nullable', 'numeric', 'min:0'],
             'monthly_price' => ['nullable', 'numeric', 'min:0'],
             'yearly_price' => ['nullable', 'numeric', 'min:0'],
             'sale_price' => ['nullable', 'numeric', 'min:0'],
@@ -158,10 +154,6 @@ class UnitTypeController extends Controller
             'max_children' => $data['max_children'],
             'bed_config' => $bedConfig,
             'view_type' => $data['view_type'] ?? null,
-            'breakfast_included' => $request->boolean('breakfast_included'),
-            'extra_bed_available' => $request->boolean('extra_bed_available'),
-            'extra_bed_price' => $data['extra_bed_price'] ?? null,
-            'base_price' => $data['base_price'] ?? 0,
             'monthly_price' => filled($data['monthly_price'] ?? null) ? $data['monthly_price'] : null,
             'yearly_price' => filled($data['yearly_price'] ?? null) ? $data['yearly_price'] : null,
             'sale_price' => filled($data['sale_price'] ?? null) ? $data['sale_price'] : null,
@@ -181,10 +173,10 @@ class UnitTypeController extends Controller
     {
         $listsForRent = in_array($data['listing_type'], [UnitType::LISTING_RENT, UnitType::LISTING_BOTH], true);
         $listsForSale = in_array($data['listing_type'], [UnitType::LISTING_SALE, UnitType::LISTING_BOTH], true);
-        $hasRentalRate = collect(['base_price', 'monthly_price', 'yearly_price'])->contains(fn (string $field) => (float) ($data[$field] ?? 0) > 0);
+        $hasRentalRate = collect(['monthly_price', 'yearly_price'])->contains(fn (string $field) => (float) ($data[$field] ?? 0) > 0);
 
         if ($listsForRent && ! $hasRentalRate) {
-            throw ValidationException::withMessages(['base_price' => 'Set at least one rental rate (per night, per month or per year), or choose "For sale" only.']);
+            throw ValidationException::withMessages(['monthly_price' => 'Set at least one rental rate (per month or per year), or choose "For sale" only.']);
         }
 
         if ($listsForSale && (float) ($data['sale_price'] ?? 0) <= 0) {

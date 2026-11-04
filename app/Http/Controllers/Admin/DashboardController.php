@@ -44,7 +44,7 @@ class DashboardController extends Controller
                 ->where('created_at', '<', now()->subHours(self::WAITING_HOURS))
                 ->count(),
             'arrivals' => $apartment->bookings()
-                ->where('status', Booking::STATUS_CONFIRMED)
+                ->whereIn('status', [Booking::STATUS_APPROVED, Booking::STATUS_DEPOSIT_PAID])
                 ->whereDate('check_in', '>=', $today->toDateString())
                 ->whereDate('check_in', '<=', $today->copy()->addDays(self::ARRIVAL_DAYS - 1)->toDateString())
                 ->count(),
@@ -55,7 +55,7 @@ class DashboardController extends Controller
         ];
 
         $arrivals = $apartment->bookings()
-            ->where('status', Booking::STATUS_CONFIRMED)
+            ->whereIn('status', [Booking::STATUS_APPROVED, Booking::STATUS_DEPOSIT_PAID])
             ->whereDate('check_in', '>=', $today->toDateString())
             ->whereDate('check_in', '<=', $today->copy()->addDays(self::ARRIVAL_DAYS - 1)->toDateString())
             ->with('unitType')

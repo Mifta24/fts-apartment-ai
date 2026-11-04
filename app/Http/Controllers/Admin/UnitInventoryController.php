@@ -15,8 +15,9 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
- * Where staff open dates for rent and set what a unit costs per night. The
- * concierge and the reservation wizard only ever read this table.
+ * Where staff open dates for rent and set how many units of a type can be
+ * leased. The concierge and the rental application wizard only ever read
+ * this table.
  */
 class UnitInventoryController extends Controller
 {
@@ -59,7 +60,6 @@ class UnitInventoryController extends Controller
             'from' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.$today],
             'to' => ['required', 'date_format:Y-m-d', 'after_or_equal:from'],
             'total_units' => ['required', 'integer', 'min:0', 'max:1000'],
-            'price' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
         ]);
 
         if (CarbonImmutable::parse($data['from'])->diffInDays($data['to']) >= self::MAX_RANGE_DAYS) {
@@ -88,7 +88,6 @@ class UnitInventoryController extends Controller
                 if ($night) {
                     $night->update([
                         'total_units' => $data['total_units'],
-                        'price' => $data['price'] ?? $night->price,
                     ]);
 
                     continue;
@@ -98,7 +97,6 @@ class UnitInventoryController extends Controller
                     'stay_date' => $date->toDateString(),
                     'total_units' => $data['total_units'],
                     'booked_units' => 0,
-                    'price' => $data['price'] ?? $unitType->base_price,
                 ]);
             }
         });

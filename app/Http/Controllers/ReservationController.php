@@ -20,7 +20,7 @@ class ReservationController extends Controller
 {
     private const SUPPORTED_LOCALES = ['id', 'en', 'ja'];
 
-    /** How far ahead the date picker looks for open nights. */
+    /** How far ahead the date picker looks for open move-in days. */
     private const AVAILABILITY_DAYS = 366;
 
     /**
@@ -31,48 +31,48 @@ class ReservationController extends Controller
     public const MESSAGES = [
         'en' => [
             'invalid' => 'Please check this field.',
-            'check_in_past' => 'Check-in cannot be in the past.',
-            'check_out_after' => 'Check-out must be after check-in.',
-            'too_long' => 'Online requests cover up to :max nights. For a longer lease, please contact our leasing team.',
+            'check_in_past' => 'The move-in date cannot be in the past.',
             'unit_unknown' => 'Please choose a unit type.',
             'capacity' => 'This unit does not fit that many residents. Choose a larger unit or add another unit.',
-            'unavailable' => 'This unit type is not available for those dates.',
+            'unavailable' => 'This unit type is not available from that move-in date for that lease term.',
             'contact_email' => 'Please enter a valid email address.',
             'contact_phone' => 'Please enter a valid phone or WhatsApp number.',
-            'chat_received' => 'Your stay request :reference is in. The apartment team will confirm it shortly.',
+            'chat_received' => 'Your rental application :reference is in. The apartment team will review it shortly.',
             'rental_not_offered' => 'This unit is not offered for this kind of rental. Choose another unit or rental type.',
             'lease_term_monthly' => 'Monthly rentals run from :min to :max months. For a year or longer, choose a yearly rental.',
             'lease_term_yearly' => 'Yearly rentals cover whole years, from 1 to :max years.',
+            'viewing_past' => 'The viewing date cannot be in the past.',
+            'viewing_received' => 'Your viewing request :reference is in. The apartment team will confirm the time shortly.',
         ],
         'id' => [
             'invalid' => 'Mohon periksa kolom ini.',
-            'check_in_past' => 'Tanggal check-in tidak boleh di masa lalu.',
-            'check_out_after' => 'Tanggal check-out harus setelah check-in.',
-            'too_long' => 'Permintaan online maksimal :max malam. Untuk sewa lebih lama, hubungi tim leasing kami.',
+            'check_in_past' => 'Tanggal masuk tidak boleh di masa lalu.',
             'unit_unknown' => 'Silakan pilih tipe unit.',
             'capacity' => 'Unit ini tidak cukup untuk jumlah penghuni tersebut. Pilih unit yang lebih besar atau tambah unit.',
-            'unavailable' => 'Tipe unit ini tidak tersedia pada tanggal tersebut.',
+            'unavailable' => 'Tipe unit ini tidak tersedia mulai tanggal masuk dan lama sewa tersebut.',
             'contact_email' => 'Masukkan alamat email yang valid.',
             'contact_phone' => 'Masukkan nomor telepon atau WhatsApp yang valid.',
-            'chat_received' => 'Permintaan sewa :reference sudah masuk. Tim apartemen akan segera mengonfirmasinya.',
+            'chat_received' => 'Pengajuan sewa :reference sudah masuk. Tim apartemen akan segera memeriksanya.',
             'rental_not_offered' => 'Unit ini tidak disewakan dengan jenis sewa tersebut. Pilih unit atau jenis sewa lain.',
             'lease_term_monthly' => 'Sewa bulanan berlaku :min sampai :max bulan. Untuk satu tahun atau lebih, pilih sewa tahunan.',
             'lease_term_yearly' => 'Sewa tahunan dihitung per tahun penuh, mulai 1 sampai :max tahun.',
+            'viewing_past' => 'Tanggal survei tidak boleh di masa lalu.',
+            'viewing_received' => 'Permintaan survei :reference sudah masuk. Tim apartemen akan segera mengonfirmasi jadwalnya.',
         ],
         'ja' => [
             'invalid' => 'この項目をご確認ください。',
             'check_in_past' => '入居日は過去にできません。',
-            'check_out_after' => '退去日は入居日より後にしてください。',
-            'too_long' => 'オンラインでのご依頼は最大:max泊までです。それ以上の長期契約はリーシングチームにご相談ください。',
             'unit_unknown' => 'お部屋タイプを選択してください。',
             'capacity' => 'このお部屋では人数に対応できません。広いお部屋を選ぶか、戸数を増やしてください。',
-            'unavailable' => 'この日程では、このお部屋タイプはご利用いただけません。',
+            'unavailable' => 'この入居日・契約期間では、このお部屋タイプはご利用いただけません。',
             'contact_email' => '有効なメールアドレスを入力してください。',
             'contact_phone' => '有効な電話番号またはWhatsApp番号を入力してください。',
-            'chat_received' => '滞在リクエスト :reference を受け付けました。まもなくスタッフが確認いたします。',
+            'chat_received' => '入居申込 :reference を受け付けました。まもなくスタッフが確認いたします。',
             'rental_not_offered' => 'このお部屋はその契約形態ではご利用いただけません。他のお部屋または契約形態をお選びください。',
             'lease_term_monthly' => '月契約は:min〜:maxか月です。1年以上は年契約をお選びください。',
             'lease_term_yearly' => '年契約は1〜:max年の整数年でご利用いただけます。',
+            'viewing_past' => '内見日は過去にできません。',
+            'viewing_received' => '内見のご希望 :reference を受け付けました。まもなくスタッフが日時を確認いたします。',
         ],
     ];
 
@@ -82,8 +82,8 @@ class ReservationController extends Controller
     ) {}
 
     /**
-     * The nights on which at least one unit type still has a free unit, so
-     * the date picker can grey out the days that are fully booked.
+     * The days on which at least one unit type still has a free unit, so the
+     * date picker can grey out the move-in days that are fully booked.
      */
     public function availability(string $apartmentSlug): JsonResponse
     {
@@ -114,10 +114,10 @@ class ReservationController extends Controller
         $apartment = $this->publishedApartment($apartmentSlug);
         $locale = $this->locale($request, $apartment);
 
-        $data = $request->validate($this->stayRules($apartment, $request), $this->validationMessages($locale));
+        $data = $request->validate($this->stayRules($apartment), $this->validationMessages($locale));
         $stay = $this->resolveStay($apartment, $data, $locale);
 
-        $quote = $this->quoteStay($stay);
+        $quote = $this->reservations->quoteLease($stay['unitType'], $stay['rentalType'], $stay['checkIn'], $stay['leaseMonths'], $stay['units']);
 
         if (! $quote) {
             return $this->unavailable($apartment, $stay['unitType'], $data, $locale);
@@ -125,21 +125,15 @@ class ReservationController extends Controller
 
         return response()->json([
             'available' => true,
-            'rental_type' => $stay['rentalType'],
-            'lease_months' => $stay['leaseMonths'],
-            'check_in' => $stay['checkIn']->toDateString(),
-            'check_out' => $stay['checkOut']->toDateString(),
-            'rate' => $quote['rate'] ?? null,
-            'rate_period' => $quote['rate_period'] ?? null,
-            'monthly_rate' => $quote['monthly_rate'] ?? null,
-            'deposit_months' => $quote['deposit_months'] ?? null,
-            'deposit_total' => $quote['deposit_total'] ?? null,
-            'nights' => $quote['nights'],
-            'unit_total' => $quote['unit_total'],
-            'extra_bed_total' => $quote['extra_bed_total'],
-            'subtotal' => $quote['subtotal'],
-            'discount_percent' => $quote['discount_percent'],
-            'discount_total' => $quote['discount_total'],
+            'rental_type' => $quote['rental_type'],
+            'lease_months' => $quote['lease_months'],
+            'move_in' => $quote['move_in'],
+            'move_out' => $quote['move_out'],
+            'rate' => $quote['rate'],
+            'rate_period' => $quote['rate_period'],
+            'monthly_rate' => $quote['monthly_rate'],
+            'deposit_months' => $quote['deposit_months'],
+            'deposit_total' => $quote['deposit_total'],
             'grand_total' => $quote['grand_total'],
             'currency' => $apartment->currency,
         ]);
@@ -152,7 +146,7 @@ class ReservationController extends Controller
         $messages = self::MESSAGES[$locale];
 
         $data = $request->validate([
-            ...$this->stayRules($apartment, $request),
+            ...$this->stayRules($apartment),
             'guest_name' => ['required', 'string', 'max:100'],
             'contact_type' => ['required', Rule::in(['whatsapp', 'phone', 'email'])],
             'contact_value' => ['required', 'string', 'max:120'],
@@ -160,15 +154,7 @@ class ReservationController extends Controller
             'guest_token' => ['nullable', 'uuid'],
         ], $this->validationMessages($locale));
 
-        $isEmail = $data['contact_type'] === 'email';
-
-        if ($isEmail && ! filter_var($data['contact_value'], FILTER_VALIDATE_EMAIL)) {
-            throw ValidationException::withMessages(['contact_value' => $messages['contact_email']]);
-        }
-
-        if (! $isEmail && ! preg_match(ReservationService::PHONE_PATTERN, $data['contact_value'])) {
-            throw ValidationException::withMessages(['contact_value' => $messages['contact_phone']]);
-        }
+        $isEmail = $this->assertValidContact($data, $messages);
 
         $stay = $this->resolveStay($apartment, $data, $locale);
         $unitType = $stay['unitType'];
@@ -181,11 +167,9 @@ class ReservationController extends Controller
             'rental_type' => $stay['rentalType'],
             'lease_months' => $stay['leaseMonths'],
             'check_in' => $stay['checkIn'],
-            'check_out' => $stay['checkOut'],
             'adults' => (int) $data['adults'],
             'children' => (int) ($data['children'] ?? 0),
             'units' => $stay['units'],
-            'extra_bed' => $stay['extraBed'],
             'guest_name' => $data['guest_name'],
             'guest_email' => $isEmail ? $data['contact_value'] : null,
             'guest_phone' => $isEmail ? null : $data['contact_value'],
@@ -209,10 +193,87 @@ class ReservationController extends Controller
             'deposit_total' => $booking->deposit_total === null ? null : (float) $booking->deposit_total,
             'rental_type' => $booking->rental_type,
             'lease_months' => $booking->lease_months,
-            'check_out' => $booking->check_out->toDateString(),
+            'move_in' => $booking->check_in->toDateString(),
+            'move_out' => $booking->check_out->toDateString(),
             'currency' => $apartment->currency,
             'handover' => $this->handover->forBooking($apartment, $booking, $locale),
         ], 201);
+    }
+
+    /**
+     * A visitor asks to look at a unit in person before applying. Nothing is
+     * held for them; the team confirms the time.
+     */
+    public function storeViewing(Request $request, string $apartmentSlug): JsonResponse
+    {
+        $apartment = $this->publishedApartment($apartmentSlug);
+        $locale = $this->locale($request, $apartment);
+        $messages = self::MESSAGES[$locale];
+
+        $data = $request->validate([
+            'unit_type_slug' => ['required', 'string', 'max:120'],
+            'preferred_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.now($apartment->timezone)->toDateString()],
+            'preferred_time' => ['required', 'date_format:H:i'],
+            'visitor_name' => ['required', 'string', 'max:100'],
+            'contact_type' => ['required', Rule::in(['whatsapp', 'phone', 'email'])],
+            'contact_value' => ['required', 'string', 'max:120'],
+            'notes' => ['nullable', 'string', 'max:500'],
+            'guest_token' => ['nullable', 'uuid'],
+            'locale' => ['nullable', Rule::in(self::SUPPORTED_LOCALES)],
+        ], [...$this->validationMessages($locale), 'after_or_equal' => $messages['viewing_past']]);
+
+        $unitType = $apartment->unitTypes()->where('is_active', true)->where('slug', $data['unit_type_slug'])->first();
+
+        if (! $unitType) {
+            throw ValidationException::withMessages(['unit_type_slug' => $messages['unit_unknown']]);
+        }
+
+        $isEmail = $this->assertValidContact($data, $messages);
+
+        $conversation = isset($data['guest_token'])
+            ? Conversation::where('apartment_id', $apartment->id)->where('guest_token', $data['guest_token'])->first()
+            : null;
+
+        $viewing = $this->reservations->createViewing($apartment, $unitType, [
+            'preferred_date' => $data['preferred_date'],
+            'preferred_time' => $data['preferred_time'],
+            'visitor_name' => $data['visitor_name'],
+            'visitor_email' => $isEmail ? $data['contact_value'] : null,
+            'visitor_phone' => $isEmail ? null : $data['contact_value'],
+            'contact_type' => $data['contact_type'],
+            'locale' => $locale,
+            'notes' => $data['notes'] ?? null,
+        ], $conversation);
+
+        return response()->json([
+            'reference' => $viewing->reference,
+            'status' => $viewing->status,
+            'preferred_date' => $viewing->preferred_date->toDateString(),
+            'preferred_time' => $viewing->preferred_time,
+            'message' => str_replace(':reference', $viewing->reference, $messages['viewing_received']),
+        ], 201);
+    }
+
+    /**
+     * Checks the contact value against the contact type the visitor chose.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<string, string>  $messages
+     * @return bool Whether the contact is an email address.
+     */
+    private function assertValidContact(array $data, array $messages): bool
+    {
+        $isEmail = $data['contact_type'] === 'email';
+
+        if ($isEmail && ! filter_var($data['contact_value'], FILTER_VALIDATE_EMAIL)) {
+            throw ValidationException::withMessages(['contact_value' => $messages['contact_email']]);
+        }
+
+        if (! $isEmail && ! preg_match(ReservationService::PHONE_PATTERN, $data['contact_value'])) {
+            throw ValidationException::withMessages(['contact_value' => $messages['contact_phone']]);
+        }
+
+        return $isEmail;
     }
 
     /**
@@ -232,7 +293,6 @@ class ReservationController extends Controller
                     'name' => $unitType->translatedName($locale),
                     'check_in' => $booking->check_in->toDateString(),
                     'check_out' => $booking->check_out->toDateString(),
-                    'nights' => $booking->check_in->diffInDays($booking->check_out),
                     'rental_type' => $booking->rental_type,
                     'lease_months' => $booking->lease_months,
                     'deposit_total' => $booking->deposit_total === null ? null : (float) $booking->deposit_total,
@@ -248,26 +308,23 @@ class ReservationController extends Controller
     }
 
     /**
-     * A nightly stay is picked as a range of dates; a monthly or yearly rental
-     * as a move-in date and a term in months, and ends on its own.
+     * A rental is picked as a move-in date and a term in months; it ends on
+     * its own at the end of the term.
      *
      * @return array<string, mixed>
      */
-    private function stayRules(Apartment $apartment, Request $request): array
+    private function stayRules(Apartment $apartment): array
     {
         $today = now($apartment->timezone)->toDateString();
-        $isLease = in_array($request->input('rental_type'), [Booking::RENTAL_MONTHLY, Booking::RENTAL_YEARLY], true);
 
         return [
             'unit_type_slug' => ['required', 'string', 'max:120'],
-            'rental_type' => ['nullable', Rule::in(Booking::RENTAL_TYPES)],
+            'rental_type' => ['required', Rule::in(Booking::RENTAL_TYPES)],
             'check_in' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.$today],
-            'check_out' => $isLease ? ['nullable'] : ['required', 'date_format:Y-m-d', 'after:check_in'],
-            'lease_months' => $isLease ? ['required', 'integer', 'min:1', 'max:'.(12 * Apartment::MAX_YEARLY_LEASE_YEARS)] : ['nullable'],
+            'lease_months' => ['required', 'integer', 'min:1', 'max:'.(12 * Apartment::MAX_YEARLY_LEASE_YEARS)],
             'adults' => ['required', 'integer', 'min:1', 'max:20'],
             'children' => ['nullable', 'integer', 'min:0', 'max:10'],
             'units' => ['required', 'integer', 'min:1', 'max:10'],
-            'extra_bed' => ['nullable', 'boolean'],
             'locale' => ['nullable', Rule::in(self::SUPPORTED_LOCALES)],
         ];
     }
@@ -285,17 +342,15 @@ class ReservationController extends Controller
             'integer' => $messages['invalid'],
             'min' => $messages['invalid'],
             'max' => $messages['invalid'],
-            'boolean' => $messages['invalid'],
             'in' => $messages['invalid'],
             'uuid' => $messages['invalid'],
             'after_or_equal' => $messages['check_in_past'],
-            'after' => $messages['check_out_after'],
         ];
     }
 
     /**
      * @param  array<string, mixed>  $data
-     * @return array{unitType: UnitType, rentalType: string, leaseMonths: ?int, checkIn: CarbonImmutable, checkOut: CarbonImmutable, units: int, extraBed: bool}
+     * @return array{unitType: UnitType, rentalType: string, leaseMonths: int, checkIn: CarbonImmutable, checkOut: CarbonImmutable, units: int}
      */
     private function resolveStay(Apartment $apartment, array $data, string $locale): array
     {
@@ -307,9 +362,10 @@ class ReservationController extends Controller
             throw ValidationException::withMessages(['unit_type_slug' => $messages['unit_unknown']]);
         }
 
-        $rentalType = $data['rental_type'] ?? Booking::RENTAL_DAILY;
+        $rentalType = $data['rental_type'];
         $checkIn = CarbonImmutable::parse($data['check_in'])->startOfDay();
         $units = (int) $data['units'];
+        $months = (int) $data['lease_months'];
 
         if (! $this->reservations->fitsOccupancy($unitType, (int) $data['adults'], (int) ($data['children'] ?? 0), $units)) {
             throw ValidationException::withMessages(['adults' => $messages['capacity']]);
@@ -319,23 +375,6 @@ class ReservationController extends Controller
             throw ValidationException::withMessages(['unit_type_slug' => $messages['rental_not_offered']]);
         }
 
-        if ($rentalType === Booking::RENTAL_DAILY) {
-            $checkOut = CarbonImmutable::parse($data['check_out'])->startOfDay();
-
-            if ($checkIn->diffInDays($checkOut) > ReservationService::MAX_NIGHTS) {
-                throw ValidationException::withMessages([
-                    'check_out' => str_replace(':max', (string) ReservationService::MAX_NIGHTS, $messages['too_long']),
-                ]);
-            }
-
-            return [
-                'unitType' => $unitType, 'rentalType' => $rentalType, 'leaseMonths' => null,
-                'checkIn' => $checkIn, 'checkOut' => $checkOut, 'units' => $units, 'extraBed' => (bool) ($data['extra_bed'] ?? false),
-            ];
-        }
-
-        $months = (int) $data['lease_months'];
-
         if (! $this->reservations->isValidLeaseTerm($apartment, $rentalType, $months)) {
             throw ValidationException::withMessages(['lease_months' => $rentalType === Booking::RENTAL_YEARLY
                 ? str_replace(':max', (string) Apartment::MAX_YEARLY_LEASE_YEARS, $messages['lease_term_yearly'])
@@ -344,35 +383,21 @@ class ReservationController extends Controller
 
         return [
             'unitType' => $unitType, 'rentalType' => $rentalType, 'leaseMonths' => $months,
-            'checkIn' => $checkIn, 'checkOut' => $this->reservations->leaseEnd($checkIn, $months), 'units' => $units, 'extraBed' => false,
+            'checkIn' => $checkIn, 'checkOut' => $this->reservations->leaseEnd($checkIn, $months), 'units' => $units,
         ];
     }
 
     /**
-     * @param  array{unitType: UnitType, rentalType: string, leaseMonths: ?int, checkIn: CarbonImmutable, checkOut: CarbonImmutable, units: int, extraBed: bool}  $stay
-     * @return array<string, mixed>|null
-     */
-    private function quoteStay(array $stay): ?array
-    {
-        return $stay['rentalType'] === Booking::RENTAL_DAILY
-            ? $this->reservations->quote($stay['unitType'], $stay['checkIn'], $stay['checkOut'], $stay['units'], $stay['extraBed'])
-            : $this->reservations->quoteLease($stay['unitType'], $stay['rentalType'], $stay['checkIn'], $stay['leaseMonths'], $stay['units']);
-    }
-
-    /**
-     * The unit cannot be booked for those nights: say so, and offer the unit
-     * types that can host the same party on the same dates.
+     * The unit cannot be rented for that lease: say so, and offer the unit
+     * types that can host the same household from the same move-in date.
      *
      * @param  array<string, mixed>  $data
      */
     private function unavailable(Apartment $apartment, UnitType $requested, array $data, string $locale): JsonResponse
     {
         $checkIn = CarbonImmutable::parse($data['check_in'])->startOfDay();
-        $rentalType = $data['rental_type'] ?? Booking::RENTAL_DAILY;
-        $months = (int) ($data['lease_months'] ?? 0);
-        $checkOut = $rentalType === Booking::RENTAL_DAILY
-            ? CarbonImmutable::parse($data['check_out'])->startOfDay()
-            : $this->reservations->leaseEnd($checkIn, $months);
+        $rentalType = $data['rental_type'];
+        $months = (int) $data['lease_months'];
         $units = (int) $data['units'];
         $adults = (int) $data['adults'];
         $children = (int) ($data['children'] ?? 0);
@@ -384,10 +409,8 @@ class ReservationController extends Controller
             ->orderBy('sort_order')
             ->get()
             ->filter(fn (UnitType $unitType) => $this->reservations->fitsOccupancy($unitType, $adults, $children, $units))
-            ->map(function (UnitType $unitType) use ($checkIn, $checkOut, $units, $locale, $rentalType, $months) {
-                $quote = $rentalType === Booking::RENTAL_DAILY
-                    ? $this->reservations->quote($unitType, $checkIn, $checkOut, $units)
-                    : $this->reservations->quoteLease($unitType, $rentalType, $checkIn, $months, $units);
+            ->map(function (UnitType $unitType) use ($checkIn, $units, $locale, $rentalType, $months) {
+                $quote = $this->reservations->quoteLease($unitType, $rentalType, $checkIn, $months, $units);
 
                 return $quote ? [
                     'slug' => $unitType->slug,
