@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Hash;
 
 class DemoApartmentSeeder extends Seeder
 {
-    /** Yearly leases of up to three years need inventory for every night of the lease, so this reaches about three years ahead. */
+    /** Yearly leases of up to three years need inventory for every day of the lease, so this reaches about three years ahead. */
     private const INVENTORY_DAYS = 1100;
 
     public function run(): void
@@ -27,9 +27,9 @@ class DemoApartmentSeeder extends Seeder
         );
 
         $description = [
-            'id' => 'Serviced apartment 32 lantai di Senopati, Jakarta Selatan. Unit siap huni dengan dapur, Wi-Fi fiber, dan housekeeping — untuk menginap mingguan, bulanan, atau lebih lama. 8 menit jalan kaki ke MRT ASEAN.',
-            'en' => 'A 32-storey serviced apartment tower in Senopati, South Jakarta. Fully furnished units with kitchens, fibre Wi-Fi and housekeeping — for weekly, monthly or longer stays. An 8-minute walk to ASEAN MRT station.',
-            'ja' => '南ジャカルタ・スノパティにある32階建てのサービスアパートメント。キッチン、光Wi-Fi、ハウスキーピング付きの家具付きのお部屋を、週単位・月単位・長期でご利用いただけます。MRTアセアン駅まで徒歩8分。',
+            'id' => 'Serviced apartment 32 lantai di Senopati, Jakarta Selatan. Unit siap huni dengan dapur, Wi-Fi fiber, dan housekeeping — untuk disewa bulanan atau tahunan. 8 menit jalan kaki ke MRT ASEAN.',
+            'en' => 'A 32-storey serviced apartment tower in Senopati, South Jakarta. Fully furnished units with kitchens, fibre Wi-Fi and housekeeping — for monthly or yearly leases. An 8-minute walk to ASEAN MRT station.',
+            'ja' => '南ジャカルタ・スノパティにある32階建てのサービスアパートメント。キッチン、光Wi-Fi、ハウスキーピング付きの家具付きのお部屋を、月契約・年契約でご利用いただけます。MRTアセアン駅まで徒歩8分。',
         ];
 
         $apartment = Apartment::updateOrCreate(
@@ -49,10 +49,6 @@ class DemoApartmentSeeder extends Seeder
                 'timezone' => 'Asia/Jakarta',
                 'currency' => 'IDR',
                 'default_locale' => 'id',
-                'check_in_time' => '14:00',
-                'check_out_time' => '12:00',
-                'weekly_discount_percent' => 10,
-                'monthly_discount_percent' => 25,
                 'security_deposit_months' => 2,
                 'min_monthly_lease_months' => 3,
                 'cover_path' => 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1920&q=80',
@@ -85,7 +81,7 @@ class DemoApartmentSeeder extends Seeder
                 ]);
             }
 
-            // Units that are only for sale are not rented, so they hold no nightly stock.
+            // Units that are only for sale are not rented, so they hold no inventory.
             if ($unitType->isForRent()) {
                 $this->seedInventory($unitType, $totalUnits);
             }
@@ -121,10 +117,6 @@ class DemoApartmentSeeder extends Seeder
                 'max_children' => 0,
                 'bed_config' => [['type' => 'queen', 'count' => 1]],
                 'view_type' => 'city',
-                'breakfast_included' => false,
-                'extra_bed_available' => false,
-                'extra_bed_price' => null,
-                'base_price' => 650000,
                 'monthly_price' => 13500000,
                 'yearly_price' => 150000000,
                 'amenities' => ['air_conditioning', 'wifi', 'kitchenette', 'workspace', 'smart_tv', 'smart_lock', 'water_heater'],
@@ -152,10 +144,6 @@ class DemoApartmentSeeder extends Seeder
                 'max_children' => 1,
                 'bed_config' => [['type' => 'king', 'count' => 1]],
                 'view_type' => 'skyline',
-                'breakfast_included' => false,
-                'extra_bed_available' => true,
-                'extra_bed_price' => 150000,
-                'base_price' => 1050000,
                 'monthly_price' => 21000000,
                 'yearly_price' => 235000000,
                 'amenities' => ['air_conditioning', 'wifi', 'full_kitchen', 'washer_dryer', 'workspace', 'living_room', 'balcony', 'smart_tv', 'smart_lock'],
@@ -184,10 +172,6 @@ class DemoApartmentSeeder extends Seeder
                 'max_children' => 2,
                 'bed_config' => [['type' => 'king', 'count' => 1], ['type' => 'twin', 'count' => 2]],
                 'view_type' => 'park',
-                'breakfast_included' => false,
-                'extra_bed_available' => true,
-                'extra_bed_price' => 150000,
-                'base_price' => 1750000,
                 'monthly_price' => 34000000,
                 'yearly_price' => 380000000,
                 'amenities' => ['air_conditioning', 'wifi', 'full_kitchen', 'dishwasher', 'washer_dryer', 'dining_area', 'living_room', 'balcony', 'bathtub', 'smart_tv', 'smart_lock'],
@@ -216,10 +200,6 @@ class DemoApartmentSeeder extends Seeder
                 'max_children' => 2,
                 'bed_config' => [['type' => 'king', 'count' => 1], ['type' => 'queen', 'count' => 1], ['type' => 'twin', 'count' => 2]],
                 'view_type' => 'skyline',
-                'breakfast_included' => false,
-                'extra_bed_available' => true,
-                'extra_bed_price' => 200000,
-                'base_price' => 3400000,
                 'monthly_price' => 62000000,
                 'yearly_price' => 690000000,
                 'amenities' => ['air_conditioning', 'wifi', 'full_kitchen', 'dishwasher', 'washer_dryer', 'dining_area', 'living_room', 'workspace', 'bathtub', 'smart_tv', 'smart_lock', 'private_lift'],
@@ -250,10 +230,6 @@ class DemoApartmentSeeder extends Seeder
                 'max_children' => 0,
                 'bed_config' => [],
                 'view_type' => 'city',
-                'breakfast_included' => false,
-                'extra_bed_available' => false,
-                'extra_bed_price' => null,
-                'base_price' => 0,
                 'monthly_price' => 38000000,
                 'yearly_price' => 420000000,
                 'amenities' => ['air_conditioning', 'wifi', 'workspace', 'smart_lock', 'water_heater'],
@@ -282,10 +258,6 @@ class DemoApartmentSeeder extends Seeder
                 'max_children' => 0,
                 'bed_config' => [],
                 'view_type' => null,
-                'breakfast_included' => false,
-                'extra_bed_available' => false,
-                'extra_bed_price' => null,
-                'base_price' => 0,
                 'monthly_price' => 45000000,
                 'yearly_price' => 500000000,
                 'sale_price' => 4800000000,
@@ -314,10 +286,6 @@ class DemoApartmentSeeder extends Seeder
                 'max_children' => 2,
                 'bed_config' => [['type' => 'king', 'count' => 1], ['type' => 'queen', 'count' => 1]],
                 'view_type' => 'skyline',
-                'breakfast_included' => false,
-                'extra_bed_available' => false,
-                'extra_bed_price' => null,
-                'base_price' => 0,
                 'monthly_price' => null,
                 'yearly_price' => null,
                 'sale_price' => 7900000000,
@@ -338,12 +306,6 @@ class DemoApartmentSeeder extends Seeder
         for ($i = 0; $i < self::INVENTORY_DAYS; $i++) {
             $date = $start->copy()->addDays($i);
 
-            // City apartments fill up with business stays on weeknights, so
-            // weekend nights are the cheaper ones here.
-            $price = $date->isFriday() || $date->isSaturday()
-                ? (float) $unitType->base_price * 0.92
-                : (float) $unitType->base_price;
-
             // Deterministic pseudo-occupancy so the demo shows realistic
             // partial availability instead of every date being wide open.
             $booked = min(($i * 5 + $unitType->id * 3) % ($totalUnits + 1), $totalUnits - 1);
@@ -355,7 +317,6 @@ class DemoApartmentSeeder extends Seeder
                 [
                     'total_units' => $totalUnits,
                     'booked_units' => $booked,
-                    'price' => round($price, -3),
                 ]
             );
         }
@@ -378,41 +339,41 @@ class DemoApartmentSeeder extends Seeder
             ],
             [
                 'category' => ApartmentKnowledgeItem::CATEGORY_POLICIES,
-                'title' => 'Check-in, kartu akses, dan check-out',
-                'body' => 'Check-in mulai pukul 14:00 dan check-out pukul 12:00 di meja concierge lobi yang buka 24 jam. Saat check-in, setiap penghuni dewasa menunjukkan KTP atau paspor dan menerima kartu akses untuk lift dan lantai unitnya. Kehilangan kartu akses dikenakan biaya penggantian Rp100.000.',
+                'title' => 'Proses pindah masuk dan kartu akses',
+                'body' => 'Setelah pengajuan disetujui, deposit dibayar, dan perjanjian sewa ditandatangani, penyewa menerima unit pada tanggal mulai sewa di meja concierge lobi yang buka 24 jam. Setiap penghuni dewasa menunjukkan KTP atau paspor dan menerima kartu akses untuk lift dan lantai unitnya. Kehilangan kartu akses dikenakan biaya penggantian Rp100.000.',
                 'translations' => [
-                    'en' => ['title' => 'Check-in, access cards and check-out', 'body' => 'Check-in is from 2:00 PM and check-out is at 12:00 PM at the 24-hour lobby concierge desk. At check-in every adult resident shows an ID card or passport and receives an access card for the lifts and their unit floor. A lost access card costs IDR 100,000 to replace.'],
-                    'ja' => ['title' => 'チェックイン・アクセスカード・チェックアウト', 'body' => 'チェックインは14:00から、チェックアウトは12:00まで、24時間対応のロビーコンシェルジュデスクで承ります。チェックイン時に大人の入居者全員の身分証またはパスポートを確認し、エレベーターとお部屋のフロア用のアクセスカードをお渡しします。紛失時の再発行は10万ルピアです。'],
+                    'en' => ['title' => 'Move-in process and access cards', 'body' => 'Once the application is approved, the deposit is paid and the lease is signed, the tenant receives the unit on the lease start date at the 24-hour lobby concierge desk. Every adult resident shows an ID card or passport and receives an access card for the lifts and their unit floor. A lost access card costs IDR 100,000 to replace.'],
+                    'ja' => ['title' => '入居の流れとアクセスカード', 'body' => '入居申込が承認され、敷金のお支払いと賃貸借契約の締結が済むと、契約開始日に24時間対応のロビーコンシェルジュデスクでお部屋をお引き渡しします。大人の入居者全員の身分証またはパスポートを確認し、エレベーターとお部屋のフロア用のアクセスカードをお渡しします。紛失時の再発行は10万ルピアです。'],
                 ],
-                'tags' => ['check-in', 'check-out', 'access card', 'kartu akses', 'id'],
+                'tags' => ['move-in', 'access card', 'kartu akses', 'id', 'pindah masuk'],
             ],
             [
                 'category' => ApartmentKnowledgeItem::CATEGORY_POLICIES,
-                'title' => 'Tarif menginap mingguan dan bulanan',
-                'body' => 'Menginap 7 malam atau lebih otomatis mendapat diskon 10%, dan 28 malam atau lebih mendapat diskon 25% dari tarif harian. Untuk tinggal lebih dari 90 malam, pilih sewa bulanan atau tahunan dengan tarif tersendiri; untuk kontrak perusahaan, tim leasing akan membuatkan penawaran khusus.',
+                'title' => 'Proses menyewa unit',
+                'body' => 'Lihat unit di situs ini atau jadwalkan survei ke gedung, lalu ajukan sewa dengan tanggal masuk dan lama sewa. Tim leasing memeriksa pengajuan Anda dan menyetujuinya; setelah itu Anda membayar deposit, menandatangani perjanjian sewa, dan pindah masuk pada tanggal mulai sewa. Untuk kontrak perusahaan, tim leasing akan membuatkan penawaran khusus.',
                 'translations' => [
-                    'en' => ['title' => 'Weekly and monthly rates', 'body' => 'Stays of 7 nights or more automatically get 10% off the nightly rate, and stays of 28 nights or more get 25% off. For stays beyond 90 nights, choose a monthly or yearly rental at its own rent; for corporate leases, our leasing team prepares a tailored quote.'],
-                    'ja' => ['title' => '週単位・月単位の料金', 'body' => '7泊以上のご滞在は1泊料金から自動的に10%、28泊以上は25%割引となります。90泊を超えるご滞在は専用賃料の月契約・年契約をお選びください。法人契約はリーシングチームが個別にお見積もりいたします。'],
+                    'en' => ['title' => 'How renting a unit works', 'body' => 'View a unit on this site or schedule a viewing at the building, then apply with your move-in date and lease length. The leasing team reviews and approves your application; after that you pay the deposit, sign the lease and move in on the lease start date. For corporate leases, our leasing team prepares a tailored quote.'],
+                    'ja' => ['title' => 'お部屋を借りる流れ', 'body' => 'このサイトでお部屋をご覧いただくか、建物の内見をご予約のうえ、入居日と契約期間を指定してお申し込みください。リーシングチームが審査・承認したのち、敷金のお支払い、賃貸借契約の締結を経て、契約開始日に入居いただきます。法人契約はリーシングチームが個別にお見積もりいたします。'],
                 ],
-                'tags' => ['long stay', 'monthly', 'weekly', 'discount', 'bulanan', 'corporate lease'],
+                'tags' => ['rent', 'apply', 'application', 'viewing', 'survei', 'sewa', 'corporate lease'],
             ],
             [
                 'category' => ApartmentKnowledgeItem::CATEGORY_POLICIES,
                 'title' => 'Sewa bulanan dan tahunan, deposit, dan pembayaran',
-                'body' => 'Selain harian, unit dapat disewa bulanan (3 sampai 11 bulan) atau tahunan (1 sampai 3 tahun) dengan tarif sewa tersendiri yang lebih hemat dari tarif harian; sewa tahunan umumnya lebih murah per bulan daripada sewa bulanan. Sewa dibayar di muka sesuai kesepakatan dengan tim leasing. Penyewa membayar deposit keamanan sebesar 2 bulan sewa yang dikembalikan saat masa sewa berakhir, setelah unit diperiksa dan tidak ada tagihan tertunggak. Permintaan sewa di sistem ini belum menjadi kontrak: tim leasing akan menghubungi Anda untuk surat perjanjian sewa dan serah terima unit.',
+                'body' => 'Unit disewa bulanan (3 sampai 11 bulan) atau tahunan (1 sampai 3 tahun) dengan tarif sewa tersendiri; sewa tahunan umumnya lebih murah per bulan daripada sewa bulanan. Sewa dibayar di muka sesuai kesepakatan dengan tim leasing. Penyewa membayar deposit keamanan sebesar 2 bulan sewa yang dikembalikan saat masa sewa berakhir, setelah unit diperiksa dan tidak ada tagihan tertunggak. Pengajuan sewa di sistem ini belum menjadi kontrak: tim leasing akan menghubungi Anda untuk surat perjanjian sewa dan serah terima unit.',
                 'translations' => [
-                    'en' => ['title' => 'Monthly and yearly rentals, deposit and payment', 'body' => 'Besides nightly stays, units can be rented by the month (3 to 11 months) or by the year (1 to 3 years) at their own rent, which is cheaper than the nightly rate; a yearly rental usually costs less per month than a monthly one. Rent is paid in advance as arranged with the leasing team. Tenants pay a security deposit of 2 months of rent, refunded when the lease ends after the unit is inspected and no bills are outstanding. A request made on this site is not a lease yet: the leasing team will contact you for the tenancy agreement and the unit handover.'],
-                    'ja' => ['title' => '月契約・年契約、敷金とお支払い', 'body' => '日単位のご滞在に加え、お部屋ごとの賃料で月契約（3〜11か月）または年契約（1〜3年）もご利用いただけます。日額より割安で、年契約は月契約より月あたりの賃料が低めです。賃料は前払いで、お支払い方法はリーシングチームとご相談のうえ決定します。敷金は賃料2か月分で、契約終了時にお部屋の確認と未払いがないことを確認のうえ返還します。このサイトからのお申し込みはまだ契約ではなく、賃貸契約書の締結とお部屋のお引き渡しについてリーシングチームがご連絡します。'],
+                    'en' => ['title' => 'Monthly and yearly rentals, deposit and payment', 'body' => 'Units are rented by the month (3 to 11 months) or by the year (1 to 3 years) at their own rent; a yearly rental usually costs less per month than a monthly one. Rent is paid in advance as arranged with the leasing team. Tenants pay a security deposit of 2 months of rent, refunded when the lease ends after the unit is inspected and no bills are outstanding. An application made on this site is not a lease yet: the leasing team will contact you for the tenancy agreement and the unit handover.'],
+                    'ja' => ['title' => '月契約・年契約、敷金とお支払い', 'body' => 'お部屋ごとの賃料で、月契約（3〜11か月）または年契約（1〜3年）をご利用いただけます。年契約は月契約より月あたりの賃料が低めです。賃料は前払いで、お支払い方法はリーシングチームとご相談のうえ決定します。敷金は賃料2か月分で、契約終了時にお部屋の確認と未払いがないことを確認のうえ返還します。このサイトからの入居申込はまだ契約ではなく、賃貸契約書の締結とお部屋のお引き渡しについてリーシングチームがご連絡します。'],
                 ],
                 'tags' => ['monthly', 'yearly', 'annual', 'lease', 'deposit', 'bulanan', 'tahunan', 'sewa', 'kontrak', 'deposit keamanan'],
             ],
             [
                 'category' => ApartmentKnowledgeItem::CATEGORY_POLICIES,
                 'title' => 'Listrik, air, dan biaya layanan',
-                'body' => 'Untuk menginap di bawah 28 malam, listrik, air, Wi-Fi, dan housekeeping sudah termasuk dalam tarif. Untuk menginap 28 malam atau lebih, listrik ditagihkan sesuai pemakaian meteran di akhir masa sewa, sedangkan air, Wi-Fi, dan housekeeping tetap sudah termasuk.',
+                'body' => 'Sewa sudah termasuk air, Wi-Fi, dan housekeeping. Listrik ditagihkan sesuai pemakaian meteran setiap bulan.',
                 'translations' => [
-                    'en' => ['title' => 'Electricity, water and service charges', 'body' => 'For stays under 28 nights, electricity, water, Wi-Fi and housekeeping are included in the rate. For stays of 28 nights or more, electricity is billed by meter at the end of the stay, while water, Wi-Fi and housekeeping stay included.'],
-                    'ja' => ['title' => '電気・水道・サービス料', 'body' => '28泊未満のご滞在は、電気・水道・Wi-Fi・ハウスキーピングが料金に含まれます。28泊以上のご滞在では、電気代のみメーターに基づき退去時に精算となり、水道・Wi-Fi・ハウスキーピングは引き続き含まれます。'],
+                    'en' => ['title' => 'Electricity, water and service charges', 'body' => 'Rent includes water, Wi-Fi and housekeeping. Electricity is billed monthly by meter reading.'],
+                    'ja' => ['title' => '電気・水道・サービス料', 'body' => '賃料には水道・Wi-Fi・ハウスキーピングが含まれます。電気代はメーターの使用量に基づき毎月請求します。'],
                 ],
                 'tags' => ['electricity', 'listrik', 'utilities', 'water', 'service charge'],
             ],
@@ -428,11 +389,11 @@ class DemoApartmentSeeder extends Seeder
             ],
             [
                 'category' => ApartmentKnowledgeItem::CATEGORY_POLICIES,
-                'title' => 'Kebijakan pembatalan',
-                'body' => 'Untuk menginap di bawah 28 malam, pembatalan gratis hingga 3 hari sebelum check-in; setelah itu dikenakan biaya satu malam. Untuk menginap 28 malam atau lebih, pembatalan gratis hingga 14 hari sebelum check-in; setelah itu dikenakan biaya 7 malam.',
+                'title' => 'Pembatalan dan pengembalian deposit',
+                'body' => 'Pengajuan sewa dapat dibatalkan tanpa biaya sebelum perjanjian sewa ditandatangani. Setelah deposit dibayar, deposit dikembalikan penuh bila pengajuan dibatalkan paling lambat 14 hari sebelum tanggal mulai sewa; setelahnya, ketentuan dalam perjanjian sewa berlaku.',
                 'translations' => [
-                    'en' => ['title' => 'Cancellation policy', 'body' => 'For stays under 28 nights, cancellation is free up to 3 days before check-in; after that one night is charged. For stays of 28 nights or more, cancellation is free up to 14 days before check-in; after that seven nights are charged.'],
-                    'ja' => ['title' => 'キャンセルポリシー', 'body' => '28泊未満のご滞在はチェックイン3日前まで無料、それ以降は1泊分を頂戴します。28泊以上のご滞在はチェックイン14日前まで無料、それ以降は7泊分を頂戴します。'],
+                    'en' => ['title' => 'Cancellation and deposit refunds', 'body' => 'An application can be cancelled free of charge before the lease is signed. Once the deposit is paid, it is refunded in full if the application is cancelled at least 14 days before the lease start date; after that, the terms of the lease apply.'],
+                    'ja' => ['title' => 'キャンセルと敷金の返金', 'body' => '入居申込は賃貸借契約の締結前であれば無料でキャンセルできます。敷金のお支払い後は、契約開始日の14日前までにキャンセルされた場合は全額返金します。それ以降は賃貸借契約の定めに従います。'],
                 ],
                 'tags' => ['cancellation', 'refund', 'pembatalan'],
             ],
@@ -527,20 +488,20 @@ class DemoApartmentSeeder extends Seeder
             [
                 'category' => ApartmentKnowledgeItem::CATEGORY_FAQ,
                 'title' => 'Apakah boleh membawa hewan peliharaan?',
-                'body' => 'Kucing dan anjing kecil (maksimal 10 kg) diperbolehkan di unit 1 Bedroom Executive dan 2 Bedroom Family untuk menginap 28 malam atau lebih, dengan deposit kebersihan Rp1.500.000 yang dikembalikan saat check-out. Hewan peliharaan tidak boleh masuk area kolam, gym, dan co-working.',
+                'body' => 'Kucing dan anjing kecil (maksimal 10 kg) diperbolehkan di unit 1 Bedroom Executive dan 2 Bedroom Family dengan deposit kebersihan Rp1.500.000 yang dikembalikan saat masa sewa berakhir. Hewan peliharaan tidak boleh masuk area kolam, gym, dan co-working.',
                 'translations' => [
-                    'en' => ['title' => 'Can I bring a pet?', 'body' => 'Cats and small dogs (up to 10 kg) are allowed in 1 Bedroom Executive and 2 Bedroom Family units for stays of 28 nights or more, with a refundable cleaning deposit of IDR 1,500,000. Pets are not allowed in the pool, gym or co-working areas.'],
-                    'ja' => ['title' => 'ペットは同伴できますか？', 'body' => '28泊以上のご滞在で、1ベッドルーム エグゼクティブと2ベッドルーム ファミリーに限り、猫と小型犬（10kgまで）の同伴が可能です。退去時に返金されるクリーニングデポジット150万ルピアを頂戴します。プール・ジム・コワーキングへの立ち入りはできません。'],
+                    'en' => ['title' => 'Can I bring a pet?', 'body' => 'Cats and small dogs (up to 10 kg) are allowed in 1 Bedroom Executive and 2 Bedroom Family units with a refundable cleaning deposit of IDR 1,500,000 returned when the lease ends. Pets are not allowed in the pool, gym or co-working areas.'],
+                    'ja' => ['title' => 'ペットは同伴できますか？', 'body' => '1ベッドルーム エグゼクティブと2ベッドルーム ファミリーに限り、猫と小型犬（10kgまで）の同伴が可能です。退去時に返金されるクリーニングデポジット150万ルピアを頂戴します。プール・ジム・コワーキングへの立ち入りはできません。'],
                 ],
                 'tags' => ['pets', 'cat', 'dog', 'hewan', 'faq'],
             ],
             [
                 'category' => ApartmentKnowledgeItem::CATEGORY_FAQ,
                 'title' => 'Apakah ada deposit?',
-                'body' => 'Untuk menginap di bawah 28 malam tidak ada deposit. Untuk menginap 28 malam atau lebih, deposit sebesar tarif 7 malam dibayarkan saat check-in dan dikembalikan paling lambat 7 hari kerja setelah check-out, dikurangi tagihan listrik dan kerusakan jika ada.',
+                'body' => 'Ya. Penyewa membayar deposit keamanan setelah pengajuan disetujui, dan deposit dikembalikan paling lambat 7 hari kerja setelah masa sewa berakhir, dikurangi tagihan listrik dan kerusakan jika ada. Jumlahnya tertera pada rincian sewa unit.',
                 'translations' => [
-                    'en' => ['title' => 'Is there a deposit?', 'body' => 'Stays under 28 nights need no deposit. For stays of 28 nights or more, a deposit equal to seven nights is paid at check-in and refunded within 7 working days after check-out, minus the electricity bill and any damage.'],
-                    'ja' => ['title' => 'デポジットは必要ですか？', 'body' => '28泊未満のご滞在ではデポジットは不要です。28泊以上の場合は、7泊分のデポジットをチェックイン時にお預かりし、退去後7営業日以内に電気代と損傷があればその分を差し引いて返金します。'],
+                    'en' => ['title' => 'Is there a deposit?', 'body' => 'Yes. Tenants pay a security deposit after the application is approved, refunded within 7 working days after the lease ends, minus the electricity bill and any damage. The amount is shown in the unit\'s rent details.'],
+                    'ja' => ['title' => 'デポジットは必要ですか？', 'body' => 'はい。入居申込の承認後に敷金をお預かりし、契約終了後7営業日以内に電気代と損傷があればその分を差し引いて返金します。金額はお部屋の賃料詳細に表示されます。'],
                 ],
                 'tags' => ['deposit', 'payment', 'faq'],
             ],
