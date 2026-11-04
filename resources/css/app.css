@@ -302,7 +302,7 @@ a.info-fact:hover { border-color: var(--text); }
 .staff-location h3 { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .staff-location p { margin-top: 6px; font-size: 13.5px; color: #3d4452; }
 
-/* Stay request wizard */
+/* Rental application wizard */
 .lobby-content.wizard-panel { bottom: auto; max-height: calc(100dvh - var(--header) - var(--gap) - var(--dock)); }
 @media (max-width: 899px) { .lobby-content.wizard-panel { bottom: var(--dock); } }
 .wizard-dates { display: grid; gap: 12px; max-width: 420px; grid-template-areas: "slots" "cal" "extra"; }
@@ -361,8 +361,6 @@ a.info-fact:hover { border-color: var(--text); }
 .wizard-deposit { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; padding-top: 8px; font-size: 13px; color: var(--muted); }
 .wizard-deposit strong { font-size: 17px; font-weight: 600; color: var(--text); }
 .wizard-hint { grid-column: 1 / -1; font-size: 12.5px; line-height: 1.7; color: var(--muted); }
-.wizard-long-stay { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 4px; background: var(--ink); color: white; font-size: 12.5px; line-height: 1.5; }
-.wizard-long-stay span { display: grid; place-items: center; flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: var(--signal); color: var(--signal-ink); font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
 .wizard-units { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
 .wizard-unit { position: relative; display: block; cursor: pointer; }
 .wizard-unit input { position: absolute; opacity: 0; pointer-events: none; }
@@ -658,7 +656,7 @@ a.info-fact:hover { border-color: var(--text); }
     input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="submit"], [type="button"]), select, textarea { font-size: 16px !important; }
 }
 
-/* Showcase: the concierge presents a unit, a set of options or the stay request form at centre stage */
+/* Showcase: the concierge presents a unit, a set of options or the rental application form at centre stage */
 .stage.is-presenting .stage-image { filter: brightness(.55) saturate(.85); transform: scale(1.035); }
 .stage.is-presenting .stage-character { opacity: 0; transition: opacity .35s ease; }
 .stage.is-presenting .lift-panel, .stage.is-presenting .unit-directory, .stage.is-presenting .lobby-content, .stage.is-presenting .stage-welcome { filter: blur(3px) brightness(.6); pointer-events: none; transition: filter .45s ease; }
@@ -771,7 +769,7 @@ a.info-fact:hover { border-color: var(--text); }
 .showcase-option-actions { display: grid; grid-template-columns: 1fr 1.3fr; gap: 8px; margin-top: auto; padding-top: 10px; }
 .showcase-option-actions .showcase-button { min-height: 40px; padding: 0 10px; font-size: 12.5px; }
 
-/* The stay request form */
+/* The rental application form */
 .showcase-form { display: grid; flex: 1; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); min-height: 0; overflow: hidden; }
 .showcase-form-side { min-width: 0; padding: 20px 18px 20px 20px; overflow-y: auto; border-right: 1px solid var(--steel-line); background: #ffffff06; }
 .showcase-form-photo { position: relative; aspect-ratio: 16 / 10; margin-bottom: 14px; overflow: hidden; border-radius: 6px; background: #080b11; }

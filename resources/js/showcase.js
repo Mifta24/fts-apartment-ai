@@ -1,12 +1,12 @@
 /**
  * Centre stage: when the concierge shows a guest something — one unit, a set
- * of options, the stay request form, a confirmation — the stage dims and the
+ * of options, the rental application form, a confirmation — the stage dims and the
  * thing is presented in the middle of the screen, as if the concierge were
  * holding it up in person. Vanilla JS; the shell lives in chat.blade.php and
  * everything inside it is built here from the AI tools' ui payloads.
  *
- * The form submits to the same reservation endpoint as the stay request
- * wizard, which re-checks price and availability on the server.
+ * The form submits to the same endpoint as the rental application wizard,
+ * which re-checks rent and availability on the server.
  */
 function initShowcase() {
     const root = document.querySelector('[data-showcase]');
@@ -27,7 +27,6 @@ function initShowcase() {
         quoteUrl: app.dataset.quoteUrl,
         reserveUrl: app.dataset.reserveUrl,
         today: app.dataset.today,
-        maxNights: Number(app.dataset.maxNights) || 90,
         minMonths: Number(app.dataset.minMonths) || 1,
         maxMonths: Number(app.dataset.maxMonths) || 11,
         maxYears: Number(app.dataset.maxYears) || 3,
@@ -69,19 +68,6 @@ function initShowcase() {
         return new Intl.DateTimeFormat(config.locale, { day: 'numeric', month: 'long', year: 'numeric' }).format(parseDate(iso));
     }
 
-    function nightsBetween(checkIn, checkOut) {
-        if (!checkIn || !checkOut) return 0;
-        const [y1, m1, d1] = checkIn.split('-').map(Number);
-        const [y2, m2, d2] = checkOut.split('-').map(Number);
-        return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000);
-    }
-
-    function addDays(iso, days) {
-        const date = parseDate(iso);
-        date.setDate(date.getDate() + days);
-        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    }
-
     function layoutLabel(unit) {
         if (unit.bedrooms === undefined || unit.bedrooms === null) return '';
         return Number(unit.bedrooms) === 0 ? L.studio : tpl(L.bedrooms, { count: unit.bedrooms });
@@ -100,9 +86,9 @@ function initShowcase() {
         return Array.from({ length: config.maxMonths - config.minMonths + 1 }, (_, index) => config.minMonths + index);
     }
 
-    /** The ways this unit can be rented: nightly always, monthly and yearly when it has a rent for them. */
+    /** The ways this unit can be rented: monthly and yearly, when it has a rent for them. */
     function rentalTypesOf(unit) {
-        return ['daily', ...(unit.monthly_price ? ['monthly'] : []), ...(unit.yearly_price ? ['yearly'] : [])];
+        return [...(unit.monthly_price ? ['monthly'] : []), ...(unit.yearly_price ? ['yearly'] : [])];
     }
 
     const rentLine = (price, rentalType) => tpl(rentalType === 'yearly' ? L.rent_per_year : L.rent_per_month, { price: money(price) });
@@ -275,12 +261,11 @@ function initShowcase() {
             [L.guests, guests ? tpl(L.residents, { count: guests }) : ''],
             [L.beds, beds],
             [L.view_title, unit.view_type ? tpl(L.view_label, { view: headline(unit.view_type) }) : ''],
-            ['', unit.breakfast_included ? L.breakfast : ''],
         ].filter(([, value]) => value);
     }
 
     function priceBlock(unit) {
-        if (unit.total_price !== undefined && unit.total_price !== null && unit.rental_type && unit.rental_type !== 'daily') {
+        if (unit.total_price !== undefined && unit.total_price !== null && unit.rental_type) {
             return `
                 <div class="showcase-price">
                     <p class="showcase-price-main">${money(unit.total_price)}</p>
@@ -289,29 +274,10 @@ function initShowcase() {
                 </div>`;
         }
 
-        if (unit.total_price !== undefined && unit.total_price !== null) {
-            return `
-                <div class="showcase-price">
-                    <p class="showcase-price-main">${money(unit.total_price)}</p>
-                    <p class="showcase-price-sub">${esc(tpl(L.total_for, { nights: unit.nights }))}${unit.discount_percent > 0 ? ` <b>−${unit.discount_percent}% ${esc(L.discount)}</b>` : ''}</p>
-                </div>`;
-        }
-
         return `
             <div class="showcase-price">
-                <p class="showcase-price-main"><span class="showcase-price-from">${esc(L.from)}</span> ${money(unit.starting_price)} <span class="showcase-price-per">${esc(L.per_night)}</span></p>
-                ${leaseRentLines(unit).map((line) => `<p class="showcase-price-sub">${esc(line)}</p>`).join('')}
+                ${leaseRentLines(unit).map((line, index) => `<p class="${index === 0 ? 'showcase-price-main' : 'showcase-price-sub'}">${esc(line)}</p>`).join('')}
             </div>`;
-    }
-
-    function longStayLine(unit) {
-        const stay = unit.long_stay;
-        if (!stay || !(stay.weekly_discount_percent > 0 || stay.monthly_discount_percent > 0)) return '';
-
-        return `<p class="showcase-longstay"><span aria-hidden="true">%</span>${esc(tpl(L.long_stay, {
-            weekly: stay.weekly_discount_percent, weekly_nights: stay.weekly_from_nights,
-            monthly: stay.monthly_discount_percent, monthly_nights: stay.monthly_from_nights,
-        }))}</p>`;
     }
 
     function galleryMarkup(unit, photos) {
@@ -396,7 +362,6 @@ function initShowcase() {
                         ${facts.length ? `<dl class="showcase-facts">${facts.map(([term, value]) => `<div${term ? '' : ' class="is-wide"'}>${term ? `<dt>${esc(term)}</dt>` : ''}<dd>${esc(value)}</dd></div>`).join('')}</dl>` : ''}
                         ${unit.description ? `<p class="showcase-description">${esc(unit.description)}</p>` : ''}
                         ${amenities.length ? `<p class="showcase-subheading">${esc(L.amenities)}</p><ul class="showcase-amenities">${amenities.map((item) => `<li>${esc(item)}</li>`).join('')}</ul>` : ''}
-                        ${longStayLine(unit)}
                     </div>
                 </div>
                 <footer class="showcase-actions">
@@ -422,15 +387,13 @@ function initShowcase() {
     function presentResults(payload, { caption = '' } = {}) {
         const list = payload?.units || [];
         if (!list.length) return false;
-        const stay = { check_in: payload.check_in, check_out: payload.check_out, adults: payload.adults, children: payload.children, rental_type: payload.rental_type, lease_months: payload.lease_months };
+        const stay = { check_in: payload.check_in, adults: payload.adults, children: payload.children, rental_type: payload.rental_type, lease_months: payload.lease_months };
         list.forEach((unit) => remember({ ...unit, stay }));
 
         mount('results', caption, (body) => {
-            const lease = payload.rental_type && payload.rental_type !== 'daily';
-            const dates = payload.check_in && payload.check_out
-                ? (lease
-                    ? `${shortDate(payload.check_in)} → ${shortDate(payload.check_out)} · ${termLabel(payload.lease_months, payload.rental_type)}`
-                    : tpl(L.results_dates, { in: shortDate(payload.check_in), out: shortDate(payload.check_out), nights: nightsBetween(payload.check_in, payload.check_out) }))
+            const lease = Boolean(payload.rental_type);
+            const dates = payload.check_in && payload.check_out && lease
+                ? `${shortDate(payload.check_in)} → ${shortDate(payload.check_out)} · ${termLabel(payload.lease_months, payload.rental_type)}`
                 : '';
 
             body.innerHTML = `
@@ -455,12 +418,11 @@ function initShowcase() {
                                         <div class="showcase-option-body">
                                             <h3>${esc(unit.name)}</h3>
                                             <p class="showcase-option-facts">${esc(facts)}</p>
-                                            <p class="showcase-option-price">${unit.total_price !== undefined && unit.total_price !== null
-                                                ? `${money(unit.total_price)} <span>${esc(lease ? tpl(L.total_for_term, { term: termLabel(unit.lease_months, unit.rental_type) }) : tpl(L.total_for, { nights: unit.nights }))}</span>`
-                                                : `<span>${esc(L.from)}</span> ${money(unit.starting_price)} <span>${esc(L.per_night)}</span>`}</p>
+                                            ${unit.total_price !== undefined && unit.total_price !== null
+                                                ? `<p class="showcase-option-price">${money(unit.total_price)} <span>${esc(tpl(L.total_for_term, { term: termLabel(unit.lease_months, unit.rental_type) }))}</span></p>`
+                                                : ''}
                                             ${lease && unit.deposit_total ? `<p class="showcase-option-facts">${esc(L.deposit)}: ${money(unit.deposit_total)}</p>` : ''}
-                                            ${!lease && (unit.total_price === undefined || unit.total_price === null) ? leaseRentLines(unit).map((line) => `<p class="showcase-option-facts">${esc(line)}</p>`).join('') : ''}
-                                            ${unit.discount_percent > 0 ? `<p class="showcase-chip">−${unit.discount_percent}% ${esc(L.discount)}</p>` : ''}
+                                            ${unit.total_price === undefined || unit.total_price === null ? leaseRentLines(unit).map((line, index) => `<p class="${index === 0 ? 'showcase-option-price' : 'showcase-option-facts'}">${esc(line)}</p>`).join('') : ''}
                                             <div class="showcase-option-actions">
                                                 <button type="button" class="showcase-button is-ghost" data-view="${esc(unit.unit_type_slug)}">${esc(L.view)}</button>
                                                 <button type="button" class="showcase-button is-primary" data-pick="${esc(unit.unit_type_slug)}">${esc(L.reserve)}</button>
@@ -490,7 +452,7 @@ function initShowcase() {
             }));
             body.querySelectorAll('[data-pick]').forEach((button) => button.addEventListener('click', () => {
                 const unit = units.get(button.dataset.pick);
-                presentForm(unit, { check_in: payload.check_in, check_out: payload.check_out, adults: payload.adults, children: payload.children, rental_type: payload.rental_type, lease_months: payload.lease_months }, { caption: '', backTo: () => presentResults(payload, { caption }) });
+                presentForm(unit, { check_in: payload.check_in, adults: payload.adults, children: payload.children, rental_type: payload.rental_type, lease_months: payload.lease_months }, { caption: '', backTo: () => presentResults(payload, { caption }) });
             }));
             body.querySelector('[data-view]')?.setAttribute('data-showcase-focus', '');
         });
@@ -498,7 +460,7 @@ function initShowcase() {
         return true;
     }
 
-    // --- the stay request form -------------------------------------------
+    // --- the rental application form -------------------------------------------
 
     function presentForm(unit, prefill = {}, { caption = '', backTo = null } = {}) {
         if (!unit) return false;
@@ -508,13 +470,13 @@ function initShowcase() {
         const slug = unit.unit_type_slug;
         const saved = drafts.get(slug) || {};
         const values = {
-            rental_type: 'daily', lease_months: 0, check_in: '', check_out: '', adults: 1, children: 0, units: 1, extra_bed: false,
+            rental_type: 'monthly', lease_months: 0, check_in: '', adults: 1, children: 0, units: 1,
             guest_name: '', contact_type: 'whatsapp', contact_value: '', special_request: '',
             ...saved, ...Object.fromEntries(Object.entries(prefill).filter(([, value]) => value !== undefined && value !== null && value !== '')),
         };
         const photo = photosOf(unit)[0];
         const rentalTypes = rentalTypesOf(unit);
-        if (!rentalTypes.includes(values.rental_type)) values.rental_type = 'daily';
+        if (!rentalTypes.includes(values.rental_type)) values.rental_type = rentalTypes[0] || 'monthly';
 
         mount('form', caption, (body) => {
             body.innerHTML = `
@@ -535,14 +497,12 @@ function initShowcase() {
                                 <fieldset class="showcase-field is-wide">
                                     <legend>${esc(L.rental_title)}</legend>
                                     <div class="showcase-pills">${rentalTypes.map((type) => `<label><input type="radio" name="rental_type" value="${type}" ${values.rental_type === type ? 'checked' : ''}><span>${esc(L[`rental_${type}`])}</span></label>`).join('')}</div>
-                                </fieldset>` : '<input type="hidden" name="rental_type" value="daily">'}
-                            <label class="showcase-field"><span data-check-in-label>${esc(L.check_in)}</span><input type="date" name="check_in" min="${esc(config.today)}" value="${esc(values.check_in)}" required data-showcase-focus></label>
-                            <label class="showcase-field" data-check-out-field><span>${esc(L.check_out)}</span><input type="date" name="check_out" min="${esc(addDays(values.check_in || config.today, 1))}" value="${esc(values.check_out)}" required></label>
-                            <label class="showcase-field" data-term-field hidden><span>${esc(L.term)}</span><select name="lease_months" data-saved-term="${esc(values.lease_months)}"></select></label>
+                                </fieldset>` : `<input type="hidden" name="rental_type" value="${esc(rentalTypes[0] || 'monthly')}">`}
+                            <label class="showcase-field"><span>${esc(L.move_in)}</span><input type="date" name="check_in" min="${esc(config.today)}" value="${esc(values.check_in)}" required data-showcase-focus></label>
+                            <label class="showcase-field"><span>${esc(L.term)}</span><select name="lease_months" data-saved-term="${esc(values.lease_months)}"></select></label>
                             ${stepper('adults', L.adults, values.adults, 1, 20)}
                             ${stepper('children', L.children, values.children, 0, 10)}
                             ${stepper('units', L.units, values.units, 1, 10)}
-                            ${unit.extra_bed_available ? `<label class="showcase-check" data-extra-bed-field><input type="checkbox" name="extra_bed" ${values.extra_bed ? 'checked' : ''}><span>${esc(tpl(L.extra_bed, { price: money(unit.extra_bed_price) }))}</span></label>` : ''}
                             <label class="showcase-field is-wide"><span>${esc(L.name)}</span><input type="text" name="guest_name" value="${esc(values.guest_name)}" maxlength="100" autocomplete="name" required></label>
                             <fieldset class="showcase-field is-wide">
                                 <legend>${esc(L.contact_method)}</legend>
@@ -582,17 +542,13 @@ function initShowcase() {
     function readForm(form) {
         const data = new FormData(form);
 
-        const rentalType = data.get('rental_type') || 'daily';
-
         return {
-            rental_type: rentalType,
-            lease_months: rentalType === 'daily' ? 0 : Number(data.get('lease_months')) || 0,
+            rental_type: data.get('rental_type') || 'monthly',
+            lease_months: Number(data.get('lease_months')) || 0,
             check_in: data.get('check_in') || '',
-            check_out: rentalType === 'daily' ? data.get('check_out') || '' : '',
             adults: Number(data.get('adults')) || 1,
             children: Number(data.get('children')) || 0,
             units: Number(data.get('units')) || 1,
-            extra_bed: rentalType === 'daily' && Boolean(form.elements.extra_bed?.checked),
             guest_name: String(data.get('guest_name') || '').trim(),
             contact_type: data.get('contact_type') || 'whatsapp',
             contact_value: String(data.get('contact_value') || '').trim(),
@@ -641,24 +597,16 @@ function initShowcase() {
             });
         };
 
-        /** Daily rentals pick a date range; leases pick a move-in date and a term. Rebuilds the term list only when the kind of rental changes. */
+        /** Rebuilds the term list only when the kind of rental changes. */
         const applyRental = () => {
-            const rentalType = form.elements.rental_type.value || 'daily';
-            const lease = rentalType !== 'daily';
+            const rentalType = form.elements.rental_type.value || 'monthly';
             const term = form.elements.lease_months;
-
-            body.querySelector('[data-check-out-field]').hidden = lease;
-            body.querySelector('[data-term-field]').hidden = !lease;
-            body.querySelector('[data-check-in-label]').textContent = lease ? L.move_in : L.check_in;
-            form.elements.check_out.required = !lease;
-            const extraBed = body.querySelector('[data-extra-bed-field]');
-            if (extraBed) extraBed.hidden = lease;
 
             if (form.dataset.rental === rentalType) return;
             form.dataset.rental = rentalType;
 
             const wanted = Number(term.value) || Number(term.dataset.savedTerm) || 0;
-            const options = lease ? termOptions(rentalType) : [];
+            const options = termOptions(rentalType);
             term.replaceChildren(...options.map((months) => {
                 const option = document.createElement('option');
                 option.value = months;
@@ -666,15 +614,12 @@ function initShowcase() {
                 return option;
             }));
             if (options.includes(wanted)) term.value = wanted;
-            else if (lease) term.value = rentalType === 'yearly' ? 12 : Math.min(Math.max(config.minMonths, 6), config.maxMonths);
+            else term.value = rentalType === 'yearly' ? 12 : Math.min(Math.max(config.minMonths, 6), config.maxMonths);
         };
 
         const sync = () => {
             applyRental();
             drafts.set(slug, readForm(form));
-            const checkIn = form.elements.check_in.value;
-            form.elements.check_out.min = addDays(checkIn || config.today, 1);
-            if (checkIn && form.elements.check_out.value && form.elements.check_out.value <= checkIn) form.elements.check_out.value = '';
             const contact = form.elements.contact_type.value;
             form.elements.contact_value.type = contact === 'email' ? 'email' : 'tel';
             form.elements.contact_value.inputMode = contact === 'email' ? 'email' : 'tel';
@@ -703,12 +648,9 @@ function initShowcase() {
             clearErrors();
 
             const values = readForm(form);
-            const lease = values.rental_type !== 'daily';
-            const nights = nightsBetween(values.check_in, values.check_out);
 
-            if (!values.check_in || values.check_in < config.today) return fail(lease ? L.need_move_in : L.need_dates, 'check_in');
-            if (lease && !termOptions(values.rental_type).includes(values.lease_months)) return fail(L.need_term, 'lease_months');
-            if (!lease && (nights < 1 || nights > config.maxNights)) return fail(L.need_dates, 'check_out');
+            if (!values.check_in || values.check_in < config.today) return fail(L.need_move_in, 'check_in');
+            if (!termOptions(values.rental_type).includes(values.lease_months)) return fail(L.need_term, 'lease_months');
             if (!values.guest_name) return fail(L.need_name, 'guest_name');
             if (!values.contact_value) return fail(L.need_contact, 'contact_value');
 
@@ -722,7 +664,6 @@ function initShowcase() {
                     headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken || '' },
                     body: JSON.stringify({
                         ...values,
-                        ...(lease ? { check_out: undefined, extra_bed: undefined } : { lease_months: undefined }),
                         unit_type_slug: slug, locale: config.locale, guest_token: safeToken(),
                     }),
                 });
@@ -764,13 +705,9 @@ function initShowcase() {
     function scheduleQuote(body, unit, values) {
         window.clearTimeout(quoteTimer);
         const seq = ++quoteSeq;
-        const lease = values.rental_type !== 'daily';
-        const nights = nightsBetween(values.check_in, values.check_out);
         const panel = body.querySelector('[data-quote]');
 
-        const ready = lease
-            ? values.check_in && values.check_in >= config.today && termOptions(values.rental_type).includes(values.lease_months)
-            : values.check_in && nights >= 1 && values.check_in >= config.today && nights <= config.maxNights;
+        const ready = values.check_in && values.check_in >= config.today && termOptions(values.rental_type).includes(values.lease_months);
 
         if (!ready) {
             panel.innerHTML = `<p class="showcase-quote-hint">${esc(L.pick_dates)}</p>`;
@@ -786,7 +723,7 @@ function initShowcase() {
                     headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken || '' },
                     body: JSON.stringify({
                         unit_type_slug: unit.unit_type_slug, rental_type: values.rental_type, check_in: values.check_in, adults: values.adults, children: values.children, units: values.units, locale: config.locale,
-                        ...(lease ? { lease_months: values.lease_months } : { check_out: values.check_out, extra_bed: values.extra_bed }),
+                        lease_months: values.lease_months,
                     }),
                 });
                 const data = await response.json().catch(() => ({}));
@@ -808,43 +745,30 @@ function initShowcase() {
         const panel = body.querySelector('[data-quote]');
         if (!panel) return;
 
-        if (quote.rental_type && quote.rental_type !== 'daily') {
-            panel.innerHTML = `
-                <dl>
-                    <div><dt>${esc(L.term)}</dt><dd>${esc(termLabel(quote.lease_months, quote.rental_type))}</dd></div>
-                    <div><dt>${esc(L.rent)}</dt><dd>${esc(rentLine(quote.rate, quote.rental_type))}</dd></div>
-                    <div><dt>${esc(L.lease_ends)}</dt><dd>${esc(longDate(quote.check_out))}</dd></div>
-                </dl>
-                <p class="showcase-quote-total"><span>${esc(L.estimated_total)}</span><strong>${money(quote.grand_total)}</strong></p>
-                <dl class="showcase-quote-deposit">
-                    <div><dt>${esc(L.deposit)}</dt><dd>${money(quote.deposit_total)}</dd></div>
-                </dl>
-                <p class="showcase-quote-hint">${esc(L.deposit_hint)}</p>`;
-            return;
-        }
-
         panel.innerHTML = `
             <dl>
-                ${quote.nights ? `<div><dt>${esc(L.nights)}</dt><dd>${quote.nights}</dd></div>` : ''}
-                ${quote.discount_percent > 0 ? `<div><dt>${esc(L.subtotal)}</dt><dd><s>${money(quote.subtotal ?? quote.grand_total)}</s></dd></div><div class="is-discount"><dt>${esc(L.discount)} −${quote.discount_percent}%</dt><dd>−${money(quote.discount_total ?? 0)}</dd></div>` : ''}
+                <div><dt>${esc(L.term)}</dt><dd>${esc(termLabel(quote.lease_months, quote.rental_type))}</dd></div>
+                <div><dt>${esc(L.rent)}</dt><dd>${esc(rentLine(quote.rate, quote.rental_type))}</dd></div>
+                <div><dt>${esc(L.lease_ends)}</dt><dd>${esc(longDate(quote.move_out))}</dd></div>
             </dl>
-            <p class="showcase-quote-total"><span>${esc(L.estimated_total)}</span><strong>${money(quote.grand_total)}</strong></p>`;
+            <p class="showcase-quote-total"><span>${esc(L.estimated_total)}</span><strong>${money(quote.grand_total)}</strong></p>
+            <dl class="showcase-quote-deposit">
+                <div><dt>${esc(L.deposit)}</dt><dd>${money(quote.deposit_total)}</dd></div>
+            </dl>
+            <p class="showcase-quote-hint">${esc(L.deposit_hint)}</p>`;
     }
 
     // --- done ------------------------------------------------------------
 
     function presentDone(unit, values, result) {
-        const checkOut = result.check_out || values.check_out;
-        const nights = nightsBetween(values.check_in, checkOut);
         const booking = {
             booking_reference: result.reference,
             unit_type_slug: unit.unit_type_slug,
             name: unit.name,
             rental_type: result.rental_type || values.rental_type,
             lease_months: result.lease_months || null,
-            check_in: values.check_in,
-            check_out: checkOut,
-            nights,
+            check_in: result.move_in || values.check_in,
+            check_out: result.move_out,
             units: values.units,
             total_price: result.total,
             deposit_total: result.deposit_total ?? null,
@@ -872,10 +796,8 @@ function initShowcase() {
                         <p class="showcase-ticket-status">${esc(L.awaiting)}</p>
                         <dl class="showcase-ticket-rows">
                             <div><dt>${esc(L.unit)}</dt><dd>${esc(booking.name)}${booking.units > 1 ? ` × ${booking.units}` : ''}</dd></div>
-                            ${booking.rental_type && booking.rental_type !== 'daily'
-                                ? `<div><dt>${esc(L[`rental_${booking.rental_type}`])}</dt><dd>${esc(termLabel(booking.lease_months, booking.rental_type))}</dd></div>
-                                   <div><dt>${esc(L.move_in)} → ${esc(L.lease_ends)}</dt><dd>${esc(longDate(booking.check_in))} → ${esc(longDate(booking.check_out))}</dd></div>`
-                                : `<div><dt>${esc(L.check_in)} → ${esc(L.check_out)}</dt><dd>${esc(longDate(booking.check_in))} → ${esc(longDate(booking.check_out))} · ${booking.nights} ${esc(L.nights)}</dd></div>`}
+                            ${booking.lease_months ? `<div><dt>${esc(L[`rental_${booking.rental_type}`])}</dt><dd>${esc(termLabel(booking.lease_months, booking.rental_type))}</dd></div>` : ''}
+                            <div><dt>${esc(L.move_in)} → ${esc(L.lease_ends)}</dt><dd>${esc(longDate(booking.check_in))} → ${esc(longDate(booking.check_out))}</dd></div>
                             ${residents ? `<div><dt>${esc(L.guests)}</dt><dd>${residents}</dd></div>` : ''}
                             <div><dt>${esc(L.estimated_total)}</dt><dd><strong>${money(booking.total_price)}</strong></dd></div>
                             ${booking.deposit_total ? `<div><dt>${esc(L.deposit)}</dt><dd>${money(booking.deposit_total)}</dd></div>` : ''}

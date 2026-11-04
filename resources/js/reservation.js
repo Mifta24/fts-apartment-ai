@@ -1,12 +1,13 @@
 import { createDatePicker } from './date-picker';
 
 /**
- * Guided stay request wizard: five short steps on the leasing floor — dates,
- * residents, unit, contact, summary — for a nightly stay, a monthly lease or a
- * yearly lease (a move-in date plus a term instead of a date range), then a reference number and
- * WhatsApp / phone / email hand-over. Progress survives leaving the page and
- * switching language (sessionStorage), and every rule is enforced again on the
- * server, which is the only source of price and availability.
+ * Guided rental application wizard: five short steps on the leasing floor —
+ * move-in and term, residents, unit, contact, summary — for a monthly or a
+ * yearly lease, then a reference number and WhatsApp / phone / email
+ * hand-over. A visitor can also ask for a viewing of a unit instead. Progress
+ * survives leaving the page and switching language (sessionStorage), and every
+ * rule is enforced again on the server, which is the only source of rent and
+ * availability.
  */
 function initReservationWizard() {
     const root = document.querySelector('[data-wizard]');
@@ -19,7 +20,7 @@ function initReservationWizard() {
     const steps = [...root.querySelectorAll('[data-step]')];
     const progress = [...root.querySelectorAll('[data-progress-step]')];
     const stepLabel = root.querySelector('[data-wizard-step-label]');
-    const nightsHint = root.querySelector('[data-nights-hint]');
+    const leaseHint = root.querySelector('[data-lease-hint]');
     const backButton = root.querySelector('[data-wizard-back]');
     const nextButton = root.querySelector('[data-wizard-next]');
     const submitButton = root.querySelector('[data-wizard-submit]');
@@ -27,18 +28,16 @@ function initReservationWizard() {
     const errorText = root.querySelector('[data-wizard-error-text]');
     const alternativesBox = root.querySelector('[data-wizard-alternatives]');
     const unitOptions = [...root.querySelectorAll('[data-unit-option]')];
-    const extraBedField = root.querySelector('[data-extra-bed-field]');
-    const termField = root.querySelector('[data-term-field]');
     const rentalHint = root.querySelector('[data-rental-hint]');
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
     const config = {
         quoteUrl: root.dataset.quoteUrl,
         submitUrl: root.dataset.submitUrl,
+        viewingUrl: root.dataset.viewingUrl,
         locale: root.dataset.locale,
         currency: root.dataset.currency,
         today: root.dataset.today,
-        maxNights: Number(root.dataset.maxNights),
         minMonths: Number(root.dataset.minMonths) || 1,
         maxMonths: Number(root.dataset.maxMonths) || 11,
         maxYears: Number(root.dataset.maxYears) || 3,
@@ -47,7 +46,7 @@ function initReservationWizard() {
     };
 
     const fieldStep = {
-        rental_type: 1, lease_months: 1, check_in: 1, check_out: 1, adults: 2, children: 2, units: 2, unit_type_slug: 3, extra_bed: 3,
+        rental_type: 1, lease_months: 1, check_in: 1, adults: 2, children: 2, units: 2, unit_type_slug: 3,
         guest_name: 4, contact_type: 4, contact_value: 4, special_request: 4,
     };
 
@@ -55,7 +54,6 @@ function initReservationWizard() {
     let quote = null;
     let busy = false;
 
-    const isLease = () => form.elements.rental_type.value !== 'daily';
     const text = (template, values) => Object.entries(values).reduce((out, [key, value]) => out.replace(`:${key}`, value), template);
     const money = (value) => `${config.currency} ${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(value) || 0)}`;
 
@@ -66,8 +64,7 @@ function initReservationWizard() {
 
     const datePicker = createDatePicker({
         root: root.querySelector('[data-date-picker]'),
-        checkIn: form.elements.check_in,
-        checkOut: form.elements.check_out,
+        moveIn: form.elements.check_in,
         config,
         labels,
         formatDate,
@@ -77,27 +74,17 @@ function initReservationWizard() {
         },
     });
 
-    function nightsBetween(checkIn, checkOut) {
-        if (!checkIn || !checkOut) return 0;
-        const [y1, m1, d1] = checkIn.split('-').map(Number);
-        const [y2, m2, d2] = checkOut.split('-').map(Number);
-        return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000);
-    }
-
     function values() {
         const data = new FormData(form);
-        const rentalType = data.get('rental_type') || 'daily';
 
         return {
-            rental_type: rentalType,
-            lease_months: rentalType === 'daily' ? 0 : Number(data.get('lease_months')) || 0,
+            rental_type: data.get('rental_type') || 'monthly',
+            lease_months: Number(data.get('lease_months')) || 0,
             check_in: data.get('check_in') || '',
-            check_out: rentalType === 'daily' ? data.get('check_out') || '' : '',
             adults: Number(data.get('adults')) || 0,
             children: Number(data.get('children')) || 0,
             units: Number(data.get('units')) || 0,
             unit_type_slug: data.get('unit_type_slug') || '',
-            extra_bed: form.elements.extra_bed.checked && !extraBedField.hidden,
             guest_name: (data.get('guest_name') || '').trim(),
             contact_type: data.get('contact_type') || 'whatsapp',
             contact_value: (data.get('contact_value') || '').trim(),
@@ -128,13 +115,12 @@ function initReservationWizard() {
                 applyRentalType();
                 if (saved.lease_months) form.elements.lease_months.value = saved.lease_months;
             }
-            ['check_in', 'check_out', 'adults', 'children', 'units', 'guest_name', 'contact_value', 'special_request'].forEach((name) => {
+            ['check_in', 'adults', 'children', 'units', 'guest_name', 'contact_value', 'special_request'].forEach((name) => {
                 if (saved[name] !== undefined && saved[name] !== '' && saved[name] !== 0) form.elements[name].value = saved[name];
             });
             if (saved.children === 0) form.elements.children.value = 0;
             if (saved.contact_type) form.elements.contact_type.value = saved.contact_type;
             if (saved.unit_type_slug) form.elements.unit_type_slug.value = saved.unit_type_slug;
-            form.elements.extra_bed.checked = Boolean(saved.extra_bed);
             current = Math.min(Math.max(Number(draft.step) || 1, 1), steps.length);
         } catch { /* ignore a corrupt draft */ }
     }
@@ -195,10 +181,6 @@ function initReservationWizard() {
             option.querySelector('[data-unit-price]').textContent = priceOf(option, party.rental_type);
             if (!suitable && input.checked) input.checked = false;
         });
-
-        const chosen = selectedOption();
-        extraBedField.hidden = party.rental_type !== 'daily' || !chosen || chosen.dataset.extraBed !== '1';
-        if (extraBedField.hidden) form.elements.extra_bed.checked = false;
     }
 
     const termLabel = (months, rentalType) => {
@@ -212,12 +194,11 @@ function initReservationWizard() {
         return Array.from({ length: config.maxMonths - config.minMonths + 1 }, (_, index) => config.minMonths + index);
     }
 
-    /** Shows the picker, hint and term that fit the chosen kind of rental. */
+    /** Shows the hint and the terms that fit the chosen kind of rental. */
     function applyRentalType() {
-        const rentalType = form.elements.rental_type.value || 'daily';
-        const lease = rentalType !== 'daily';
+        const rentalType = form.elements.rental_type.value || 'monthly';
         const previous = Number(form.elements.lease_months.value) || 0;
-        const options = lease ? termOptions(rentalType) : [];
+        const options = termOptions(rentalType);
 
         form.elements.lease_months.replaceChildren(...options.map((months) => {
             const option = document.createElement('option');
@@ -226,11 +207,9 @@ function initReservationWizard() {
             return option;
         }));
         if (options.includes(previous)) form.elements.lease_months.value = previous;
-        else if (lease) form.elements.lease_months.value = rentalType === 'yearly' ? 12 : Math.min(Math.max(config.minMonths, 6), config.maxMonths);
+        else form.elements.lease_months.value = rentalType === 'yearly' ? 12 : Math.min(Math.max(config.minMonths, 6), config.maxMonths);
 
-        termField.hidden = !lease;
         if (rentalHint) rentalHint.textContent = labels[`rental_hint_${rentalType}`] || '';
-        datePicker.setSingle(lease);
     }
 
     function leaseEnd(checkIn, months) {
@@ -240,18 +219,13 @@ function initReservationWizard() {
         return new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth(), Math.min(day, last))).toISOString().slice(0, 10);
     }
 
-    function refreshNights() {
-        const checkIn = form.elements.check_in.value;
-        const nights = nightsBetween(checkIn, form.elements.check_out.value);
+    function refreshHint() {
+        const moveIn = form.elements.check_in.value;
+        const months = Number(form.elements.lease_months.value) || 0;
 
-        if (isLease()) {
-            const months = Number(form.elements.lease_months.value) || 0;
-            if (checkIn && months) nightsHint.textContent = text(labels.lease_ends, { date: formatDate(leaseEnd(checkIn, months)) });
-            else if (!datePicker.hasOpenNights) nightsHint.textContent = labels.cal_none;
-            else nightsHint.textContent = labels.cal_pick_in;
-        } else if (nights > 0) nightsHint.textContent = `${nights} ${labels.nights}`;
-        else if (!datePicker.hasOpenNights) nightsHint.textContent = labels.cal_none;
-        else nightsHint.textContent = checkIn ? labels.cal_pick_out : labels.cal_pick_in;
+        if (moveIn && months) leaseHint.textContent = text(labels.lease_ends, { date: formatDate(leaseEnd(moveIn, months)) });
+        else if (!datePicker.hasOpenDays) leaseHint.textContent = labels.cal_none;
+        else leaseHint.textContent = labels.cal_pick_in;
     }
 
     function validate(step) {
@@ -260,12 +234,7 @@ function initReservationWizard() {
         if (step === 1) {
             if (!data.check_in) return { field: 'check_in', message: labels.cal_pick_in };
             if (data.check_in < config.today) return { field: 'check_in', message: labels.check_in_past };
-            if (data.rental_type !== 'daily') {
-                return termOptions(data.rental_type).includes(data.lease_months) ? null : { field: 'lease_months', message: labels.need_term };
-            }
-            if (!data.check_out) return { field: 'check_out', message: labels.cal_pick_out };
-            if (data.check_out <= data.check_in) return { field: 'check_out', message: labels.check_out_after };
-            if (nightsBetween(data.check_in, data.check_out) > config.maxNights) return { field: 'check_out', message: text(labels.too_long, { max: config.maxNights }) };
+            if (!termOptions(data.rental_type).includes(data.lease_months)) return { field: 'lease_months', message: labels.need_term };
         }
 
         if (step === 2) {
@@ -333,12 +302,8 @@ function initReservationWizard() {
     }
 
     function stayPayload() {
-        const { rental_type, lease_months, check_in, check_out, adults, children, units, unit_type_slug, extra_bed } = values();
-        const lease = rental_type !== 'daily';
-        return {
-            rental_type, check_in, adults, children, units, unit_type_slug, locale: config.locale,
-            ...(lease ? { lease_months } : { check_out, extra_bed }),
-        };
+        const { rental_type, lease_months, check_in, adults, children, units, unit_type_slug } = values();
+        return { rental_type, lease_months, check_in, adults, children, units, unit_type_slug, locale: config.locale };
     }
 
     function handleFailure(result) {
@@ -401,19 +366,16 @@ function initReservationWizard() {
     function renderSummary() {
         const data = values();
         const chosen = selectedOption();
-        const lease = data.rental_type !== 'daily';
-        const nights = nightsBetween(data.check_in, data.check_out);
-        const moveOut = lease ? (quote?.check_out || leaseEnd(data.check_in, data.lease_months)) : data.check_out;
+        const moveOut = quote?.move_out || leaseEnd(data.check_in, data.lease_months);
         const guests = [`${data.adults} ${labels.adults.toLowerCase()}`];
         if (data.children > 0) guests.push(`${data.children} ${labels.children.toLowerCase()}`);
 
-        const unit = `${chosen ? chosen.dataset.name : ''}${data.extra_bed ? ` + ${labels.extra_bed.toLowerCase()}` : ''}`;
         const rows = [
-            ...(lease ? [summaryRow(labels[`rental_${data.rental_type}`], termLabel(data.lease_months, data.rental_type), 1)] : []),
-            summaryRow(labels.dates, `${formatDate(data.check_in)} → ${formatDate(moveOut)}${lease ? '' : ` (${nights} ${labels.nights})`}`, 1),
+            summaryRow(labels[`rental_${data.rental_type}`], termLabel(data.lease_months, data.rental_type), 1),
+            summaryRow(labels.dates, `${formatDate(data.check_in)} → ${formatDate(moveOut)}`, 1),
             summaryRow(labels.guests, `${guests.join(', ')} · ${labels.units}: ${data.units}`, 2),
-            summaryRow(labels.unit, unit, 3),
-            ...(lease && quote ? [summaryRow(labels.rent, text(quote.rate_period === 'year' ? labels.rent_per_year : labels.rent_per_month, { price: money(quote.rate) }), 3)] : []),
+            summaryRow(labels.unit, chosen ? chosen.dataset.name : '', 3),
+            ...(quote ? [summaryRow(labels.rent, text(quote.rate_period === 'year' ? labels.rent_per_year : labels.rent_per_month, { price: money(quote.rate) }), 3)] : []),
             summaryRow(labels.contact, `${data.guest_name} · ${labels[data.contact_type]}: ${data.contact_value}`, 4),
         ];
         if (data.special_request) rows.push(summaryRow(labels.special, data.special_request, 4));
@@ -422,18 +384,10 @@ function initReservationWizard() {
         root.querySelector('[data-summary-total]').textContent = quote ? money(quote.grand_total) : '';
 
         const deposit = root.querySelector('[data-summary-deposit]');
-        const hasDeposit = Boolean(quote && lease && quote.deposit_total > 0);
+        const hasDeposit = Boolean(quote && quote.deposit_total > 0);
         deposit.hidden = !hasDeposit;
         root.querySelector('[data-summary-deposit-hint]').hidden = !hasDeposit;
         if (hasDeposit) deposit.querySelector('[data-summary-deposit-amount]').textContent = money(quote.deposit_total);
-
-        const discount = root.querySelector('[data-summary-discount]');
-        const hasDiscount = Boolean(quote && quote.discount_percent > 0);
-        discount.hidden = !hasDiscount;
-        if (hasDiscount) {
-            discount.querySelector('[data-summary-discount-percent]').textContent = `−${quote.discount_percent}%`;
-            discount.querySelector('[data-summary-discount-amount]').textContent = `−${money(quote.discount_total)}`;
-        }
     }
 
     function showDone(result) {
@@ -498,7 +452,7 @@ function initReservationWizard() {
         done.hidden = true;
         flow.hidden = false;
         clearDraft();
-        refreshNights();
+        refreshHint();
         showStep(1, true);
     }
 
@@ -514,13 +468,61 @@ function initReservationWizard() {
         }
     }
 
-    form.addEventListener('input', () => { refreshNights(); if (current <= 3) refreshUnits(); saveDraft(); });
+    /** The "see it first" form: a visitor asks for a time to look at a unit, without applying. */
+    function initViewing() {
+        const panel = root.querySelector('[data-viewing]');
+        if (!panel) return;
+
+        const viewingForm = panel.querySelector('[data-viewing-form]');
+        const message = panel.querySelector('[data-viewing-message]');
+        const submitViewing = viewingForm.querySelector('[type="submit"]');
+        viewingForm.elements.preferred_date.min = config.today;
+
+        const show = (text, ok = false) => {
+            message.textContent = text;
+            message.hidden = false;
+            message.classList.toggle('is-ok', ok);
+        };
+
+        viewingForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            message.hidden = true;
+            const data = Object.fromEntries(new FormData(viewingForm));
+            const valid = data.contact_type === 'email'
+                ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contact_value)
+                : /^\+?[0-9\s\-().]{6,20}$/.test(data.contact_value);
+
+            if (!data.unit_type_slug || !data.preferred_date || !data.preferred_time || !data.visitor_name.trim()) return show(labels.invalid);
+            if (data.preferred_date < config.today) return show(labels.viewing_past);
+            if (!valid) return show(data.contact_type === 'email' ? labels.contact_email : labels.contact_phone);
+
+            submitViewing.disabled = true;
+            try {
+                const result = await post(config.viewingUrl, { ...data, locale: config.locale, guest_token: localStorage.getItem(config.tokenKey) || undefined });
+                if (result.ok) {
+                    viewingForm.reset();
+                    show(result.body.message, true);
+                } else {
+                    const [first] = Object.values(result.body.errors || {});
+                    show(first ? first[0] : labels.error_generic);
+                }
+            } catch {
+                show(labels.error_network);
+            } finally {
+                submitViewing.disabled = false;
+            }
+        });
+
+        if (root.dataset.preselectUnit) viewingForm.elements.unit_type_slug.value = root.dataset.preselectUnit;
+    }
+
+    form.addEventListener('input', () => { refreshHint(); if (current <= 3) refreshUnits(); saveDraft(); });
     form.addEventListener('change', (event) => {
         if (event.target.name === 'rental_type') {
             applyRentalType();
             clearError();
         }
-        refreshNights();
+        refreshHint();
         refreshUnits();
         saveDraft();
     });
@@ -535,19 +537,20 @@ function initReservationWizard() {
         }
     });
 
+    initViewing();
     applyRentalType();
     restoreDraft();
     datePicker.show();
-    refreshNights();
+    refreshHint();
 
     if (root.dataset.availabilityUrl) {
         fetch(root.dataset.availabilityUrl, { headers: { Accept: 'application/json' } })
             .then((response) => (response.ok ? response.json() : Promise.reject(new Error('availability unavailable'))))
             .then((availability) => {
                 datePicker.setAvailability(availability.dates);
-                refreshNights();
+                refreshHint();
             })
-            .catch(() => { /* the server still checks every night when the guest continues */ });
+            .catch(() => { /* the server still checks every day when the applicant continues */ });
     }
 
     refreshUnits();
