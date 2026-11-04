@@ -9,7 +9,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * Tells a guest their stay request arrived. It is not a confirmation yet.
+ * Tells an applicant their rental application arrived. It is not an approval yet.
  */
 class BookingRequestReceived extends Notification implements ShouldQueue
 {
@@ -51,21 +51,21 @@ class BookingRequestReceived extends Notification implements ShouldQueue
     {
         return [
             'en' => [
-                'subject' => 'We received your stay request %s',
+                'subject' => 'We received your rental application %s',
                 'greeting' => 'Hello %s,',
-                'intro' => 'Thank you for your request at %s. Our team will check it and reply shortly. This is not a confirmation yet.',
+                'intro' => 'Thank you for applying at %s. Our team will review your application and reply shortly. This is not an approval yet.',
                 'next' => 'Keep your reference handy if you contact us.',
             ],
             'ja' => [
-                'subject' => '入居リクエストを受け付けました %s',
+                'subject' => '入居申込を受け付けました %s',
                 'greeting' => '%s 様',
-                'intro' => '%s へのリクエストありがとうございます。スタッフが確認のうえ、まもなくご連絡します。まだ確定ではありません。',
-                'next' => 'お問い合わせの際は予約番号をお知らせください。',
+                'intro' => '%s へのお申込みありがとうございます。スタッフが審査のうえ、まもなくご連絡します。まだ承認ではありません。',
+                'next' => 'お問い合わせの際は申込番号をお知らせください。',
             ],
             'id' => [
-                'subject' => 'Permintaan sewa %s kami terima',
+                'subject' => 'Pengajuan sewa %s kami terima',
                 'greeting' => 'Halo %s,',
-                'intro' => 'Terima kasih atas permintaan Anda di %s. Tim kami akan memeriksanya dan segera membalas. Ini belum merupakan konfirmasi.',
+                'intro' => 'Terima kasih telah mengajukan sewa di %s. Tim kami akan memeriksa pengajuan Anda dan segera membalas. Ini belum merupakan persetujuan.',
                 'next' => 'Simpan nomor referensi ini bila Anda menghubungi kami.',
             ],
         ][$locale] ?? $this->copy('en');

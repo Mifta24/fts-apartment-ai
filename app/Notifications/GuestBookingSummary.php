@@ -5,7 +5,7 @@ namespace App\Notifications;
 use App\Models\Booking;
 
 /**
- * The few lines every guest email repeats about the stay, in the guest's language.
+ * The few lines every applicant email repeats about the rental, in the applicant's language.
  */
 class GuestBookingSummary
 {
@@ -17,9 +17,9 @@ class GuestBookingSummary
         $booking->loadMissing(['apartment', 'unitType']);
 
         $labels = match ($locale) {
-            'ja' => ['予約番号', 'お部屋', '入居日', '退去日', '人数', '合計', '契約形態', '敷金（返還）'],
-            'id' => ['Referensi', 'Unit', 'Check-in', 'Check-out', 'Penghuni', 'Total', 'Jenis sewa', 'Deposit (dikembalikan)'],
-            default => ['Reference', 'Unit', 'Move-in', 'Move-out', 'Residents', 'Total', 'Rental', 'Security deposit (refundable)'],
+            'ja' => ['申込番号', 'お部屋', '入居日', '契約終了日', '入居人数', '賃料合計', '契約形態', '敷金（返還）'],
+            'id' => ['Referensi', 'Unit', 'Tanggal masuk', 'Sewa berakhir', 'Penghuni', 'Total sewa', 'Jenis sewa', 'Deposit (dikembalikan)'],
+            default => ['Reference', 'Unit', 'Move-in', 'Lease ends', 'Residents', 'Total rent', 'Rental', 'Security deposit (refundable)'],
         };
 
         $money = fn ($value) => "{$booking->apartment->currency} ".number_format((float) $value, 0, ',', '.');
