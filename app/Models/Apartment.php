@@ -29,10 +29,6 @@ use Illuminate\Support\Str;
     'timezone',
     'currency',
     'default_locale',
-    'check_in_time',
-    'check_out_time',
-    'weekly_discount_percent',
-    'monthly_discount_percent',
     'security_deposit_months',
     'min_monthly_lease_months',
     'logo_path',
@@ -42,12 +38,6 @@ use Illuminate\Support\Str;
 class Apartment extends Model
 {
     use HasFactory, SoftDeletes;
-
-    /** Stays of at least this many nights get the weekly rate. */
-    public const WEEKLY_STAY_NIGHTS = 7;
-
-    /** Stays of at least this many nights get the monthly rate. */
-    public const MONTHLY_STAY_NIGHTS = 28;
 
     /** A monthly rental covers up to this many months; a full year or more is a yearly rental. */
     public const MAX_MONTHLY_LEASE_MONTHS = 11;
@@ -61,23 +51,9 @@ class Apartment extends Model
             'translations' => 'array',
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
-            'weekly_discount_percent' => 'integer',
-            'monthly_discount_percent' => 'integer',
             'security_deposit_months' => 'integer',
             'min_monthly_lease_months' => 'integer',
         ];
-    }
-
-    /**
-     * The long-stay discount a stay of this length earns, in percent.
-     */
-    public function longStayDiscountPercent(int $nights): int
-    {
-        return match (true) {
-            $nights >= self::MONTHLY_STAY_NIGHTS && $this->monthly_discount_percent > 0 => $this->monthly_discount_percent,
-            $nights >= self::WEEKLY_STAY_NIGHTS && $this->weekly_discount_percent > 0 => $this->weekly_discount_percent,
-            default => 0,
-        };
     }
 
     public function users(): BelongsToMany
@@ -114,6 +90,11 @@ class Apartment extends Model
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    public function viewingRequests(): HasMany
+    {
+        return $this->hasMany(ViewingRequest::class);
     }
 
     public function translatedDescription(string $locale): ?string

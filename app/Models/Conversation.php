@@ -75,7 +75,7 @@ class Conversation extends Model
 
     /**
      * Where to reach a guest who left the chat: the address they gave the
-     * concierge, or failing that the one on their latest stay request.
+     * concierge, or failing that the one on their latest rental application.
      */
     public function guestEmail(): ?string
     {

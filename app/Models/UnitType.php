@@ -27,8 +27,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'bed_config',
     'view_type',
     'breakfast_included',
-    'extra_bed_available',
-    'extra_bed_price',
     'base_price',
     'monthly_price',
     'yearly_price',
@@ -74,8 +72,6 @@ class UnitType extends Model
             'bed_config' => 'array',
             'amenities' => 'array',
             'breakfast_included' => 'boolean',
-            'extra_bed_available' => 'boolean',
-            'extra_bed_price' => 'decimal:2',
             'base_price' => 'decimal:2',
             'monthly_price' => 'decimal:2',
             'yearly_price' => 'decimal:2',
@@ -135,11 +131,6 @@ class UnitType extends Model
         return $this->isForSale() && $this->sale_price !== null && (float) $this->sale_price > 0;
     }
 
-    public function offersDailyRental(): bool
-    {
-        return $this->isForRent() && $this->base_price !== null && (float) $this->base_price > 0;
-    }
-
     public function offersMonthlyRental(): bool
     {
         return $this->isForRent() && $this->monthly_price !== null && (float) $this->monthly_price > 0;
@@ -153,11 +144,11 @@ class UnitType extends Model
     /**
      * Whether this unit can be rented in the given way. Every way needs the
      * unit to be for rent and the rate for it to be set by the apartment.
+     * Nightly rental is not offered any more.
      */
     public function offersRental(string $rentalType): bool
     {
         return match ($rentalType) {
-            Booking::RENTAL_DAILY => $this->offersDailyRental(),
             Booking::RENTAL_MONTHLY => $this->offersMonthlyRental(),
             Booking::RENTAL_YEARLY => $this->offersYearlyRental(),
             default => false,
