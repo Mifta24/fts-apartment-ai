@@ -7,10 +7,12 @@ use App\Http\Controllers\Admin\HandoverController;
 use App\Http\Controllers\Admin\KnowledgeItemController;
 use App\Http\Controllers\Admin\UnitInventoryController;
 use App\Http\Controllers\Admin\UnitTypeController;
+use App\Http\Controllers\Admin\ViewingController;
 use App\Http\Controllers\ApartmentPageController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ConciergeChatController;
 use App\Http\Controllers\ReservationController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [ApartmentPageController::class, 'index'])->name('home');
@@ -33,6 +35,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('bookings', [BookingController::class, 'index'])->name('bookings.index');
         Route::patch('bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('bookings.status');
 
+        Route::get('viewings', [ViewingController::class, 'index'])->name('viewings.index');
+        Route::patch('viewings/{viewing}/status', [ViewingController::class, 'updateStatus'])->name('viewings.status');
+
         Route::get('settings', [ApartmentSettingController::class, 'edit'])->name('settings.edit');
         Route::put('settings', [ApartmentSettingController::class, 'update'])->name('settings.update');
 
@@ -51,12 +56,14 @@ Route::prefix('{apartmentSlug}')->group(function () {
     Route::get('facilities/{facilityId}', [ApartmentPageController::class, 'facility'])->whereNumber('facilityId')->name('apartment.facility');
     Route::get('info', [ApartmentPageController::class, 'info'])->name('apartment.info');
     Route::get('staff', [ApartmentPageController::class, 'staff'])->name('apartment.staff');
-    Route::get('reservation', [ApartmentPageController::class, 'reservationScene'])->name('apartment.reservation');
+    Route::get('apply', [ApartmentPageController::class, 'reservationScene'])->name('apartment.reservation');
+    Route::get('reservation', fn (Request $request, string $apartmentSlug) => redirect()->route('apartment.reservation', ['apartmentSlug' => $apartmentSlug, ...$request->query()], 301));
 
-    Route::prefix('reservation')->name('reservation.')->middleware('throttle:20,1')->group(function () {
+    Route::prefix('apply')->name('reservation.')->middleware('throttle:20,1')->group(function () {
         Route::get('availability', [ReservationController::class, 'availability'])->name('availability');
         Route::post('quote', [ReservationController::class, 'quote'])->name('quote');
         Route::post('/', [ReservationController::class, 'store'])->name('store');
+        Route::post('viewing', [ReservationController::class, 'storeViewing'])->name('viewing');
     });
 
     Route::prefix('concierge')->name('concierge.')->group(function () {
