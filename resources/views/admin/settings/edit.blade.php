@@ -60,16 +60,8 @@
         </section>
 
         <section class="rounded-xl border border-stone-200 bg-white p-5">
-            <h2 class="text-sm font-semibold text-stone-900">Hours, language and time zone</h2>
-            <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <div>
-                    <label for="check_in_time" class="block text-sm font-medium text-stone-700">Move-in from</label>
-                    <input id="check_in_time" type="time" name="check_in_time" value="{{ old('check_in_time', substr((string) $apartment->check_in_time, 0, 5)) }}" required class="{{ $field }}">
-                </div>
-                <div>
-                    <label for="check_out_time" class="block text-sm font-medium text-stone-700">Move-out by</label>
-                    <input id="check_out_time" type="time" name="check_out_time" value="{{ old('check_out_time', substr((string) $apartment->check_out_time, 0, 5)) }}" required class="{{ $field }}">
-                </div>
+            <h2 class="text-sm font-semibold text-stone-900">Language and time zone</h2>
+            <div class="mt-4 grid grid-cols-2 gap-4">
                 <div>
                     <label for="default_locale" class="block text-sm font-medium text-stone-700">Default language</label>
                     <select id="default_locale" name="default_locale" class="{{ $field }}">
@@ -91,22 +83,7 @@
         </section>
 
         <section class="rounded-xl border border-stone-200 bg-white p-5">
-            <h2 class="text-sm font-semibold text-stone-900">Long-stay discounts</h2>
-            <p class="mt-1 text-xs text-stone-500">Applied to the whole stay, in the reservation form and by the AI concierge alike. Weekly starts at {{ \App\Models\Apartment::WEEKLY_STAY_NIGHTS }} nights, monthly at {{ \App\Models\Apartment::MONTHLY_STAY_NIGHTS }} nights.</p>
-            <div class="mt-4 grid grid-cols-2 gap-4">
-                <div>
-                    <label for="weekly_discount_percent" class="block text-sm font-medium text-stone-700">Weekly discount (%)</label>
-                    <input id="weekly_discount_percent" type="number" name="weekly_discount_percent" value="{{ old('weekly_discount_percent', $apartment->weekly_discount_percent) }}" min="0" max="90" required class="{{ $field }}">
-                </div>
-                <div>
-                    <label for="monthly_discount_percent" class="block text-sm font-medium text-stone-700">Monthly discount (%)</label>
-                    <input id="monthly_discount_percent" type="number" name="monthly_discount_percent" value="{{ old('monthly_discount_percent', $apartment->monthly_discount_percent) }}" min="0" max="90" required class="{{ $field }}">
-                </div>
-            </div>
-        </section>
-
-        <section class="rounded-xl border border-stone-200 bg-white p-5">
-            <h2 class="text-sm font-semibold text-stone-900">Monthly and yearly rentals</h2>
+            <h2 class="text-sm font-semibold text-stone-900">Leases</h2>
             <p class="mt-1 text-xs text-stone-500">The rent itself is set on each unit type. Monthly leases run up to {{ \App\Models\Apartment::MAX_MONTHLY_LEASE_MONTHS }} months; a year or more is a yearly rental, up to {{ \App\Models\Apartment::MAX_YEARLY_LEASE_YEARS }} years. The deposit is refundable and is based on one month of rent.</p>
             <div class="mt-4 grid grid-cols-2 gap-4">
                 <div>

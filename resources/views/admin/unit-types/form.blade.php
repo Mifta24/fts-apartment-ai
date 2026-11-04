@@ -109,12 +109,8 @@
         </section>
 
         <section class="rounded-xl border border-stone-200 bg-white p-5">
-            <h2 class="text-sm font-semibold text-stone-900">Pricing & inclusions</h2>
+            <h2 class="text-sm font-semibold text-stone-900">Rent & listing</h2>
             <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <div>
-                    <label class="block text-sm font-medium text-stone-700">Base price / night</label>
-                    <input type="number" step="1000" min="0" name="base_price" value="{{ old('base_price', $unitType->base_price) }}" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
-                </div>
                 <div>
                     <label class="block text-sm font-medium text-stone-700">Monthly rent / month</label>
                     <input type="number" step="1000" min="0" name="monthly_price" value="{{ old('monthly_price', $unitType->monthly_price) }}" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
@@ -128,24 +124,12 @@
                     <input type="number" step="1000" min="0" name="sale_price" value="{{ old('sale_price', $unitType->sale_price) }}" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-stone-700">Extra bed price / night</label>
-                    <input type="number" step="1000" name="extra_bed_price" value="{{ old('extra_bed_price', $unitType->extra_bed_price) }}" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
-                </div>
-                <div>
                     <label class="block text-sm font-medium text-stone-700">Sort order</label>
                     <input type="number" name="sort_order" value="{{ old('sort_order', $unitType->sort_order) }}" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
                 </div>
             </div>
-            <p class="mt-3 text-xs text-stone-500">The sale price is only used for units listed for sale; sale enquiries go to the team, not the booking form. Leave the nightly, monthly or yearly rate empty if this unit is not rented that way. The yearly rent is the price for one full year; two or three years are charged as a multiple of it.</p>
+            <p class="mt-3 text-xs text-stone-500">The sale price is only used for units listed for sale; sale enquiries go to the team, not the rental application. Leave the monthly or yearly rent empty if this unit is not rented that way. The yearly rent is the price for one full year; two or three years are charged as a multiple of it.</p>
             <div class="mt-4 flex flex-wrap gap-6">
-                <label class="flex items-center gap-2 text-sm text-stone-700">
-                    <input type="checkbox" name="breakfast_included" value="1" @checked(old('breakfast_included', $unitType->breakfast_included)) class="rounded border-stone-300">
-                    Breakfast included
-                </label>
-                <label class="flex items-center gap-2 text-sm text-stone-700">
-                    <input type="checkbox" name="extra_bed_available" value="1" @checked(old('extra_bed_available', $unitType->extra_bed_available)) class="rounded border-stone-300">
-                    Extra bed available
-                </label>
                 <label class="flex items-center gap-2 text-sm text-stone-700">
                     <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $unitType->is_active)) class="rounded border-stone-300">
                     Published (visible on the website)

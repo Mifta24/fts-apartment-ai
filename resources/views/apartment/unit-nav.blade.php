@@ -1,4 +1,4 @@
-{{-- The residences directory board: every unit type with its layout, floors and nightly rate, so the guest can step between units without going back. --}}
+{{-- The residences directory board: every unit type with its layout, floors and monthly rent, so the guest can step between units without going back. --}}
 <aside class="unit-directory" aria-label="{{ $labels['units_heading'] }}">
     <p class="unit-directory-title"><span>{{ $labels['units_heading'] }}</span><span>{{ $unitTypes->count() }}</span></p>
     <nav class="unit-nav">
@@ -20,9 +20,7 @@
                         @if ($item->size_sqm)<span class="unit-nav-size">{{ $item->size_sqm }}&nbsp;m²</span>@endif
                     </span>
                     <span class="unit-nav-price">
-                        @if ($item->offersDailyRental())
-                            {{ $labels['from'] }} {{ $apartment->currency }}&nbsp;{{ number_format((float) $item->base_price, 0, ',', '.') }} {{ $labels['per_night'] }}
-                        @elseif ($item->offersMonthlyRental())
+                        @if ($item->offersMonthlyRental())
                             {{ str_replace(':price', $apartment->currency."\u{00A0}".number_format((float) $item->monthly_price, 0, ',', '.'), $lobby['rent_from_monthly']) }}
                         @elseif ($item->offersSalePrice())
                             {{ str_replace(':price', $apartment->currency."\u{00A0}".number_format((float) $item->sale_price, 0, ',', '.'), $lobby['sale_price']) }}

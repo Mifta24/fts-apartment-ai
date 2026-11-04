@@ -5,25 +5,21 @@
 
     <form method="POST" action="{{ route('admin.unit-types.inventory.store', $unitType) }}" class="rounded-xl border border-stone-200 bg-white p-5">
         @csrf
-        <h2 class="text-sm font-semibold text-stone-900">Open dates and set the price</h2>
-        <p class="mt-1 text-xs text-stone-500">Applies to every night from the first to the last date. Leave the price empty to keep current prices (new nights use the base price of {{ $apartment->currency }} {{ number_format((float) $unitType->base_price, 0, ',', '.') }}).</p>
+        <h2 class="text-sm font-semibold text-stone-900">Open units for rent</h2>
+        <p class="mt-1 text-xs text-stone-500">Sets how many units of this type can be leased on every day from the first to the last date. A lease holds one unit for each day of its term.</p>
 
-        <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+        <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
             <div>
                 <label for="from" class="block text-sm font-medium text-stone-700">From</label>
                 <input id="from" type="date" name="from" value="{{ old('from', $today) }}" min="{{ $today }}" required class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
             </div>
             <div>
-                <label for="to" class="block text-sm font-medium text-stone-700">To (last night)</label>
+                <label for="to" class="block text-sm font-medium text-stone-700">To (last day)</label>
                 <input id="to" type="date" name="to" value="{{ old('to') }}" min="{{ $today }}" required class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
             </div>
             <div>
                 <label for="total_units" class="block text-sm font-medium text-stone-700">Units for rent</label>
                 <input id="total_units" type="number" name="total_units" value="{{ old('total_units', 1) }}" min="0" max="1000" required class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
-            </div>
-            <div>
-                <label for="price" class="block text-sm font-medium text-stone-700">Price per night ({{ $apartment->currency }})</label>
-                <input id="price" type="number" name="price" value="{{ old('price') }}" min="0" step="1" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
             </div>
         </div>
 
@@ -68,14 +64,13 @@
                 type="button"
                 @disabled($isPast)
                 data-day="{{ $date }}"
-                @if ($night) data-total="{{ $night->total_units }}" data-price="{{ (int) $night->price }}" @endif
+                @if ($night) data-total="{{ $night->total_units }}" @endif
                 aria-label="{{ $day->format('l j F') }}: {{ $night ? $free.' of '.$night->total_units.' free' : 'not open for rent' }}"
                 class="flex min-h-14 flex-col items-start justify-between rounded-lg border p-1.5 text-left transition sm:min-h-20 sm:p-2 {{ $tone }} {{ $isPast ? 'opacity-40' : 'hover:ring-2 hover:ring-ink/40' }} data-[picked]:ring-2 data-[picked]:ring-ink"
             >
                 <span class="text-xs font-semibold sm:text-sm">{{ $day->day }}</span>
                 @if ($night)
                     <span class="font-mono text-[11px] leading-tight">{{ $free }}/{{ $night->total_units }}</span>
-                    <span class="hidden text-[11px] leading-tight opacity-80 sm:block">{{ number_format((float) $night->price, 0, ',', '.') }}</span>
                 @else
                     <span class="text-[11px] opacity-70">—</span>
                 @endif
@@ -113,7 +108,6 @@
                 if (!picking || cell.dataset.day < from.value) {
                     from.value = to.value = cell.dataset.day;
                     if (cell.dataset.total) document.getElementById('total_units').value = cell.dataset.total;
-                    if (cell.dataset.price) document.getElementById('price').value = cell.dataset.price;
                     picking = true;
                 } else {
                     to.value = cell.dataset.day;

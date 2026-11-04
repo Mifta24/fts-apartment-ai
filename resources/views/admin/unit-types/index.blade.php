@@ -27,8 +27,8 @@
                         </td>
                         <td class="px-4 py-3">@if ($unitType->isResidential()){{ $unitType->isStudio() ? 'Studio' : $unitType->bedrooms.' BR' }} · @endif{{ $unitType->bathrooms }} BA @if($unitType->floor_range)<span class="text-stone-400">· fl. {{ $unitType->floor_range }}</span>@endif</td>
                         <td class="px-4 py-3">
-                            @if ($unitType->offersDailyRental()){{ $apartment->currency }} {{ number_format((float) $unitType->base_price, 0, ',', '.') }} / night<br>@endif
-                            @if ($unitType->offersMonthlyRental())<span class="text-xs text-stone-500">{{ number_format((float) $unitType->monthly_price, 0, ',', '.') }} / month</span><br>@endif
+                            @if ($unitType->offersMonthlyRental()){{ $apartment->currency }} {{ number_format((float) $unitType->monthly_price, 0, ',', '.') }} / month<br>@endif
+                            @if ($unitType->offersYearlyRental())<span class="text-xs text-stone-500">{{ number_format((float) $unitType->yearly_price, 0, ',', '.') }} / year</span><br>@endif
                             @if ($unitType->offersSalePrice())<span class="text-xs text-stone-500">Sale {{ number_format((float) $unitType->sale_price, 0, ',', '.') }}</span>@endif
                         </td>
                         <td class="px-4 py-3">{{ $unitType->max_adults }}A / {{ $unitType->max_children }}C</td>

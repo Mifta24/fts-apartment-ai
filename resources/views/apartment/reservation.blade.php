@@ -1,11 +1,12 @@
 @php
     $unitTypes = $unitTypes->filter(fn ($unitType) => $unitType->isForRent())->values();
     $rentalTypes = array_values(array_filter([
-        $unitTypes->contains(fn ($unitType) => $unitType->offersDailyRental()) ? 'daily' : null,
         $unitTypes->contains(fn ($unitType) => $unitType->offersMonthlyRental()) ? 'monthly' : null,
         $unitTypes->contains(fn ($unitType) => $unitType->offersYearlyRental()) ? 'yearly' : null,
     ]));
     $priceText = fn ($value, string $per) => trim($labels['from'].' '.$apartment->currency.' '.number_format((float) $value, 0, ',', '.').' '.$per);
+    $viewingUnits = $unitTypes;
+    $canApply = $rentalTypes !== [];
 @endphp
 <section class="lobby-content wizard-panel stage-panel-right @container" aria-label="{{ $wizard['title'] }}">
     <a href="{{ route('apartment.show', ['apartmentSlug' => $apartment->slug, 'lang' => $locale]) }}" data-stage-exit data-tour-line="{{ $narration['tour_lobby'] }}" class="panel-close" aria-label="{{ $lobby['back'] }}"><span aria-hidden="true">×</span></a>
@@ -16,11 +17,11 @@
         data-quote-url="{{ route('reservation.quote', $apartment->slug) }}"
         data-availability-url="{{ route('reservation.availability', $apartment->slug) }}"
         data-submit-url="{{ route('reservation.store', $apartment->slug) }}"
+        data-viewing-url="{{ route('reservation.viewing', $apartment->slug) }}"
         data-apartment-slug="{{ $apartment->slug }}"
         data-locale="{{ $locale }}"
         data-currency="{{ $apartment->currency }}"
         data-today="{{ $today }}"
-        data-max-nights="{{ \App\Services\Reservation\ReservationService::MAX_NIGHTS }}"
         data-min-months="{{ max(1, $apartment->min_monthly_lease_months) }}"
         data-max-months="{{ \App\Models\Apartment::MAX_MONTHLY_LEASE_MONTHS }}"
         data-max-years="{{ \App\Models\Apartment::MAX_YEARLY_LEASE_YEARS }}"
@@ -29,7 +30,42 @@
         <div data-wizard-flow>
             <p class="mt-3 max-w-xl text-sm leading-relaxed text-stone-600">{{ $wizard['intro'] }}</p>
 
-            <div class="wizard-progress" aria-label="{{ $wizard['title'] }}">
+            <details class="wizard-viewing" data-viewing{{ ($viewingRequested ?? false) ? ' open' : '' }}>
+                <summary>{{ $wizard['viewing_title'] }}</summary>
+                <p class="wizard-hint">{{ $wizard['viewing_intro'] }}</p>
+                <form data-viewing-form novalidate>
+                    <label class="wizard-field wizard-field-wide">
+                        <span>{{ $wizard['choose_unit'] }}</span>
+                        <select name="unit_type_slug" required>
+                            <option value="">—</option>
+                            @foreach ($viewingUnits as $unitType)
+                                <option value="{{ $unitType->slug }}">{{ $unitType->translatedName($locale) }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <label class="wizard-field"><span>{{ $wizard['viewing_date'] }}</span><input type="date" name="preferred_date" required></label>
+                    <label class="wizard-field"><span>{{ $wizard['viewing_time'] }}</span><input type="time" name="preferred_time" value="10:00" required></label>
+                    <label class="wizard-field wizard-field-wide"><span>{{ $wizard['name'] }}</span><input type="text" name="visitor_name" maxlength="100" autocomplete="name" required></label>
+                    <fieldset class="wizard-field-wide">
+                        <legend>{{ $wizard['contact_method'] }}</legend>
+                        <div class="wizard-pills">
+                            @foreach (['whatsapp', 'phone', 'email'] as $method)
+                                <label><input type="radio" name="contact_type" value="{{ $method }}" @checked($method === 'whatsapp')><span>{{ $wizard[$method] }}</span></label>
+                            @endforeach
+                        </div>
+                    </fieldset>
+                    <label class="wizard-field wizard-field-wide"><span>{{ $wizard['contact_value'] }}</span><input type="text" name="contact_value" maxlength="120" required></label>
+                    <label class="wizard-field wizard-field-wide"><span>{{ $wizard['special'] }}</span><textarea name="notes" rows="2" maxlength="500"></textarea></label>
+                    <p class="wizard-hint wizard-viewing-message" data-viewing-message role="status" hidden></p>
+                    <div class="wizard-actions"><button type="submit" class="lobby-action">{{ $wizard['viewing_submit'] }}</button></div>
+                </form>
+            </details>
+
+            @unless ($canApply)
+                <p class="wizard-hint mt-4" role="status">{{ $wizard['no_units'] }}</p>
+            @endunless
+
+            <div class="wizard-progress" aria-label="{{ $wizard['title'] }}" @unless ($canApply) hidden @endunless>
                 <p class="wizard-step-label" data-wizard-step-label aria-live="polite"></p>
                 <ol>
                     @foreach ($wizard['steps'] as $stepLabel)
@@ -38,29 +74,26 @@
                 </ol>
             </div>
 
-            <form data-wizard-form novalidate autocomplete="on">
+            <form data-wizard-form novalidate autocomplete="on" @unless ($canApply) hidden @endunless>
                 <div data-step="1" class="wizard-step wizard-step-wide">
                     <input type="hidden" name="check_in" required>
-                    <input type="hidden" name="check_out">
 
-                    @if (count($rentalTypes) > 1 || ($rentalTypes[0] ?? 'daily') !== 'daily')
-                        <fieldset class="wizard-rental">
-                            <legend>{{ $wizard['rental_title'] }}</legend>
-                            <div class="wizard-pills">
-                                @foreach ($rentalTypes as $rentalType)
-                                    <label><input type="radio" name="rental_type" value="{{ $rentalType }}" @checked($loop->first)><span>{{ $wizard['rental_'.$rentalType] }}</span></label>
-                                @endforeach
-                            </div>
-                            <p class="wizard-hint" data-rental-hint aria-live="polite"></p>
-                        </fieldset>
-                    @else
-                        <input type="hidden" name="rental_type" value="daily">
-                    @endif
+                    @unless ($canApply)
+                        <input type="hidden" name="rental_type" value="monthly">
+                    @endunless
+                    <fieldset class="wizard-rental">
+                        <legend>{{ $wizard['rental_title'] }}</legend>
+                        <div class="wizard-pills">
+                            @foreach ($rentalTypes as $rentalType)
+                                <label><input type="radio" name="rental_type" value="{{ $rentalType }}" @checked($loop->first)><span>{{ $wizard['rental_'.$rentalType] }}</span></label>
+                            @endforeach
+                        </div>
+                        <p class="wizard-hint" data-rental-hint aria-live="polite"></p>
+                    </fieldset>
 
                     <div class="wizard-dates" data-date-picker>
                         <div class="wizard-slots">
-                            <div class="wizard-slot" data-slot="check_in"><span>{{ $wizard['check_in'] }}</span><strong data-slot-value>{{ $wizard['cal_choose'] }}</strong></div>
-                            <div class="wizard-slot" data-slot="check_out"><span>{{ $wizard['check_out'] }}</span><strong data-slot-value>{{ $wizard['cal_choose'] }}</strong></div>
+                            <div class="wizard-slot" data-slot="move_in"><span>{{ $wizard['move_in'] }}</span><strong data-slot-value>{{ $wizard['cal_choose'] }}</strong></div>
                         </div>
                         <div class="wizard-cal">
                             <div class="wizard-cal-head">
@@ -72,14 +105,11 @@
                             <div class="wizard-cal-grid" data-cal-grid></div>
                         </div>
                         <div class="wizard-dates-extra">
-                            <label class="wizard-field wizard-term" data-term-field hidden>
+                            <label class="wizard-field wizard-term">
                                 <span>{{ $wizard['term'] }}</span>
                                 <select name="lease_months"></select>
                             </label>
-                            <p class="wizard-hint" data-nights-hint aria-live="polite"></p>
-                            @if ($wizard['long_stay_hint'])
-                                <p class="wizard-long-stay"><span aria-hidden="true">%</span>{{ $wizard['long_stay_hint'] }}</p>
-                            @endif
+                            <p class="wizard-hint" data-lease-hint aria-live="polite"></p>
                         </div>
                     </div>
                 </div>
@@ -108,8 +138,6 @@
                                     data-name="{{ $unitType->translatedName($locale) }}"
                                     data-max-adults="{{ $unitType->max_adults }}"
                                     data-max-occupancy="{{ $unitType->maxOccupancy() }}"
-                                    data-extra-bed="{{ $unitType->extra_bed_available ? 1 : 0 }}"
-                                    data-price-daily="{{ $unitType->offersDailyRental() ? $priceText($unitType->base_price, $labels['per_night']) : '' }}"
                                     data-price-monthly="{{ $unitType->offersMonthlyRental() ? $priceText($unitType->monthly_price, $labels['per_month']) : '' }}"
                                     data-price-yearly="{{ $unitType->offersYearlyRental() ? $priceText($unitType->yearly_price, $labels['per_year']) : '' }}"
                                 >
@@ -117,17 +145,13 @@
                                     <span class="wizard-unit-body">
                                         <strong>{{ $unitType->translatedName($locale) }}</strong>
                                         <span>{{ str_replace(':count', (string) $unitType->maxOccupancy(), $wizard['fits']) }}</span>
-                                        <span class="wizard-unit-price" data-unit-price>{{ $unitType->offersDailyRental() ? $priceText($unitType->base_price, $labels['per_night']) : '' }}</span>
+                                        <span class="wizard-unit-price" data-unit-price></span>
                                         <span class="wizard-unit-hint" data-unit-hint></span>
                                     </span>
                                 </label>
                             @endforeach
                         </div>
                     </fieldset>
-                    <label class="wizard-check" data-extra-bed-field hidden>
-                        <input type="checkbox" name="extra_bed" value="1">
-                        <span>{{ $wizard['extra_bed'] }}</span>
-                    </label>
                 </div>
 
                 <div data-step="4" class="wizard-step" hidden>
@@ -155,7 +179,6 @@
 
                 <div data-step="5" class="wizard-step wizard-step-wide" hidden>
                     <dl class="wizard-summary" data-summary></dl>
-                    <p class="wizard-discount" data-summary-discount hidden><span>{{ $wizard['discount'] }} <b data-summary-discount-percent></b></span> <strong data-summary-discount-amount></strong></p>
                     <p class="wizard-total"><span>{{ $wizard['estimated_total'] }}</span> <strong data-summary-total></strong></p>
                     <p class="wizard-deposit" data-summary-deposit hidden><span>{{ $wizard['deposit'] }}</span> <strong data-summary-deposit-amount></strong></p>
                     <p class="wizard-hint" data-summary-deposit-hint hidden>{{ $wizard['deposit_hint'] }}</p>

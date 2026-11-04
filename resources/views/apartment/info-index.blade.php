@@ -21,19 +21,6 @@
                 <p class="mt-4 leading-relaxed text-stone-600">{{ $about }}</p>
             @endif
 
-            {{-- Check-in / check-out, read like the two halves of an access-card sleeve. --}}
-            <div class="info-stay">
-                <div class="info-stay-item">
-                    <span class="info-stay-label">{{ $lobby['check_in'] }}</span>
-                    <span class="info-stay-time">{{ substr($apartment->check_in_time ?? '', 0, 5) ?: '—' }}</span>
-                </div>
-                <div class="info-stay-divider" aria-hidden="true"></div>
-                <div class="info-stay-item">
-                    <span class="info-stay-label">{{ $lobby['check_out'] }}</span>
-                    <span class="info-stay-time">{{ substr($apartment->check_out_time ?? '', 0, 5) ?: '—' }}</span>
-                </div>
-            </div>
-
             <div class="info-facts">
                 <a href="{{ $mapUrl }}" target="_blank" rel="noopener" class="info-fact">
                     <x-info-icon name="place" />

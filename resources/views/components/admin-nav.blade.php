@@ -5,7 +5,8 @@
         ['route' => 'admin.dashboard', 'label' => 'Dashboard'],
         ['route' => 'admin.unit-types.index', 'label' => 'Units'],
         ['route' => 'admin.knowledge-items.index', 'label' => 'Knowledge base'],
-        ['route' => 'admin.bookings.index', 'label' => 'Bookings'],
+        ['route' => 'admin.bookings.index', 'label' => 'Rental applications'],
+        ['route' => 'admin.viewings.index', 'label' => 'Viewings'],
         ['route' => 'admin.handovers.index', 'label' => 'Handovers'],
     ];
 

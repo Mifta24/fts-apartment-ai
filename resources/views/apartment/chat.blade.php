@@ -29,16 +29,12 @@
             data-rate-url="{{ route('concierge.rate', $apartment->slug) }}"
             data-transcript-url="{{ route('concierge.transcript', $apartment->slug) }}"
             data-label-intro="{{ $labels['chat_intro'] }}"
-            data-label-breakfast-included="{{ $labels['breakfast_included'] }}"
             data-label-max-guests="{{ $labels['max_guests'] }}"
-            data-label-unit-only="{{ $labels['chat_unit_only'] }}"
-            data-label-night="{{ $labels['chat_night'] }}"
             data-label-month="{{ $labels['chat_month'] }}"
             data-label-year="{{ $labels['chat_year'] }}"
             data-label-deposit="{{ $labels['chat_deposit'] }}"
             data-label-studio="{{ $labels['chat_studio'] }}"
             data-label-bedrooms="{{ $labels['chat_bedrooms'] }}"
-            data-label-discount="{{ $labels['chat_discount'] }}"
             data-label-no-availability="{{ $labels['chat_no_availability'] }}"
             data-label-booking-received="{{ $labels['chat_booking_received'] }}"
             data-label-reference="{{ $labels['chat_reference'] }}"
@@ -68,7 +64,6 @@
             data-quote-url="{{ route('reservation.quote', $apartment->slug) }}"
             data-reserve-url="{{ route('reservation.store', $apartment->slug) }}"
             data-today="{{ now($apartment->timezone)->toDateString() }}"
-            data-max-nights="{{ \App\Services\Reservation\ReservationService::MAX_NIGHTS }}"
             data-min-months="{{ max(1, $apartment->min_monthly_lease_months) }}"
             data-max-months="{{ \App\Models\Apartment::MAX_MONTHLY_LEASE_MONTHS }}"
             data-max-years="{{ \App\Models\Apartment::MAX_YEARLY_LEASE_YEARS }}"
@@ -142,7 +137,7 @@
 
         </div>
 
-        {{-- Centre stage: where the concierge shows a guest a unit, a set of options or the stay request form. Filled in by showcase.js. --}}
+        {{-- Centre stage: where the concierge shows a guest a unit, a set of options or the rental application form. Filled in by showcase.js. --}}
         <div class="showcase" data-showcase hidden>
             <div class="showcase-backdrop" data-showcase-backdrop></div>
             <section class="showcase-card" data-showcase-card role="dialog" aria-modal="true" aria-label="{{ $labels['showcase']['presenting'] }}" tabindex="-1"></section>
