@@ -39,7 +39,7 @@ class ConciergeChatTest extends TestCase
 
         $this->apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'city' => 'Bali', 'country' => 'Indonesia', 'currency' => 'IDR', 'default_locale' => 'en']);
         $this->deluxe = $this->apartment->unitTypes()->create([
-            'name' => 'Deluxe King', 'slug' => 'deluxe-king', 'base_price' => 1000000, 'max_adults' => 2, 'max_children' => 1, 'is_active' => true,
+            'name' => 'Deluxe King', 'slug' => 'deluxe-king', 'monthly_price' => 12000000, 'max_adults' => 2, 'max_children' => 1, 'is_active' => true,
         ]);
     }
 

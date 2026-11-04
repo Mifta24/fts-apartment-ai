@@ -24,7 +24,7 @@ class LeaseRentalTest extends TestCase
 
     private UnitType $studio;
 
-    private UnitType $nightlyOnly;
+    private UnitType $withoutLeaseRent;
 
     private CarbonImmutable $moveIn;
 
@@ -38,27 +38,27 @@ class LeaseRentalTest extends TestCase
         ]);
 
         $this->studio = $this->apartment->unitTypes()->create([
-            'name' => 'Studio', 'slug' => 'studio', 'base_price' => 650000, 'monthly_price' => 13500000, 'yearly_price' => 150000000,
+            'name' => 'Studio', 'slug' => 'studio', 'monthly_price' => 13500000, 'yearly_price' => 150000000,
             'max_adults' => 2, 'max_children' => 0, 'is_active' => true,
         ]);
-        $this->nightlyOnly = $this->apartment->unitTypes()->create([
-            'name' => 'Suite', 'slug' => 'suite', 'base_price' => 2000000, 'max_adults' => 4, 'max_children' => 0, 'is_active' => true, 'sort_order' => 1,
+        $this->withoutLeaseRent = $this->apartment->unitTypes()->create([
+            'name' => 'Suite', 'slug' => 'suite', 'max_adults' => 4, 'max_children' => 0, 'is_active' => true, 'sort_order' => 1,
         ]);
 
         $this->moveIn = CarbonImmutable::now('Asia/Jakarta')->startOfDay()->addDays(10);
 
-        foreach ([$this->studio, $this->nightlyOnly] as $unitType) {
+        foreach ([$this->studio, $this->withoutLeaseRent] as $unitType) {
             $this->openInventory($unitType, $this->moveIn, 1100, 2);
         }
     }
 
-    private function openInventory(UnitType $unitType, CarbonImmutable $from, int $nights, int $units): void
+    private function openInventory(UnitType $unitType, CarbonImmutable $from, int $days, int $units): void
     {
         $now = now();
 
-        UnitInventory::insert(collect(range(0, $nights - 1))->map(fn (int $offset) => [
+        UnitInventory::insert(collect(range(0, $days - 1))->map(fn (int $offset) => [
             'unit_type_id' => $unitType->id, 'stay_date' => $from->addDays($offset)->toDateString(),
-            'total_units' => $units, 'booked_units' => 0, 'price' => $unitType->base_price, 'created_at' => $now, 'updated_at' => $now,
+            'total_units' => $units, 'booked_units' => 0, 'created_at' => $now, 'updated_at' => $now,
         ])->all());
     }
 
@@ -91,8 +91,7 @@ class LeaseRentalTest extends TestCase
         $this->assertSame(13500000.0, $quote['rate']);
         $this->assertSame('month', $quote['rate_period']);
         $this->assertSame(27000000.0, $quote['deposit_total']);
-        $this->assertSame($this->moveIn->addMonthsNoOverflow(6)->toDateString(), $quote['check_out']);
-        $this->assertSame(0, $quote['discount_percent']);
+        $this->assertSame($this->moveIn->addMonthsNoOverflow(6)->toDateString(), $quote['move_out']);
     }
 
     public function test_a_yearly_lease_costs_the_yearly_rent_for_every_year_and_is_cheaper_per_month(): void
@@ -114,14 +113,14 @@ class LeaseRentalTest extends TestCase
     {
         $service = app(ReservationService::class);
 
-        $this->assertNull($service->quoteLease($this->nightlyOnly, 'monthly', $this->moveIn, 6));
+        $this->assertNull($service->quoteLease($this->withoutLeaseRent, 'monthly', $this->moveIn, 6));
         $this->assertNull($service->quoteLease($this->studio, 'monthly', $this->moveIn, 2), 'shorter than the shortest monthly lease');
         $this->assertNull($service->quoteLease($this->studio, 'monthly', $this->moveIn, 12), 'a full year is a yearly rental');
         $this->assertNull($service->quoteLease($this->studio, 'yearly', $this->moveIn, 18));
         $this->assertNull($service->quoteLease($this->studio, 'yearly', $this->moveIn, 48));
     }
 
-    public function test_the_quote_endpoint_prices_a_lease_without_a_check_out_date(): void
+    public function test_the_quote_endpoint_prices_a_lease_from_a_move_in_date_and_a_term(): void
     {
         $this->postJson(route('reservation.quote', 'demo'), $this->lease())
             ->assertOk()
@@ -129,13 +128,11 @@ class LeaseRentalTest extends TestCase
             ->assertJsonPath('lease_months', 6)
             ->assertJsonPath('grand_total', 81000000)
             ->assertJsonPath('deposit_total', 27000000)
-            ->assertJsonPath('check_out', $this->moveIn->addMonthsNoOverflow(6)->toDateString());
+            ->assertJsonPath('move_out', $this->moveIn->addMonthsNoOverflow(6)->toDateString());
     }
 
-    public function test_a_lease_longer_than_the_online_limit_for_nights_is_still_accepted(): void
+    public function test_a_long_monthly_lease_and_a_three_year_lease_are_accepted(): void
     {
-        $this->assertGreaterThan(ReservationService::MAX_NIGHTS, (int) $this->moveIn->diffInDays($this->moveIn->addMonthsNoOverflow(11)));
-
         $this->postJson(route('reservation.quote', 'demo'), $this->lease(['lease_months' => 11]))->assertOk();
         $this->postJson(route('reservation.quote', 'demo'), $this->lease(['rental_type' => 'yearly', 'lease_months' => 36]))->assertOk();
     }
@@ -200,7 +197,7 @@ class LeaseRentalTest extends TestCase
     public function test_the_alternatives_offered_for_a_taken_lease_are_leases_too(): void
     {
         $other = $this->apartment->unitTypes()->create([
-            'name' => 'Loft', 'slug' => 'loft', 'base_price' => 900000, 'monthly_price' => 18000000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true, 'sort_order' => 2,
+            'name' => 'Loft', 'slug' => 'loft', 'monthly_price' => 18000000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true, 'sort_order' => 2,
         ]);
         $this->openInventory($other, $this->moveIn, 1100, 1);
         UnitInventory::where('unit_type_id', $this->studio->id)->update(['booked_units' => 2]);
@@ -212,20 +209,14 @@ class LeaseRentalTest extends TestCase
             ->assertJsonCount(1, 'alternatives');
     }
 
-    public function test_nightly_stays_are_unchanged_and_record_no_lease(): void
+    public function test_a_nightly_stay_cannot_be_applied_for(): void
     {
-        $checkOut = $this->moveIn->addDays(3);
-
         $this->postJson(route('reservation.store', 'demo'), [
-            'unit_type_slug' => 'studio', 'check_in' => $this->moveIn->toDateString(), 'check_out' => $checkOut->toDateString(),
+            'unit_type_slug' => 'studio', 'check_in' => $this->moveIn->toDateString(), 'check_out' => $this->moveIn->addDays(3)->toDateString(),
             'adults' => 2, 'units' => 1, 'locale' => 'en', 'guest_name' => 'Ayu', 'contact_type' => 'whatsapp', 'contact_value' => '+62 811 1111 2222',
-        ])->assertCreated()->assertJsonPath('rental_type', 'daily')->assertJsonPath('total', 1950000);
+        ])->assertUnprocessable()->assertJsonValidationErrors(['rental_type', 'lease_months']);
 
-        $booking = Booking::firstOrFail();
-        $this->assertSame('daily', $booking->rental_type);
-        $this->assertNull($booking->lease_months);
-        $this->assertNull($booking->deposit_total);
-        $this->assertFalse($booking->isLease());
+        $this->assertSame(0, Booking::count());
     }
 
     public function test_the_concierge_quotes_and_books_a_monthly_and_a_yearly_lease(): void
@@ -284,7 +275,7 @@ class LeaseRentalTest extends TestCase
 
         $this->assertContains('Rental: Yearly rental, 2 years', $lines);
         $this->assertContains('Security deposit (refundable): IDR 25.000.000', $lines);
-        $this->assertContains('Total: IDR 300.000.000', $lines);
+        $this->assertContains('Total rent: IDR 300.000.000', $lines);
         $this->assertContains('Jenis sewa: Sewa tahunan, 2 tahun', GuestBookingSummary::lines(Booking::firstOrFail(), 'id'));
     }
 
@@ -293,18 +284,17 @@ class LeaseRentalTest extends TestCase
         $owner = User::factory()->create();
         $this->apartment->users()->attach($owner->id, ['role' => 'owner', 'status' => 'active']);
 
-        $this->actingAs($owner)->put(route('admin.unit-types.update', $this->nightlyOnly), [
-            'name' => 'Suite', 'bedrooms' => 2, 'bathrooms' => 1, 'max_adults' => 4, 'max_children' => 0, 'base_price' => 2000000,
+        $this->actingAs($owner)->put(route('admin.unit-types.update', $this->withoutLeaseRent), [
+            'name' => 'Suite', 'bedrooms' => 2, 'bathrooms' => 1, 'max_adults' => 4, 'max_children' => 0,
             'monthly_price' => 38000000, 'yearly_price' => '', 'is_active' => 1,
         ])->assertRedirect(route('admin.unit-types.index'));
 
-        $this->nightlyOnly->refresh();
-        $this->assertTrue($this->nightlyOnly->offersMonthlyRental());
-        $this->assertFalse($this->nightlyOnly->offersYearlyRental());
+        $this->withoutLeaseRent->refresh();
+        $this->assertTrue($this->withoutLeaseRent->offersMonthlyRental());
+        $this->assertFalse($this->withoutLeaseRent->offersYearlyRental());
 
         $this->actingAs($owner)->put(route('admin.settings.update'), [
-            'name' => 'Demo', 'timezone' => 'Asia/Jakarta', 'default_locale' => 'en', 'check_in_time' => '14:00', 'check_out_time' => '12:00',
-            'weekly_discount_percent' => 0, 'monthly_discount_percent' => 0, 'public_status' => 'published',
+            'name' => 'Demo', 'timezone' => 'Asia/Jakarta', 'default_locale' => 'en', 'public_status' => 'published',
             'security_deposit_months' => 1, 'min_monthly_lease_months' => 6,
         ])->assertRedirect(route('admin.settings.edit'));
 
@@ -313,8 +303,7 @@ class LeaseRentalTest extends TestCase
         $this->assertSame(6, $this->apartment->min_monthly_lease_months);
 
         $this->actingAs($owner)->put(route('admin.settings.update'), [
-            'name' => 'Demo', 'timezone' => 'Asia/Jakarta', 'default_locale' => 'en', 'check_in_time' => '14:00', 'check_out_time' => '12:00',
-            'weekly_discount_percent' => 0, 'monthly_discount_percent' => 0, 'public_status' => 'published',
+            'name' => 'Demo', 'timezone' => 'Asia/Jakarta', 'default_locale' => 'en', 'public_status' => 'published',
             'security_deposit_months' => 1, 'min_monthly_lease_months' => 12,
         ])->assertSessionHasErrors('min_monthly_lease_months');
     }

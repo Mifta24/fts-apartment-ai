@@ -35,7 +35,7 @@ class AdminAccessTest extends TestCase
 
     private function foreignBooking(): Booking
     {
-        $unit = $this->otherApartment->unitTypes()->create(['name' => 'Foreign', 'slug' => 'foreign', 'base_price' => 1, 'max_adults' => 1, 'max_children' => 0, 'is_active' => true]);
+        $unit = $this->otherApartment->unitTypes()->create(['name' => 'Foreign', 'slug' => 'foreign', 'monthly_price' => 1, 'max_adults' => 1, 'max_children' => 0, 'is_active' => true]);
 
         return Booking::create([
             'reference' => 'BK-FOREIGN', 'apartment_id' => $this->otherApartment->id, 'unit_type_id' => $unit->id, 'guest_name' => 'Foreign Guest',
@@ -69,7 +69,7 @@ class AdminAccessTest extends TestCase
         $booking = $this->foreignBooking();
 
         $this->actingAs($this->staff)
-            ->patch(route('admin.bookings.status', $booking), ['status' => Booking::STATUS_CONFIRMED])
+            ->patch(route('admin.bookings.status', $booking), ['status' => Booking::STATUS_APPROVED])
             ->assertNotFound();
 
         $this->assertSame(Booking::STATUS_PENDING, $booking->fresh()->status);

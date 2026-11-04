@@ -40,7 +40,7 @@ class ReservationAvailabilityTest extends TestCase
      */
     private function openNights(): array
     {
-        return $this->getJson('/demo/reservation/availability')->assertOk()->json('dates');
+        return $this->getJson('/demo/apply/availability')->assertOk()->json('dates');
     }
 
     public function test_a_night_is_open_while_any_active_unit_type_has_a_free_unit(): void
@@ -80,7 +80,7 @@ class ReservationAvailabilityTest extends TestCase
         $this->night($suite, 5);
         $this->night($studio, 2);
 
-        $response = $this->getJson('/demo/reservation/availability')->assertOk();
+        $response = $this->getJson('/demo/apply/availability')->assertOk();
 
         $this->assertSame([$this->today->addDays(2)->toDateString(), $this->today->addDays(5)->toDateString()], $response->json('dates'));
         $this->assertSame($this->today->toDateString(), $response->json('today'));
@@ -108,7 +108,7 @@ class ReservationAvailabilityTest extends TestCase
     {
         Apartment::create(['name' => 'Draft', 'slug' => 'draft']);
 
-        $this->getJson('/draft/reservation/availability')->assertNotFound();
-        $this->getJson('/nowhere/reservation/availability')->assertNotFound();
+        $this->getJson('/draft/apply/availability')->assertNotFound();
+        $this->getJson('/nowhere/apply/availability')->assertNotFound();
     }
 }

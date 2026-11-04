@@ -31,7 +31,7 @@ class AdminDashboardTest extends TestCase
         parent::setUp();
 
         $this->apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'timezone' => 'Asia/Jakarta']);
-        $this->unitType = $this->apartment->unitTypes()->create(['name' => 'Studio', 'slug' => 'studio', 'base_price' => 500000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
+        $this->unitType = $this->apartment->unitTypes()->create(['name' => 'Studio', 'slug' => 'studio', 'monthly_price' => 13500000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
         $this->staff = User::factory()->create();
         $this->apartment->users()->attach($this->staff->id, ['role' => 'staff', 'status' => 'active']);
         $this->today = CarbonImmutable::now('Asia/Jakarta')->startOfDay();
@@ -62,7 +62,7 @@ class AdminDashboardTest extends TestCase
         $this->freezeTime();
         $this->booking(Booking::STATUS_PENDING, 5);
         $this->booking(Booking::STATUS_PENDING, 6, now()->subHours(25));
-        $this->booking(Booking::STATUS_CONFIRMED, 7, now()->subDays(3));
+        $this->booking(Booking::STATUS_APPROVED, 7, now()->subDays(3));
 
         $this->dashboard()->assertOk()->assertSee('1 waiting over 24h')->assertSee('border-amber-300', false);
     }
@@ -76,10 +76,10 @@ class AdminDashboardTest extends TestCase
 
     public function test_move_ins_count_and_list_only_confirmed_bookings_in_the_next_seven_days(): void
     {
-        $soon = $this->booking(Booking::STATUS_CONFIRMED, 0);
-        $this->booking(Booking::STATUS_CONFIRMED, 6);
-        $this->booking(Booking::STATUS_CONFIRMED, 7);
-        $this->booking(Booking::STATUS_CONFIRMED, -1);
+        $soon = $this->booking(Booking::STATUS_APPROVED, 0);
+        $this->booking(Booking::STATUS_APPROVED, 6);
+        $this->booking(Booking::STATUS_APPROVED, 7);
+        $this->booking(Booking::STATUS_APPROVED, -1);
         $this->booking(Booking::STATUS_PENDING, 2);
         $this->booking(Booking::STATUS_CANCELLED, 2);
 
@@ -91,7 +91,7 @@ class AdminDashboardTest extends TestCase
 
     public function test_occupancy_is_booked_over_total_units_for_the_next_thirty_days_of_active_unit_types(): void
     {
-        $hidden = $this->apartment->unitTypes()->create(['name' => 'Hidden', 'slug' => 'hidden', 'base_price' => 1, 'max_adults' => 1, 'max_children' => 0, 'is_active' => false]);
+        $hidden = $this->apartment->unitTypes()->create(['name' => 'Hidden', 'slug' => 'hidden', 'monthly_price' => 1, 'max_adults' => 1, 'max_children' => 0, 'is_active' => false]);
         foreach ([[$this->unitType, 0, 10, 4], [$this->unitType, 29, 10, 6], [$this->unitType, 30, 10, 10], [$hidden, 1, 10, 10]] as [$unitType, $offset, $total, $booked]) {
             UnitInventory::create(['unit_type_id' => $unitType->id, 'stay_date' => $this->today->addDays($offset)->toDateString(), 'total_units' => $total, 'booked_units' => $booked, 'price' => 1]);
         }
@@ -112,8 +112,8 @@ class AdminDashboardTest extends TestCase
     {
         $this->freezeTime();
         $other = Apartment::create(['name' => 'Other', 'slug' => 'other', 'public_status' => 'published']);
-        $foreign = $other->unitTypes()->create(['name' => 'Foreign', 'slug' => 'foreign', 'base_price' => 1, 'max_adults' => 1, 'max_children' => 0, 'is_active' => true]);
-        $this->booking(Booking::STATUS_CONFIRMED, 1, null, $other, $foreign);
+        $foreign = $other->unitTypes()->create(['name' => 'Foreign', 'slug' => 'foreign', 'monthly_price' => 1, 'max_adults' => 1, 'max_children' => 0, 'is_active' => true]);
+        $this->booking(Booking::STATUS_APPROVED, 1, null, $other, $foreign);
         $this->booking(Booking::STATUS_PENDING, 1, now()->subDays(2), $other, $foreign);
         UnitInventory::create(['unit_type_id' => $foreign->id, 'stay_date' => $this->today->toDateString(), 'total_units' => 5, 'booked_units' => 5, 'price' => 1]);
         $conversation = Conversation::create(['apartment_id' => $other->id, 'guest_token' => (string) Str::uuid(), 'locale' => 'en']);

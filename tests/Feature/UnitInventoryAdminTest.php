@@ -29,7 +29,7 @@ class UnitInventoryAdminTest extends TestCase
         parent::setUp();
 
         $this->apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
-        $this->unitType = $this->apartment->unitTypes()->create(['name' => 'Studio', 'slug' => 'studio', 'base_price' => 500000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
+        $this->unitType = $this->apartment->unitTypes()->create(['name' => 'Studio', 'slug' => 'studio', 'monthly_price' => 13500000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
 
         $this->staff = User::factory()->create();
         $this->apartment->users()->attach($this->staff->id, ['role' => 'staff', 'status' => 'active']);
@@ -43,7 +43,7 @@ class UnitInventoryAdminTest extends TestCase
      */
     private function range(array $overrides = []): array
     {
-        return ['from' => $this->today->addDays(2)->toDateString(), 'to' => $this->today->addDays(4)->toDateString(), 'total_units' => 3, 'price' => 750000, ...$overrides];
+        return ['from' => $this->today->addDays(2)->toDateString(), 'to' => $this->today->addDays(4)->toDateString(), 'total_units' => 3, ...$overrides];
     }
 
     private function save(array $payload, ?UnitType $unitType = null)
@@ -57,7 +57,7 @@ class UnitInventoryAdminTest extends TestCase
         $this->post(route('admin.unit-types.inventory.store', $this->unitType), $this->range())->assertRedirect(route('admin.login'));
     }
 
-    public function test_opening_a_range_creates_every_night_with_the_given_units_and_price(): void
+    public function test_opening_a_range_creates_every_day_with_the_given_units(): void
     {
         $this->save($this->range())->assertRedirect()->assertSessionHas('status');
 
@@ -65,17 +65,15 @@ class UnitInventoryAdminTest extends TestCase
         $this->assertCount(3, $nights);
         $this->assertSame([3, 3, 3], $nights->pluck('total_units')->all());
         $this->assertSame([0, 0, 0], $nights->pluck('booked_units')->all());
-        $this->assertSame([750000.0, 750000.0, 750000.0], $nights->map(fn ($night) => (float) $night->price)->all());
     }
 
-    public function test_a_blank_price_gives_new_nights_the_base_price_and_keeps_existing_prices(): void
+    public function test_changing_the_units_for_an_open_range_keeps_the_days_and_opens_new_ones(): void
     {
         $this->save($this->range(['to' => $this->today->addDays(2)->toDateString()]));
 
-        $this->save($this->range(['price' => null, 'total_units' => 5]));
+        $this->save($this->range(['total_units' => 5]));
 
-        $prices = $this->unitType->inventory()->orderBy('stay_date')->get()->map(fn ($night) => (float) $night->price)->all();
-        $this->assertSame([750000.0, 500000.0, 500000.0], $prices);
+        $this->assertSame(3, $this->unitType->inventory()->count());
         $this->assertSame([5, 5, 5], $this->unitType->inventory()->orderBy('stay_date')->pluck('total_units')->all());
     }
 
@@ -84,7 +82,7 @@ class UnitInventoryAdminTest extends TestCase
         $this->save($this->range());
         $this->unitType->inventory()->update(['booked_units' => 2]);
 
-        $this->save($this->range(['total_units' => 4, 'price' => 800000]))->assertSessionHas('status');
+        $this->save($this->range(['total_units' => 4]))->assertSessionHas('status');
 
         $this->assertSame(3, $this->unitType->inventory()->count());
         $this->assertSame([2, 2, 2], $this->unitType->inventory()->pluck('booked_units')->all());
@@ -96,10 +94,9 @@ class UnitInventoryAdminTest extends TestCase
         $this->save($this->range());
         $this->unitType->inventory()->orderBy('stay_date')->first()->update(['booked_units' => 3]);
 
-        $this->save($this->range(['total_units' => 2, 'price' => 1]))->assertSessionHasErrors('total_units');
+        $this->save($this->range(['total_units' => 2]))->assertSessionHasErrors('total_units');
 
         $this->assertSame([3, 3, 3], $this->unitType->inventory()->pluck('total_units')->all());
-        $this->assertSame([750000.0, 750000.0, 750000.0], $this->unitType->inventory()->get()->map(fn ($night) => (float) $night->price)->all());
     }
 
     /**
@@ -111,7 +108,6 @@ class UnitInventoryAdminTest extends TestCase
             'starts in the past' => [['from' => '2000-01-01', 'to' => '2000-01-05'], 'from'],
             'ends before it starts' => [['to' => 'before-from'], 'to'],
             'spans more than a year' => [['to' => 'far-future'], 'to'],
-            'negative price' => [['price' => -1], 'price'],
             'negative units' => [['total_units' => -1], 'total_units'],
             'missing dates' => [['from' => null, 'to' => null], 'from'],
         ];
@@ -141,11 +137,11 @@ class UnitInventoryAdminTest extends TestCase
         $this->assertSame(366, $this->unitType->inventory()->count());
     }
 
-    public function test_the_month_calendar_shows_free_units_and_price_for_open_nights_and_marks_the_rest_as_closed(): void
+    public function test_the_month_calendar_shows_free_units_for_open_days_and_marks_the_rest_as_closed(): void
     {
         $day = $this->today->addDays(2);
         $closedDay = $day->day < $day->daysInMonth ? $day->addDay() : $day->subDay();
-        $this->save($this->range(['from' => $day->toDateString(), 'to' => $day->toDateString(), 'total_units' => 4, 'price' => 750000]));
+        $this->save($this->range(['from' => $day->toDateString(), 'to' => $day->toDateString(), 'total_units' => 4]));
         $this->unitType->inventory()->update(['booked_units' => 1]);
 
         $this->actingAs($this->staff)
@@ -153,7 +149,6 @@ class UnitInventoryAdminTest extends TestCase
             ->assertOk()
             ->assertSee('data-day="'.$day->toDateString().'"', false)
             ->assertSee($day->format('l j F').': 3 of 4 free', false)
-            ->assertSee('750.000')
             ->assertSee($closedDay->format('l j F').': not open for rent', false);
     }
 
@@ -165,19 +160,21 @@ class UnitInventoryAdminTest extends TestCase
             ->assertSee($this->today->format('F Y'));
     }
 
-    public function test_new_inventory_is_what_the_reservation_quote_uses(): void
+    public function test_new_inventory_is_what_the_lease_quote_uses(): void
     {
-        $this->save($this->range(['from' => $this->today->addDays(2)->toDateString(), 'to' => $this->today->addDays(3)->toDateString(), 'total_units' => 1, 'price' => 650000]));
+        $this->apartment->update(['min_monthly_lease_months' => 1]);
+        $this->save($this->range(['from' => $this->today->addDays(2)->toDateString(), 'to' => $this->today->addDays(40)->toDateString(), 'total_units' => 1]));
 
-        $quote = app(ReservationService::class)->quote($this->unitType, $this->today->addDays(2), $this->today->addDays(4));
+        $quote = app(ReservationService::class)->quoteLease($this->unitType, 'monthly', $this->today->addDays(2), 1);
 
-        $this->assertSame(1300000.0, $quote['grand_total']);
+        $this->assertSame(13500000.0, $quote['grand_total']);
+        $this->assertNull(app(ReservationService::class)->quoteLease($this->unitType, 'monthly', $this->today->addDays(2), 2), 'the second month is not open');
     }
 
     public function test_staff_cannot_read_or_change_another_apartments_inventory(): void
     {
         $other = Apartment::create(['name' => 'Other', 'slug' => 'other', 'public_status' => 'published']);
-        $foreign = $other->unitTypes()->create(['name' => 'Foreign', 'slug' => 'foreign', 'base_price' => 1, 'max_adults' => 1, 'max_children' => 0, 'is_active' => true]);
+        $foreign = $other->unitTypes()->create(['name' => 'Foreign', 'slug' => 'foreign', 'max_adults' => 1, 'max_children' => 0, 'is_active' => true]);
 
         $this->actingAs($this->staff)->get(route('admin.unit-types.inventory.index', $foreign))->assertNotFound();
         $this->save($this->range(), $foreign)->assertNotFound();

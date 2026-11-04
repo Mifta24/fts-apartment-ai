@@ -24,7 +24,7 @@ class ApartmentSettingTest extends TestCase
 
         $this->apartment = Apartment::create([
             'name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR',
-            'weekly_discount_percent' => 5, 'monthly_discount_percent' => 10,
+            'security_deposit_months' => 2, 'min_monthly_lease_months' => 1,
         ]);
 
         $this->owner = User::factory()->create();
@@ -42,8 +42,7 @@ class ApartmentSettingTest extends TestCase
         return [
             'name' => 'Demo Residence', 'description' => 'Deskripsi', 'translations' => ['en' => ['description' => 'Description'], 'ja' => ['description' => '説明']],
             'address' => 'Jl. Senopati 1', 'city' => 'Jakarta', 'country' => 'Indonesia', 'phone' => '+62 21 555 0100', 'whatsapp' => '+62 812 0000 1111',
-            'email' => 'front@demo.test', 'timezone' => 'Asia/Makassar', 'default_locale' => 'en', 'check_in_time' => '15:00', 'check_out_time' => '11:00',
-            'weekly_discount_percent' => 12, 'monthly_discount_percent' => 30, 'public_status' => 'published',
+            'email' => 'front@demo.test', 'timezone' => 'Asia/Makassar', 'default_locale' => 'en', 'security_deposit_months' => 3, 'min_monthly_lease_months' => 2, 'public_status' => 'published',
             ...$overrides,
         ];
     }
@@ -64,11 +63,11 @@ class ApartmentSettingTest extends TestCase
         $this->actingAs($this->owner)->get(route('admin.settings.edit'))
             ->assertOk()
             ->assertSee('value="Demo"', false)
-            ->assertSee('name="monthly_discount_percent" value="10"', false)
+            ->assertSee('name="security_deposit_months" value="2"', false)
             ->assertSee(route('admin.settings.edit'), false);
     }
 
-    public function test_the_owner_saves_contact_hours_and_discounts(): void
+    public function test_the_owner_saves_contact_details_and_lease_rules(): void
     {
         $this->save($this->settings())->assertRedirect(route('admin.settings.edit'))->assertSessionHas('status');
 
@@ -80,16 +79,8 @@ class ApartmentSettingTest extends TestCase
         $this->assertSame('説明', $apartment->translations['ja']['description']);
         $this->assertSame('demo', $apartment->slug);
         $this->assertSame('IDR', $apartment->currency);
-    }
-
-    public function test_the_saved_discounts_are_what_long_stays_earn(): void
-    {
-        $this->save($this->settings(['weekly_discount_percent' => 12, 'monthly_discount_percent' => 30]));
-
-        $apartment = $this->apartment->fresh();
-        $this->assertSame(0, $apartment->longStayDiscountPercent(3));
-        $this->assertSame(12, $apartment->longStayDiscountPercent(7));
-        $this->assertSame(30, $apartment->longStayDiscountPercent(28));
+        $this->assertSame(3, $apartment->security_deposit_months);
+        $this->assertSame(2, $apartment->min_monthly_lease_months);
     }
 
     public function test_saving_keeps_translations_other_than_the_description(): void
@@ -129,10 +120,9 @@ class ApartmentSettingTest extends TestCase
             'bad email' => [['email' => 'not-an-email'], 'email'],
             'unknown time zone' => [['timezone' => 'Mars/Olympus'], 'timezone'],
             'unsupported language' => [['default_locale' => 'fr'], 'default_locale'],
-            'bad move-in time' => [['check_in_time' => '25:99'], 'check_in_time'],
-            'bad move-out time' => [['check_out_time' => 'noon'], 'check_out_time'],
-            'discount over the limit' => [['weekly_discount_percent' => 91], 'weekly_discount_percent'],
-            'negative discount' => [['weekly_discount_percent' => -1], 'weekly_discount_percent'],
+            'deposit over the limit' => [['security_deposit_months' => 13], 'security_deposit_months'],
+            'negative deposit' => [['security_deposit_months' => -1], 'security_deposit_months'],
+            'shortest lease below one month' => [['min_monthly_lease_months' => 0], 'min_monthly_lease_months'],
             'unknown status' => [['public_status' => 'archived'], 'public_status'],
         ];
     }
@@ -146,13 +136,5 @@ class ApartmentSettingTest extends TestCase
         $this->save($this->settings($overrides))->assertSessionHasErrors($field);
 
         $this->assertSame('Demo', $this->apartment->fresh()->name);
-    }
-
-    public function test_the_monthly_discount_cannot_be_smaller_than_the_weekly_one(): void
-    {
-        $this->save($this->settings(['weekly_discount_percent' => 20, 'monthly_discount_percent' => 10]))
-            ->assertSessionHasErrors(['monthly_discount_percent' => 'The monthly discount cannot be smaller than the weekly discount.']);
-
-        $this->assertSame(10, $this->apartment->fresh()->monthly_discount_percent);
     }
 }

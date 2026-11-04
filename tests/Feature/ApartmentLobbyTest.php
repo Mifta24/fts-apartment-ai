@@ -82,9 +82,9 @@ class ApartmentLobbyTest extends TestCase
             ->assertSee('data-showcase-labels', false)
             ->assertSee('data-quote-url="'.route('reservation.quote', 'demo').'"', false)
             ->assertSee('data-reserve-url="'.route('reservation.store', 'demo').'"', false)
-            ->assertSee('Send stay request');
-        $this->get('/demo?lang=id')->assertOk()->assertSee('Kirim permintaan sewa');
-        $this->get('/demo/staff?lang=ja')->assertOk()->assertSee('滞在リクエストを送信');
+            ->assertSee('Send rental application');
+        $this->get('/demo?lang=id')->assertOk()->assertSee('Kirim pengajuan sewa');
+        $this->get('/demo/staff?lang=ja')->assertOk()->assertSee('入居申込を送信');
     }
 
     public function test_chat_exposes_consistent_status_draft_and_loading_copy_for_each_locale(): void
@@ -154,16 +154,16 @@ class ApartmentLobbyTest extends TestCase
     {
         $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
         $first = $apartment->unitTypes()->create([
-            'name' => 'Deluxe King', 'slug' => 'deluxe-king', 'base_price' => 950000, 'max_adults' => 2, 'max_children' => 1,
+            'name' => 'Deluxe King', 'slug' => 'deluxe-king', 'monthly_price' => 12000000, 'max_adults' => 2, 'max_children' => 1,
             'bed_config' => [['type' => 'king', 'count' => 1]], 'view_type' => 'garden', 'amenities' => ['wifi', 'full_kitchen'],
             'bedrooms' => 1, 'bathrooms' => 1, 'floor_range' => '10–20', 'is_active' => true, 'sort_order' => 0,
         ]);
         $first->images()->create(['image_url' => 'https://example.test/one.jpg', 'alt_text' => 'King bed', 'sort_order' => 0]);
         $first->images()->create(['image_url' => 'https://example.test/two.jpg', 'alt_text' => 'Bathroom', 'sort_order' => 1]);
-        $apartment->unitTypes()->create(['name' => 'Family Suite', 'slug' => 'family-suite', 'base_price' => 1800000, 'max_adults' => 3, 'max_children' => 2, 'is_active' => true, 'sort_order' => 1]);
-        $apartment->unitTypes()->create(['name' => 'Retired Unit', 'slug' => 'retired-unit', 'base_price' => 1, 'max_adults' => 1, 'max_children' => 0, 'is_active' => false]);
+        $apartment->unitTypes()->create(['name' => 'Family Suite', 'slug' => 'family-suite', 'monthly_price' => 20000000, 'max_adults' => 3, 'max_children' => 2, 'is_active' => true, 'sort_order' => 1]);
+        $apartment->unitTypes()->create(['name' => 'Retired Unit', 'slug' => 'retired-unit', 'monthly_price' => 1, 'max_adults' => 1, 'max_children' => 0, 'is_active' => false]);
         $other = Apartment::create(['name' => 'Other', 'slug' => 'other', 'public_status' => 'published']);
-        $other->unitTypes()->create(['name' => 'Foreign Unit', 'slug' => 'foreign-unit', 'base_price' => 1, 'max_adults' => 1, 'max_children' => 0, 'is_active' => true]);
+        $other->unitTypes()->create(['name' => 'Foreign Unit', 'slug' => 'foreign-unit', 'monthly_price' => 1, 'max_adults' => 1, 'max_children' => 0, 'is_active' => true]);
 
         $this->get('/demo/units?lang=en')
             ->assertOk()
@@ -183,13 +183,13 @@ class ApartmentLobbyTest extends TestCase
     {
         $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
         $first = $apartment->unitTypes()->create([
-            'name' => 'Deluxe King', 'slug' => 'deluxe-king', 'base_price' => 950000, 'size_sqm' => 32, 'max_adults' => 2, 'max_children' => 1,
+            'name' => 'Deluxe King', 'slug' => 'deluxe-king', 'monthly_price' => 12000000, 'size_sqm' => 32, 'max_adults' => 2, 'max_children' => 1,
             'bed_config' => [['type' => 'king', 'count' => 1]], 'view_type' => 'garden', 'amenities' => ['wifi', 'full_kitchen'],
             'bedrooms' => 1, 'bathrooms' => 1, 'floor_range' => '10–20', 'is_active' => true, 'sort_order' => 0,
         ]);
         $first->images()->create(['image_url' => 'https://example.test/one.jpg', 'alt_text' => 'King bed', 'sort_order' => 0]);
         $first->images()->create(['image_url' => 'https://example.test/two.jpg', 'alt_text' => 'Bathroom', 'sort_order' => 1]);
-        $apartment->unitTypes()->create(['name' => 'Family Suite', 'slug' => 'family-suite', 'base_price' => 1800000, 'max_adults' => 3, 'max_children' => 2, 'is_active' => true, 'sort_order' => 1]);
+        $apartment->unitTypes()->create(['name' => 'Family Suite', 'slug' => 'family-suite', 'monthly_price' => 20000000, 'max_adults' => 3, 'max_children' => 2, 'is_active' => true, 'sort_order' => 1]);
 
         $suiteUrl = route('apartment.unit', ['apartmentSlug' => 'demo', 'unitSlug' => 'family-suite', 'lang' => 'en']);
 
@@ -214,7 +214,7 @@ class ApartmentLobbyTest extends TestCase
     public function test_units_pages_follow_the_apartment_publication_and_unit_state(): void
     {
         $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published']);
-        $apartment->unitTypes()->create(['name' => 'Hidden', 'slug' => 'hidden', 'base_price' => 1, 'max_adults' => 1, 'max_children' => 0, 'is_active' => false]);
+        $apartment->unitTypes()->create(['name' => 'Hidden', 'slug' => 'hidden', 'monthly_price' => 1, 'max_adults' => 1, 'max_children' => 0, 'is_active' => false]);
         Apartment::create(['name' => 'Draft', 'slug' => 'draft']);
 
         $this->get('/demo/units?lang=en')->assertOk()->assertSee('Unit information will be available soon.');
@@ -225,7 +225,7 @@ class ApartmentLobbyTest extends TestCase
     public function test_the_lobby_walks_the_guest_to_the_units_page(): void
     {
         $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published']);
-        $apartment->unitTypes()->create(['name' => 'Deluxe King', 'slug' => 'deluxe-king', 'base_price' => 950000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
+        $apartment->unitTypes()->create(['name' => 'Deluxe King', 'slug' => 'deluxe-king', 'monthly_price' => 12000000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
 
         $this->get('/demo?lang=id')
             ->assertOk()
@@ -249,16 +249,16 @@ class ApartmentLobbyTest extends TestCase
             'name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'whatsapp' => '+62 812-0000-1111',
             'phone' => '+62 361 000', 'email' => 'front@demo.test',
         ]);
-        $apartment->unitTypes()->create(['name' => 'Deluxe King', 'slug' => 'deluxe-king', 'base_price' => 950000, 'max_adults' => 2, 'max_children' => 1, 'is_active' => true]);
+        $apartment->unitTypes()->create(['name' => 'Deluxe King', 'slug' => 'deluxe-king', 'monthly_price' => 12000000, 'max_adults' => 2, 'max_children' => 1, 'is_active' => true]);
 
         $this->get('/demo?lang=en')
             ->assertOk()
             ->assertSee('href="'.route('apartment.reservation', ['apartmentSlug' => 'demo', 'lang' => 'en']).'"', false)
-            ->assertSee('data-tour-line="Going to the leasing desk to plan your stay."', false)
+            ->assertSee('data-tour-line="Going to the leasing desk to apply for a unit."', false)
             ->assertSee('href="'.route('apartment.staff', ['apartmentSlug' => 'demo', 'lang' => 'en']).'"', false)
             ->assertSee('data-tour-line="Going to the apartment team."', false);
 
-        $this->get('/demo/reservation?lang=en')
+        $this->get('/demo/apply?lang=en')
             ->assertOk()
             ->assertSee('data-scene="reservation"', false)
             ->assertSee('data-tour-line="Going back down to the lobby."', false)
@@ -267,9 +267,9 @@ class ApartmentLobbyTest extends TestCase
             ->assertSee('Step :current of :total', false)
             ->assertSee(route('reservation.store', 'demo'), false);
 
-        $this->get('/demo/reservation?lang=id')->assertOk()->assertSee('Langkah :current dari :total', false);
+        $this->get('/demo/apply?lang=id')->assertOk()->assertSee('Langkah :current dari :total', false);
 
-        $this->get('/demo/reservation?lang=en&unit=deluxe-king')
+        $this->get('/demo/apply?lang=en&unit=deluxe-king')
             ->assertOk()
             ->assertSee('data-preselect-unit="deluxe-king"', false);
 
@@ -286,14 +286,14 @@ class ApartmentLobbyTest extends TestCase
             ->assertSee('mailto:front@demo.test', false);
 
         $this->get('/draft/staff')->assertNotFound();
-        $this->get('/draft/reservation')->assertNotFound();
+        $this->get('/draft/apply')->assertNotFound();
     }
 
     public function test_every_floor_shows_the_lift_panel_with_its_own_button_lit(): void
     {
         Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published']);
 
-        foreach (['' => 'L', '/units' => '02', '/facilities' => '03', '/info' => '04', '/reservation' => '05', '/staff' => '06'] as $path => $floor) {
+        foreach (['' => 'L', '/units' => '02', '/facilities' => '03', '/info' => '04', '/apply' => '05', '/staff' => '06'] as $path => $floor) {
             $page = $this->get('/demo'.$path.'?lang=en')
                 ->assertOk()
                 ->assertSee('class="lift-panel"', false)
@@ -318,10 +318,10 @@ class ApartmentLobbyTest extends TestCase
     public function test_every_stage_scene_uses_the_same_chat_controls_and_dock_contract(): void
     {
         $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published']);
-        $apartment->unitTypes()->create(['name' => 'Deluxe King', 'slug' => 'deluxe-king', 'base_price' => 950000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
+        $apartment->unitTypes()->create(['name' => 'Deluxe King', 'slug' => 'deluxe-king', 'monthly_price' => 12000000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
         $apartment->knowledgeItems()->create(['category' => 'facilities', 'title' => 'Pool', 'body' => 'Open all day.', 'is_active' => true]);
 
-        foreach (['/demo', '/demo/info', '/demo/units', '/demo/facilities', '/demo/reservation', '/demo/staff'] as $path) {
+        foreach (['/demo', '/demo/info', '/demo/units', '/demo/facilities', '/demo/apply', '/demo/staff'] as $path) {
             $this->get($path.'?lang=en')
                 ->assertOk()
                 ->assertSee('data-chat-dock="', false)
@@ -366,7 +366,7 @@ class ApartmentLobbyTest extends TestCase
     {
         $apartment = Apartment::create([
             'name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'address' => 'Jl. Pantai 8', 'city' => 'Bali', 'country' => 'Indonesia',
-            'check_in_time' => '14:00', 'check_out_time' => '12:00', 'description' => 'A beachfront resort.', 'latitude' => -8.8, 'longitude' => 115.23,
+            'description' => 'A beachfront resort.', 'latitude' => -8.8, 'longitude' => 115.23,
         ]);
         $apartment->knowledgeItems()->create(['category' => 'policies', 'title' => 'Cancellation', 'body' => 'Free until 48 hours before arrival.', 'is_active' => true]);
         $apartment->knowledgeItems()->create(['category' => 'faq', 'title' => 'Is parking free?', 'body' => 'Yes, for guests.', 'is_active' => true]);
@@ -386,8 +386,7 @@ class ApartmentLobbyTest extends TestCase
             ->assertSee('data-tour-line="Going back down to the lobby."', false)
             ->assertSee('Free until 48 hours before arrival.')
             ->assertSee('Is parking free?')
-            ->assertSee('class="info-stay-time"', false)
-            ->assertSeeInOrder(['14:00', '12:00'])
+            ->assertDontSee('info-stay-time', false)
             ->assertSee('https://www.google.com/maps?q=-8.8000000,115.2300000', false)
             ->assertDontSee('Not approved.');
     }
@@ -404,25 +403,25 @@ class ApartmentLobbyTest extends TestCase
     {
         $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
         $apartment->unitTypes()->create([
-            'name' => 'Two Bedroom', 'slug' => 'two-bedroom', 'description' => 'A calm unit with a park outlook', 'base_price' => 950000, 'size_sqm' => 82,
+            'name' => 'Two Bedroom', 'slug' => 'two-bedroom', 'description' => 'A calm unit with a park outlook', 'monthly_price' => 12000000, 'size_sqm' => 82,
             'bedrooms' => 2, 'bathrooms' => 2, 'floor_range' => '15–26', 'max_adults' => 4, 'max_children' => 2, 'view_type' => 'park', 'is_active' => true, 'sort_order' => 0,
         ]);
-        $apartment->unitTypes()->create(['name' => 'Studio', 'slug' => 'studio', 'base_price' => 650000, 'bedrooms' => 0, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true, 'sort_order' => 1]);
+        $apartment->unitTypes()->create(['name' => 'Studio', 'slug' => 'studio', 'monthly_price' => 8000000, 'bedrooms' => 0, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true, 'sort_order' => 1]);
 
         $this->get('/demo/units?lang=en')
             ->assertOk()
             ->assertSee('data-narrator', false)
-            ->assertSee('We have 2 unit types, from IDR 650.000 per night.');
+            ->assertSee('We have 2 unit types, from IDR 8.000.000 per month.');
 
         $this->get('/demo/units/two-bedroom?lang=en')
             ->assertOk()
-            ->assertSee('Two Bedroom. A calm unit with a park outlook. It is a 2-bedroom, 2-bathroom layout with 82 m² for up to 6 residents. You will find it on floors 15–26. Park view. Rates start from IDR 950.000 per night');
+            ->assertSee('Two Bedroom. A calm unit with a park outlook. It is a 2-bedroom, 2-bathroom layout with 82 m² for up to 6 residents. You will find it on floors 15–26. Park view. Rent starts from IDR 12.000.000 per month.');
 
         $this->get('/demo/units/studio?lang=en')
             ->assertOk()
-            ->assertSee('Studio. It is a studio for up to 2 residents. Rates start from IDR 650.000 per night, and longer stays get a lower rate. Final availability and rates are confirmed by our team.');
+            ->assertSee('Studio. It is a studio for up to 2 residents. Rent starts from IDR 8.000.000 per month. Final availability and rates are confirmed by our team.');
 
-        $this->get('/demo/units?lang=id')->assertOk()->assertSee('Ada 2 tipe unit, mulai dari IDR 650.000 per malam.');
+        $this->get('/demo/units?lang=id')->assertOk()->assertSee('Ada 2 tipe unit, mulai dari IDR 8.000.000 per bulan.');
     }
 
     public function test_no_units_narration_is_shown_when_the_apartment_has_no_units(): void
@@ -436,7 +435,6 @@ class ApartmentLobbyTest extends TestCase
     {
         $apartment = Apartment::create([
             'name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'city' => 'Bali', 'country' => 'Indonesia',
-            'check_in_time' => '14:00', 'check_out_time' => '12:00',
         ]);
         $apartment->knowledgeItems()->create(['category' => 'facilities', 'title' => 'Garden pool', 'body' => "Open 07:00 to 20:00.\nTowels included.", 'is_active' => true, 'sort_order' => 0]);
         $apartment->knowledgeItems()->create(['category' => 'facilities', 'title' => 'Gym', 'body' => 'Open 24 hours.', 'is_active' => true, 'sort_order' => 1]);
@@ -456,7 +454,7 @@ class ApartmentLobbyTest extends TestCase
 
         $this->get('/demo/info?lang=en')
             ->assertOk()
-            ->assertSee('Welcome to Demo. The building is in Bali, Indonesia. Check-in is from 14:00 and check-out is at 12:00.');
+            ->assertSee('Welcome to Demo. The building is in Bali, Indonesia. Below you will find the address');
 
         $this->get('/demo/info?lang=id')->assertOk()->assertSee('Selamat datang di Demo. Gedung kami berada di Bali, Indonesia.');
     }
@@ -467,7 +465,7 @@ class ApartmentLobbyTest extends TestCase
 
         $this->get('/bare/info?lang=en')
             ->assertOk()
-            ->assertSee('Welcome to Bare. Check-in is from 14:00 and check-out is at 12:00. Below you will find the address')
+            ->assertSee('Welcome to Bare. Below you will find the address')
             ->assertDontSee('The building is in');
     }
 
@@ -488,15 +486,15 @@ class ApartmentLobbyTest extends TestCase
     public function test_the_units_floor_shows_a_directory_of_unit_types(): void
     {
         $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
-        $apartment->unitTypes()->create(['name' => 'Deluxe King', 'slug' => 'deluxe-king', 'base_price' => 950000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true, 'sort_order' => 0]);
-        $apartment->unitTypes()->create(['name' => 'Family Suite', 'slug' => 'family-suite', 'base_price' => 2200000, 'max_adults' => 4, 'max_children' => 0, 'is_active' => true, 'sort_order' => 1]);
-        $apartment->unitTypes()->create(['name' => 'Retired Unit', 'slug' => 'retired', 'base_price' => 1, 'max_adults' => 1, 'max_children' => 0, 'is_active' => false]);
+        $apartment->unitTypes()->create(['name' => 'Deluxe King', 'slug' => 'deluxe-king', 'monthly_price' => 12000000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true, 'sort_order' => 0]);
+        $apartment->unitTypes()->create(['name' => 'Family Suite', 'slug' => 'family-suite', 'monthly_price' => 25000000, 'max_adults' => 4, 'max_children' => 0, 'is_active' => true, 'sort_order' => 1]);
+        $apartment->unitTypes()->create(['name' => 'Retired Unit', 'slug' => 'retired', 'monthly_price' => 1, 'max_adults' => 1, 'max_children' => 0, 'is_active' => false]);
 
         $this->get('/demo/units/family-suite?lang=id')
             ->assertOk()
             ->assertSee('class="unit-directory"', false)
             ->assertSee('class="unit-nav"', false)
-            ->assertSee('mulai dari IDR&nbsp;950.000 / malam', false)
+            ->assertSee("Sewa mulai IDR\u{00A0}12.000.000 / bulan", false)
             ->assertDontSee('Retired Unit')
             // the lift panel still takes the guest back down to the lobby
             ->assertSee('href="'.route('apartment.show', ['apartmentSlug' => 'demo', 'lang' => 'id']).'" class="lift-button"', false);
@@ -517,7 +515,7 @@ class ApartmentLobbyTest extends TestCase
     public function test_each_floor_opens_onto_its_own_photograph_with_the_concierge_posed_in_front(): void
     {
         $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
-        $apartment->unitTypes()->create(['name' => 'Deluxe King', 'slug' => 'deluxe-king', 'base_price' => 950000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
+        $apartment->unitTypes()->create(['name' => 'Deluxe King', 'slug' => 'deluxe-king', 'monthly_price' => 12000000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
 
         $this->get('/demo')
             ->assertOk()
@@ -538,7 +536,7 @@ class ApartmentLobbyTest extends TestCase
             ->assertSee('class="stage-character" data-pose="welcoming"', false)
             ->assertSee('images/character/character welcoming.png', false);
         $this->get('/demo/staff')->assertOk()->assertSee('class="stage-character" data-pose="consulting"', false);
-        $this->get('/demo/reservation')->assertOk()->assertSee('class="stage-character" data-pose="consulting"', false);
+        $this->get('/demo/apply')->assertOk()->assertSee('class="stage-character" data-pose="consulting"', false);
 
         // the unit page is too full to share with her, so only her avatar stays
         $this->get('/demo/units/deluxe-king')
@@ -574,7 +572,7 @@ class ApartmentLobbyTest extends TestCase
         $scenes = [
             'apartment.units' => 'Saya ingin melihat pilihan tipe unit yang tersedia.',
             'apartment.facilities' => 'Fasilitas apa saja yang bisa dipakai penghuni?',
-            'apartment.info' => 'Apa kebijakan check-in, aturan gedung, dan pembatalan?',
+            'apartment.info' => 'Apa aturan gedung, proses pindah masuk, dan kebijakan deposit?',
             'apartment.reservation' => 'Saya ingin menyewa unit. Bantu saya cek ketersediaan.',
             'apartment.staff' => 'Saya ingin bicara dengan tim apartemen.',
         ];
@@ -590,10 +588,10 @@ class ApartmentLobbyTest extends TestCase
         }
     }
 
-    public function test_lobby_offers_the_residences_and_a_stay_request_as_the_two_main_actions_in_the_guest_language(): void
+    public function test_lobby_offers_the_residences_and_a_rental_application_as_the_two_main_actions_in_the_guest_language(): void
     {
-        $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR', 'monthly_discount_percent' => 25]);
-        $apartment->unitTypes()->create(['name' => 'Studio', 'slug' => 'studio', 'base_price' => 650000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
+        $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
+        $apartment->unitTypes()->create(['name' => 'Studio', 'slug' => 'studio', 'monthly_price' => 8000000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
 
         $this->get('/demo?lang=id')
             ->assertOk()
@@ -601,9 +599,9 @@ class ApartmentLobbyTest extends TestCase
             ->assertSee('href="'.route('apartment.units', ['apartmentSlug' => 'demo', 'lang' => 'id']).'"', false)
             ->assertSee('Lihat unit')
             ->assertSee('href="'.route('apartment.reservation', ['apartmentSlug' => 'demo', 'lang' => 'id']).'"', false)
-            ->assertSee('Rencanakan menginap');
+            ->assertSee('Ajukan sewa');
 
-        $this->get('/demo?lang=en')->assertOk()->assertSee('See the residences')->assertSee('Plan my stay');
+        $this->get('/demo?lang=en')->assertOk()->assertSee('See the residences')->assertSee('Apply to rent');
         $this->get('/demo?lang=ja')->assertOk()->assertSee('お部屋を見る');
     }
 
@@ -614,11 +612,17 @@ class ApartmentLobbyTest extends TestCase
         $this->get('/demo?lang=en')->assertOk()->assertDontSee('lobby-cta', false)->assertDontSee('See the residences');
     }
 
-    public function test_lobby_stats_show_the_price_from_the_monthly_saving_and_the_move_in_time(): void
+    public function test_lobby_stats_show_the_monthly_rent_from_and_no_hotel_check_in_time(): void
     {
-        $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR', 'monthly_discount_percent' => 25, 'check_in_time' => '14:00']);
-        $apartment->unitTypes()->create(['name' => 'Studio', 'slug' => 'studio', 'base_price' => 650000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
+        $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
+        $apartment->unitTypes()->create(['name' => 'Studio', 'slug' => 'studio', 'monthly_price' => 8000000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
+        $apartment->unitTypes()->create(['name' => 'Loft', 'slug' => 'loft', 'monthly_price' => 12000000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true]);
 
-        $this->get('/demo?lang=en')->assertOk()->assertSee('IDR 650.000')->assertSee('25% off')->assertSee('14:00');
+        $this->get('/demo?lang=en')
+            ->assertOk()
+            ->assertSee('Monthly rent from')
+            ->assertSee('IDR 8.000.000')
+            ->assertDontSee('Nightly')
+            ->assertDontSee('Check-in');
     }
 }

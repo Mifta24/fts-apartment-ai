@@ -35,22 +35,22 @@ class UnitCategoryAndSaleListingTest extends TestCase
         ]);
 
         $this->studio = $this->apartment->unitTypes()->create([
-            'name' => 'Studio', 'slug' => 'studio', 'base_price' => 650000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true,
+            'name' => 'Studio', 'slug' => 'studio', 'monthly_price' => 13500000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true,
         ]);
         $this->office = $this->apartment->unitTypes()->create([
             'name' => 'Office Suite', 'slug' => 'office-suite', 'category' => UnitType::CATEGORY_OFFICE, 'listing_type' => UnitType::LISTING_RENT,
-            'base_price' => 0, 'monthly_price' => 25000000, 'bedrooms' => 0, 'bathrooms' => 1, 'max_adults' => 10, 'max_children' => 0, 'is_active' => true, 'sort_order' => 1,
+            'monthly_price' => 25000000, 'bedrooms' => 0, 'bathrooms' => 1, 'max_adults' => 10, 'max_children' => 0, 'is_active' => true, 'sort_order' => 1,
         ]);
         $this->penthouseForSale = $this->apartment->unitTypes()->create([
             'name' => 'Sky Penthouse', 'slug' => 'sky-penthouse', 'listing_type' => UnitType::LISTING_SALE, 'sale_price' => 12500000000,
-            'base_price' => 0, 'bedrooms' => 3, 'bathrooms' => 3, 'max_adults' => 6, 'max_children' => 2, 'is_active' => true, 'sort_order' => 2,
+            'bedrooms' => 3, 'bathrooms' => 3, 'max_adults' => 6, 'max_children' => 2, 'is_active' => true, 'sort_order' => 2,
         ]);
 
         $today = CarbonImmutable::now('Asia/Jakarta')->startOfDay();
         foreach ([$this->studio, $this->office, $this->penthouseForSale] as $unitType) {
             UnitInventory::insert(collect(range(10, 14))->map(fn (int $offset) => [
                 'unit_type_id' => $unitType->id, 'stay_date' => $today->addDays($offset)->toDateString(),
-                'total_units' => 2, 'booked_units' => 0, 'price' => 650000, 'created_at' => now(), 'updated_at' => now(),
+                'total_units' => 2, 'booked_units' => 0, 'created_at' => now(), 'updated_at' => now(),
             ])->all());
         }
     }
@@ -81,13 +81,13 @@ class UnitCategoryAndSaleListingTest extends TestCase
         $this->assertTrue($this->studio->isResidential());
         $this->assertTrue($this->studio->isForRent());
         $this->assertFalse($this->studio->isForSale());
-        $this->assertTrue($this->studio->offersDailyRental());
+        $this->assertTrue($this->studio->offersMonthlyRental());
     }
 
-    public function test_a_monthly_only_office_is_not_rented_by_the_night(): void
+    public function test_a_monthly_only_office_is_not_rented_by_the_year_or_the_night(): void
     {
         $this->assertTrue($this->office->offersMonthlyRental());
-        $this->assertFalse($this->office->offersDailyRental());
+        $this->assertFalse($this->office->offersRental('yearly'));
         $this->assertFalse($this->office->offersRental('daily'));
         $this->assertFalse($this->office->isResidential());
     }
@@ -95,7 +95,7 @@ class UnitCategoryAndSaleListingTest extends TestCase
     public function test_a_unit_for_sale_offers_no_rental_of_any_kind(): void
     {
         $this->assertTrue($this->penthouseForSale->offersSalePrice());
-        $this->assertFalse($this->penthouseForSale->offersRental('daily'));
+        $this->assertFalse($this->penthouseForSale->offersRental('yearly'));
         $this->assertFalse($this->penthouseForSale->offersRental('monthly'));
     }
 
@@ -124,7 +124,7 @@ class UnitCategoryAndSaleListingTest extends TestCase
 
     public function test_the_reservation_form_lists_only_units_for_rent(): void
     {
-        $this->get('/demo/reservation')
+        $this->get('/demo/apply')
             ->assertOk()
             ->assertSee('value="studio"', false)
             ->assertSee('value="office-suite"', false)
@@ -135,18 +135,18 @@ class UnitCategoryAndSaleListingTest extends TestCase
     {
         $today = CarbonImmutable::now('Asia/Jakarta')->startOfDay();
 
-        $this->postJson('/demo/reservation/quote', [
-            'unit_type_slug' => 'sky-penthouse', 'check_in' => $today->addDays(10)->toDateString(), 'check_out' => $today->addDays(12)->toDateString(),
+        $this->postJson('/demo/apply/quote', [
+            'unit_type_slug' => 'sky-penthouse', 'rental_type' => 'monthly', 'lease_months' => 1, 'check_in' => $today->addDays(10)->toDateString(),
             'adults' => 2, 'children' => 0, 'units' => 1, 'locale' => 'en',
         ])->assertUnprocessable()->assertJsonValidationErrors('unit_type_slug');
     }
 
-    public function test_a_monthly_only_unit_cannot_be_reserved_by_the_night(): void
+    public function test_a_monthly_only_unit_cannot_be_applied_for_by_the_year(): void
     {
         $today = CarbonImmutable::now('Asia/Jakarta')->startOfDay();
 
-        $this->postJson('/demo/reservation/quote', [
-            'unit_type_slug' => 'office-suite', 'check_in' => $today->addDays(10)->toDateString(), 'check_out' => $today->addDays(12)->toDateString(),
+        $this->postJson('/demo/apply/quote', [
+            'unit_type_slug' => 'office-suite', 'rental_type' => 'yearly', 'lease_months' => 12, 'check_in' => $today->addDays(10)->toDateString(),
             'adults' => 2, 'children' => 0, 'units' => 1, 'locale' => 'en',
         ])->assertUnprocessable()->assertJsonValidationErrors('unit_type_slug');
     }
@@ -160,7 +160,7 @@ class UnitCategoryAndSaleListingTest extends TestCase
 
         $this->assertSame('sale', $detail['listing_type']);
         $this->assertEquals(12500000000, $detail['sale_price']);
-        $this->assertNull($detail['starting_price']);
+        $this->assertArrayNotHasKey('starting_price', $detail);
 
         $reservation = $tools->dispatch('start_reservation', ['unit_type_slug' => 'sky-penthouse']);
 
@@ -175,7 +175,7 @@ class UnitCategoryAndSaleListingTest extends TestCase
             ->assertRedirect(route('admin.unit-types.index'));
 
         $this->assertDatabaseHas('unit_types', [
-            'apartment_id' => $this->apartment->id, 'name' => 'Corner Office', 'category' => 'office', 'listing_type' => 'rent', 'base_price' => 0,
+            'apartment_id' => $this->apartment->id, 'name' => 'Corner Office', 'category' => 'office', 'listing_type' => 'rent', 'monthly_price' => 18000000,
         ]);
     }
 
@@ -201,7 +201,7 @@ class UnitCategoryAndSaleListingTest extends TestCase
     {
         $this->actingAs($this->staff())
             ->post(route('admin.unit-types.store'), $this->unitPayload(['monthly_price' => null]))
-            ->assertSessionHasErrors('base_price');
+            ->assertSessionHasErrors('monthly_price');
     }
 
     public function test_an_unknown_category_is_rejected(): void
@@ -219,7 +219,6 @@ class UnitCategoryAndSaleListingTest extends TestCase
         $units = $demo->unitTypes()->get()->keyBy('slug');
 
         $this->assertSame(UnitType::CATEGORY_OFFICE, $units['office-suite-senopati']->category);
-        $this->assertFalse($units['office-suite-senopati']->offersDailyRental());
         $this->assertTrue($units['office-suite-senopati']->offersMonthlyRental());
         $this->assertTrue($units['retail-kiosk-podium']->isForRent() && $units['retail-kiosk-podium']->offersSalePrice());
         $this->assertFalse($units['two-bedroom-residence-for-sale']->isForRent());
