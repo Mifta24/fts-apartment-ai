@@ -53,7 +53,7 @@ class ContentGuard
 
     private const REFUSALS = [
         'id' => 'Maaf, saya tidak bisa membantu dengan hal itu. Saya siap membantu soal unit, fasilitas gedung, permintaan sewa, atau menghubungkan Anda dengan tim apartemen.',
-        'en' => 'Sorry, I cannot help with that. I am happy to help with units, building facilities, stay requests, or connecting you with the apartment team.',
+        'en' => 'Sorry, I cannot help with that. I am happy to help with units, building facilities, rental applications, or connecting you with the apartment team.',
         'ja' => '申し訳ございませんが、そのご依頼にはお応えできません。お部屋、共用施設、滞在のご依頼、スタッフへのご連絡でしたらお手伝いいたします。',
     ];
 

@@ -8,7 +8,7 @@ use App\Notifications\GuestBookingSummary;
 
 /**
  * Builds the WhatsApp / phone / email hand-over links that carry a
- * reservation summary (or a plain "talk to staff" request) to the apartment team.
+ * rental application summary (or a plain "talk to staff" request) to the apartment team.
  */
 class ReservationHandover
 {
@@ -50,9 +50,9 @@ class ReservationHandover
         $booking->loadMissing('unitType');
 
         $labels = match ($locale) {
-            'en' => ['Hello, I would like to request a stay at the apartment.', 'Name', 'Move-in', 'Move-out', 'Residents', 'Units', 'Unit type', 'Special request', 'Reference', 'Rental'],
-            'ja' => ['こんにちは。アパートメントの滞在をリクエストしたいです。', 'お名前', '入居日', '退去日', '人数', '戸数', 'お部屋タイプ', 'ご要望', '予約番号', '契約形態'],
-            default => ['Halo, saya ingin mengajukan permintaan sewa unit apartemen.', 'Nama', 'Check-in', 'Check-out', 'Penghuni', 'Jumlah unit', 'Tipe unit', 'Permintaan khusus', 'Referensi', 'Jenis sewa'],
+            'en' => ['Hello, I would like to apply to rent a unit at the apartment.', 'Name', 'Move-in', 'Lease ends', 'Residents', 'Units', 'Unit type', 'Note', 'Reference', 'Rental'],
+            'ja' => ['こんにちは。アパートメントへの入居を申し込みたいです。', 'お名前', '入居日', '契約終了日', '入居人数', '戸数', 'お部屋タイプ', 'ご要望', '申込番号', '契約形態'],
+            default => ['Halo, saya ingin mengajukan sewa unit apartemen.', 'Nama', 'Tanggal masuk', 'Sewa berakhir', 'Penghuni', 'Jumlah unit', 'Tipe unit', 'Catatan', 'Referensi', 'Jenis sewa'],
         };
 
         $guests = $booking->adults + $booking->children;
@@ -76,9 +76,9 @@ class ReservationHandover
     private function subject(string $key, string $locale): string
     {
         return [
-            'en' => ['reservation' => 'Stay request', 'staff' => 'Question for the apartment team', 'staff_message' => 'Hello, I would like to speak with the apartment team.'],
-            'ja' => ['reservation' => '滞在リクエスト', 'staff' => 'スタッフへのご相談', 'staff_message' => 'こんにちは。アパートメントのスタッフとお話ししたいです。'],
-            'id' => ['reservation' => 'Permintaan sewa unit', 'staff' => 'Pertanyaan untuk tim apartemen', 'staff_message' => 'Halo, saya ingin bicara dengan tim apartemen.'],
+            'en' => ['reservation' => 'Rental application', 'staff' => 'Question for the apartment team', 'staff_message' => 'Hello, I would like to speak with the apartment team.'],
+            'ja' => ['reservation' => '入居申込', 'staff' => 'スタッフへのご相談', 'staff_message' => 'こんにちは。アパートメントのスタッフとお話ししたいです。'],
+            'id' => ['reservation' => 'Pengajuan sewa unit', 'staff' => 'Pertanyaan untuk tim apartemen', 'staff_message' => 'Halo, saya ingin bicara dengan tim apartemen.'],
         ][$locale][$key];
     }
 }

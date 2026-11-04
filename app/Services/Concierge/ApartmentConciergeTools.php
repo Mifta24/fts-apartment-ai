@@ -52,14 +52,13 @@ class ApartmentConciergeTools
                 ],
                 [
                     'name' => 'search_units',
-                    'description' => 'Search apartment unit types (studio, 1, 2 or 3 bedrooms). With dates and household it checks real-time availability and returns the total price, long-stay discount already applied. Without dates it simply lists the building\'s unit types with their per-night, monthly and yearly starting prices. For monthly or yearly rentals pass rental_type and lease_months with the move-in date. Use this whenever a guest wants to see, browse or compare units, or describes what they want (dates, residents, bedrooms, view, budget) rather than naming one unit by name — never wait for dates before showing the units.',
+                    'description' => 'Search apartment unit types (studio, 1, 2 or 3 bedrooms) for rent. With a move-in date, lease length and household it checks real-time availability and returns the total rent for the whole lease and the security deposit. Without dates it simply lists the building\'s unit types with their monthly and yearly starting rents. Always pass rental_type (monthly or yearly), check_in as the move-in date and lease_months. Use this whenever a guest wants to see, browse or compare units, or describes what they want (move-in date, residents, bedrooms, view, budget) rather than naming one unit by name — never wait for dates before showing the units.',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
-                            'check_in' => ['type' => 'string', 'description' => 'Optional check-in (or move-in) date, YYYY-MM-DD; leave out when the guest has not given dates'],
-                            'check_out' => ['type' => 'string', 'description' => 'Optional check-out date, YYYY-MM-DD; only for daily rentals'],
-                            'rental_type' => ['type' => 'string', 'enum' => ['daily', 'monthly', 'yearly'], 'description' => 'How the guest wants to rent: daily (by the night, default), monthly (a lease of 1–11 months) or yearly (a lease of 1–3 whole years)'],
-                            'lease_months' => ['type' => 'integer', 'minimum' => 1, 'description' => 'Lease length in months for monthly (1–11) or yearly rentals (12, 24 or 36). Monthly and yearly rentals need check_in as the move-in date and lease_months; they do not use check_out'],
+                            'check_in' => ['type' => 'string', 'description' => 'Optional move-in date, YYYY-MM-DD; leave out when the guest has not given dates'],
+                            'rental_type' => ['type' => 'string', 'enum' => ['monthly', 'yearly'], 'description' => 'How the guest wants to rent: monthly (a lease of 1–11 months, the default) or yearly (a lease of 1–3 whole years)'],
+                            'lease_months' => ['type' => 'integer', 'minimum' => 1, 'description' => 'Lease length in months for monthly (1–11) or yearly rentals (12, 24 or 36). Needed together with check_in, the move-in date'],
                             'adults' => ['type' => 'integer', 'minimum' => 1, 'description' => 'Optional number of adults'],
                             'children' => ['type' => 'integer', 'minimum' => 0],
                             'view_type' => ['type' => 'string', 'description' => 'e.g. city, skyline, park, pool — optional preference'],
@@ -70,7 +69,7 @@ class ApartmentConciergeTools
                 ],
                 [
                     'name' => 'get_unit_detail',
-                    'description' => 'Get full details and photos for one unit type by its slug (from a previous search_units result): layout, bedrooms, bathrooms, floors, furnishing, and the long-stay discounts. Use this when the guest asks to see more about, or see photos of, a specific unit.',
+                    'description' => 'Get full details and photos for one unit type by its slug (from a previous search_units result): layout, bedrooms, bathrooms, floors, furnishing, the monthly and yearly rent and the security deposit. Use this when the guest asks to see more about, or see photos of, a specific unit.',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
@@ -82,31 +81,28 @@ class ApartmentConciergeTools
                 ],
                 [
                     'name' => 'check_availability',
-                    'description' => 'Get the current, real-time availability and exact total price for one unit type over specific dates, including any weekly or monthly long-stay discount for nightly stays, or the monthly/yearly rent and security deposit for a lease (pass rental_type and lease_months). ALWAYS call this before confirming a price or telling a guest a unit is available — never state a price or availability from memory.',
+                    'description' => 'Get the current, real-time availability and exact rent for one unit type from a move-in date for a lease term: the monthly or yearly rent, the total for the whole lease and the security deposit (pass rental_type and lease_months). ALWAYS call this before confirming a price or telling a guest a unit is available — never state a price or availability from memory.',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
                             'unit_type_slug' => ['type' => 'string'],
-                            'check_in' => ['type' => 'string', 'description' => 'Check-in or move-in date, YYYY-MM-DD'],
-                            'check_out' => ['type' => 'string', 'description' => 'Check-out date, YYYY-MM-DD; only for daily rentals'],
-                            'rental_type' => ['type' => 'string', 'enum' => ['daily', 'monthly', 'yearly'], 'description' => 'How the guest wants to rent: daily (by the night, default), monthly (a lease of 1–11 months) or yearly (a lease of 1–3 whole years)'],
-                            'lease_months' => ['type' => 'integer', 'minimum' => 1, 'description' => 'Lease length in months for monthly (1–11) or yearly rentals (12, 24 or 36). Monthly and yearly rentals need check_in as the move-in date and lease_months; they do not use check_out'],
-                            'extra_bed' => ['type' => 'boolean', 'description' => 'Daily rentals only'],
+                            'check_in' => ['type' => 'string', 'description' => 'Move-in date, YYYY-MM-DD'],
+                            'rental_type' => ['type' => 'string', 'enum' => ['monthly', 'yearly'], 'description' => 'How the guest wants to rent: monthly (a lease of 1–11 months, the default) or yearly (a lease of 1–3 whole years)'],
+                            'lease_months' => ['type' => 'integer', 'minimum' => 1, 'description' => 'Lease length in months for monthly (1–11) or yearly rentals (12, 24 or 36). Needed together with check_in, the move-in date'],
                         ],
                         'required' => ['unit_type_slug', 'check_in'],
                     ],
                 ],
                 [
                     'name' => 'start_reservation',
-                    'description' => 'Open the stay request form on the guest\'s screen, pre-filled with whatever you already know. Use this as soon as a guest says they want to book, reserve, rent or request a unit — the guest fills in their name, contact and any missing details in the form themselves, so do NOT ask for name or phone in chat first. Only the unit is required; pass dates and household size when the guest already gave them.',
+                    'description' => 'Open the rental application form on the guest\'s screen, pre-filled with whatever you already know. Use this as soon as a guest says they want to rent, apply for or book a unit — the guest fills in their name, contact and any missing details in the form themselves, so do NOT ask for name or phone in chat first. Only the unit is required; pass the move-in date, lease length and household size when the guest already gave them.',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
                             'unit_type_slug' => ['type' => 'string'],
-                            'check_in' => ['type' => 'string', 'description' => 'Optional, YYYY-MM-DD'],
-                            'check_out' => ['type' => 'string', 'description' => 'Optional, YYYY-MM-DD; only for daily rentals'],
-                            'rental_type' => ['type' => 'string', 'enum' => ['daily', 'monthly', 'yearly'], 'description' => 'How the guest wants to rent: daily (by the night, default), monthly (a lease of 1–11 months) or yearly (a lease of 1–3 whole years)'],
-                            'lease_months' => ['type' => 'integer', 'minimum' => 1, 'description' => 'Lease length in months for monthly (1–11) or yearly rentals (12, 24 or 36). Monthly and yearly rentals need check_in as the move-in date and lease_months; they do not use check_out'],
+                            'check_in' => ['type' => 'string', 'description' => 'Optional move-in date, YYYY-MM-DD'],
+                            'rental_type' => ['type' => 'string', 'enum' => ['monthly', 'yearly'], 'description' => 'How the guest wants to rent: monthly (a lease of 1–11 months, the default) or yearly (a lease of 1–3 whole years)'],
+                            'lease_months' => ['type' => 'integer', 'minimum' => 1, 'description' => 'Lease length in months for monthly (1–11) or yearly rentals (12, 24 or 36). Needed together with check_in, the move-in date'],
                             'adults' => ['type' => 'integer', 'minimum' => 1],
                             'children' => ['type' => 'integer', 'minimum' => 0],
                             'units' => ['type' => 'integer', 'minimum' => 1, 'description' => 'Number of units, default 1'],
@@ -116,19 +112,17 @@ class ApartmentConciergeTools
                 ],
                 [
                     'name' => 'create_booking_request',
-                    'description' => 'Create a stay request directly in the chat, only when the guest has already typed the unit, exact dates (or move-in date and lease length), household size, their name and phone in the conversation. Otherwise use start_reservation instead. This re-checks availability before booking. It does not charge payment, take the security deposit or sign a lease — it creates a pending request for the apartment team to confirm.',
+                    'description' => 'Submit a rental application directly in the chat, only when the guest has already typed the unit, move-in date, lease length, household size, their name and phone in the conversation. Otherwise use start_reservation instead. This re-checks availability before applying. It does not charge payment, take the security deposit or sign a lease — it creates a pending application for the apartment team to review.',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
                             'unit_type_slug' => ['type' => 'string'],
-                            'check_in' => ['type' => 'string', 'description' => 'Check-in or move-in date, YYYY-MM-DD'],
-                            'check_out' => ['type' => 'string', 'description' => 'Check-out date, YYYY-MM-DD; only for daily rentals'],
-                            'rental_type' => ['type' => 'string', 'enum' => ['daily', 'monthly', 'yearly'], 'description' => 'How the guest wants to rent: daily (by the night, default), monthly (a lease of 1–11 months) or yearly (a lease of 1–3 whole years)'],
-                            'lease_months' => ['type' => 'integer', 'minimum' => 1, 'description' => 'Lease length in months for monthly (1–11) or yearly rentals (12, 24 or 36). Monthly and yearly rentals need check_in as the move-in date and lease_months; they do not use check_out'],
+                            'check_in' => ['type' => 'string', 'description' => 'Move-in date, YYYY-MM-DD'],
+                            'rental_type' => ['type' => 'string', 'enum' => ['monthly', 'yearly'], 'description' => 'How the guest wants to rent: monthly (a lease of 1–11 months, the default) or yearly (a lease of 1–3 whole years)'],
+                            'lease_months' => ['type' => 'integer', 'minimum' => 1, 'description' => 'Lease length in months for monthly (1–11) or yearly rentals (12, 24 or 36). Needed together with check_in, the move-in date'],
                             'adults' => ['type' => 'integer'],
                             'children' => ['type' => 'integer'],
                             'units' => ['type' => 'integer', 'minimum' => 1, 'description' => 'Number of units, default 1'],
-                            'extra_bed' => ['type' => 'boolean'],
                             'guest_name' => ['type' => 'string'],
                             'guest_email' => ['type' => 'string'],
                             'guest_phone' => ['type' => 'string'],
@@ -138,8 +132,25 @@ class ApartmentConciergeTools
                     ],
                 ],
                 [
+                    'name' => 'schedule_viewing',
+                    'description' => 'Record a request to view a unit in person before applying. Use it when a guest wants to see, visit or tour a unit. Needs the unit, the preferred date and time, and the guest\'s name and phone. Nothing is held for a viewing: the apartment team confirms the time with the guest.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'unit_type_slug' => ['type' => 'string'],
+                            'preferred_date' => ['type' => 'string', 'description' => 'Preferred viewing date, YYYY-MM-DD'],
+                            'preferred_time' => ['type' => 'string', 'description' => 'Preferred viewing time, HH:MM, 24 hour clock'],
+                            'guest_name' => ['type' => 'string'],
+                            'guest_email' => ['type' => 'string'],
+                            'guest_phone' => ['type' => 'string'],
+                            'notes' => ['type' => 'string'],
+                        ],
+                        'required' => ['unit_type_slug', 'preferred_date', 'preferred_time', 'guest_name', 'guest_phone'],
+                    ],
+                ],
+                [
                     'name' => 'request_human_handover',
-                    'description' => 'Hand this conversation over to a human member of the apartment team. Use this for special requests, complaints, maintenance issues, corporate or group leases, negotiated rates, stays longer than the online limit, unusual cancellations, payment problems, or any question you cannot answer confidently from the available tools. Always write a clear summary so staff do not need to ask the guest to repeat themselves.',
+                    'description' => 'Hand this conversation over to a human member of the apartment team. Use this for special requests, complaints, maintenance issues, corporate or group leases, negotiated rates, leases longer than the online limit, unusual cancellations, payment problems, or any question you cannot answer confidently from the available tools. Always write a clear summary so staff do not need to ask the guest to repeat themselves.',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
@@ -172,6 +183,7 @@ class ApartmentConciergeTools
         'check_availability' => ['unit_type_slug', 'check_in'],
         'start_reservation' => ['unit_type_slug'],
         'create_booking_request' => ['unit_type_slug', 'check_in', 'adults', 'guest_name', 'guest_phone'],
+        'schedule_viewing' => ['unit_type_slug', 'preferred_date', 'preferred_time', 'guest_name', 'guest_phone'],
         'request_human_handover' => ['reason', 'summary'],
     ];
 
@@ -197,6 +209,7 @@ class ApartmentConciergeTools
             'check_availability' => $this->checkAvailability($input),
             'start_reservation' => $this->startReservation($input),
             'create_booking_request' => $this->createBookingRequest($input),
+            'schedule_viewing' => $this->scheduleViewing($input),
             'request_human_handover' => $this->requestHumanHandover($input),
             default => ['text' => "Unknown tool: {$name}", 'ui' => null],
         };
@@ -243,9 +256,8 @@ class ApartmentConciergeTools
     private function searchUnits(array $input): array
     {
         $rentalType = $this->rentalType($input);
-        $isLease = $rentalType !== Booking::RENTAL_DAILY;
 
-        if (empty($input['check_in']) || ($isLease ? empty($input['lease_months']) : empty($input['check_out']))) {
+        if (empty($input['check_in']) || empty($input['lease_months'])) {
             return $this->browseUnits($input);
         }
 
@@ -255,7 +267,7 @@ class ApartmentConciergeTools
             return ['text' => $stay, 'ui' => null];
         }
 
-        ['check_in' => $checkIn, 'check_out' => $checkOut, 'nights' => $nights] = $stay;
+        ['check_in' => $checkIn, 'check_out' => $checkOut] = $stay;
         $adults = max(1, (int) ($input['adults'] ?? 1));
         $children = (int) ($input['children'] ?? 0);
         $viewType = $input['view_type'] ?? null;
@@ -290,13 +302,12 @@ class ApartmentConciergeTools
                 'view_type' => $unitType->view_type,
                 'max_adults' => $unitType->max_adults,
                 'max_children' => $unitType->max_children,
-                'breakfast_included' => $unitType->breakfast_included,
                 'rental_type' => $rentalType,
                 'lease_months' => $stay['lease_months'],
-                'nights' => $nights,
-                'discount_percent' => $quote['discount_percent'],
                 'total_price' => $quote['grand_total'],
-                ...($isLease ? ['rate' => $quote['rate'], 'rate_period' => $quote['rate_period'], 'deposit_total' => $quote['deposit_total']] : []),
+                'rate' => $quote['rate'],
+                'rate_period' => $quote['rate_period'],
+                'deposit_total' => $quote['deposit_total'],
                 'currency' => $this->apartment->currency,
                 'min_available_units' => $quote['min_available_units'],
                 'thumbnail_url' => $thumbnail?->image_source,
@@ -305,7 +316,7 @@ class ApartmentConciergeTools
 
         if (empty($matches)) {
             return [
-                'text' => 'No unit type offers that rental with availability for every night of that stay for this household. Tell the guest honestly and offer to check different dates or another layout, or call request_human_handover if they want to join the waiting list.',
+                'text' => 'No unit type offers that rental with availability for the whole lease for this household. Tell the guest honestly and offer to check different dates or another layout, or call request_human_handover if they want to join the waiting list.',
                 'ui' => null,
             ];
         }
@@ -333,8 +344,8 @@ class ApartmentConciergeTools
     }
 
     /**
-     * Lists the building's active unit types with their per-night starting
-     * price when the guest has not given dates yet.
+     * Lists the building's active unit types with their monthly and yearly
+     * starting rent when the guest has not given dates yet.
      *
      * @param  array<string, mixed>  $input
      * @return array{text: string, ui: ?array<string, mixed>}
@@ -351,8 +362,8 @@ class ApartmentConciergeTools
             ->when($viewType, fn ($c) => $c->filter(fn (UnitType $rt) => $rt->view_type === $viewType))
             ->when($bedrooms !== null, fn ($c) => $c->filter(fn (UnitType $rt) => $rt->bedrooms >= $bedrooms))
             ->sortBy([
-                fn (UnitType $a, UnitType $b) => $b->offersDailyRental() <=> $a->offersDailyRental(),
-                ['base_price', 'asc'],
+                fn (UnitType $a, UnitType $b) => $b->offersMonthlyRental() <=> $a->offersMonthlyRental(),
+                ['monthly_price', 'asc'],
             ])
             ->values();
 
@@ -375,7 +386,6 @@ class ApartmentConciergeTools
             'sale_price' => $unit['sale_price'],
             'max_adults' => $unit['max_adults'],
             'max_children' => $unit['max_children'],
-            'starting_price_per_night' => $unit['starting_price'],
             'monthly_price' => $unit['monthly_price'],
             'yearly_price' => $unit['yearly_price'],
             'currency' => $unit['currency'],
@@ -384,7 +394,7 @@ class ApartmentConciergeTools
         return [
             'text' => json_encode([
                 'units' => $summary,
-                'note' => 'No dates were given, so these are indicative starting prices only (per night, and the monthly or yearly rent where the unit is rented that way). The units are now shown on the guest\'s screen; ask for dates and household size to check real availability and the exact price.',
+                'note' => 'No dates were given, so these are indicative starting rents only (the monthly or yearly rent where the unit is rented that way). The units are now shown on the guest\'s screen; ask for dates and household size to check real availability and the exact price.',
             ], JSON_UNESCAPED_UNICODE),
             'ui' => [
                 'type' => 'unit_results',
@@ -415,9 +425,9 @@ class ApartmentConciergeTools
     }
 
     /**
-     * Opens the stay request form on the guest's screen, pre-filled. The guest
-     * types their own name and contact there; the form submits through the
-     * same reservation endpoint as the stay request wizard.
+     * Opens the rental application form on the guest's screen, pre-filled. The
+     * guest types their own name and contact there; the form submits through
+     * the same endpoint as the rental application wizard.
      */
     private function startReservation(array $input): array
     {
@@ -437,24 +447,24 @@ class ApartmentConciergeTools
         $prefill = compact('adults', 'children', 'units');
         $quote = null;
 
-        if ($rentalType !== Booking::RENTAL_DAILY && $unitType->offersRental($rentalType)) {
+        if ($unitType->offersRental($rentalType)) {
             $prefill['rental_type'] = $rentalType;
             $prefill['lease_months'] = (int) ($input['lease_months'] ?? 0) ?: null;
         }
 
-        $hasDates = filled($input['check_in'] ?? null) && ($rentalType === Booking::RENTAL_DAILY ? filled($input['check_out'] ?? null) : filled($input['lease_months'] ?? null));
+        $hasDates = filled($input['check_in'] ?? null) && filled($input['lease_months'] ?? null);
         $stay = $hasDates ? $this->stayFromInput($input) : null;
 
         if (is_array($stay)) {
             $today = CarbonImmutable::now($this->apartment->timezone)->startOfDay();
 
             if (! $stay['check_in']->lessThan($today)) {
-                $prefill += ['check_in' => $stay['check_in']->toDateString(), 'check_out' => $stay['check_out']->toDateString()];
+                $prefill += ['check_in' => $stay['check_in']->toDateString()];
                 $quote = $this->quoteFor($unitType, $stay, $units);
 
                 if (! $quote) {
                     return [
-                        'text' => 'This unit has no availability for every night of those dates, so the form was not opened. Tell the guest honestly and offer other dates or another unit (search_units).',
+                        'text' => 'This unit has no availability for that whole lease, so the form was not opened. Tell the guest honestly and offer other dates or another unit (search_units).',
                         'ui' => ['type' => 'availability', 'available' => false, 'unit_type_slug' => $unitType->slug],
                     ];
                 }
@@ -466,13 +476,13 @@ class ApartmentConciergeTools
         return [
             'text' => json_encode([
                 'ok' => true,
-                'message' => 'The stay request form for '.$unit['name'].' is now open on the guest\'s screen'.(isset($prefill['check_in']) ? ' with the dates filled in' : '').'. Tell the guest in one short sentence to complete their name and contact there. Do not ask for their name or phone in chat.',
+                'message' => 'The rental application form for '.$unit['name'].' is now open on the guest\'s screen'.(isset($prefill['check_in']) ? ' with the move-in date filled in' : '').'. Tell the guest in one short sentence to complete their name and contact there. Do not ask for their name or phone in chat.',
             ], JSON_UNESCAPED_UNICODE),
             'ui' => [
                 'type' => 'reservation_form',
                 'unit' => $unit,
                 'prefill' => $prefill,
-                'quote' => $quote ? ['nights' => $quote['nights'], 'grand_total' => $quote['grand_total'], 'discount_percent' => $quote['discount_percent'], 'deposit_total' => $quote['deposit_total'] ?? null] : null,
+                'quote' => $quote ? ['grand_total' => $quote['grand_total'], 'deposit_total' => $quote['deposit_total']] : null,
             ],
         ];
     }
@@ -499,14 +509,10 @@ class ApartmentConciergeTools
             'view_type' => $unitType->view_type,
             'max_adults' => $unitType->max_adults,
             'max_children' => $unitType->max_children,
-            'breakfast_included' => $unitType->breakfast_included,
-            'extra_bed_available' => $unitType->extra_bed_available,
-            'extra_bed_price' => $unitType->extra_bed_price,
             'amenities' => $unitType->amenities,
             'category' => $unitType->category,
             'listing_type' => $unitType->listing_type,
             'sale_price' => $unitType->offersSalePrice() ? $unitType->sale_price : null,
-            'starting_price' => $unitType->offersDailyRental() ? $unitType->base_price : null,
             'monthly_price' => $unitType->offersMonthlyRental() ? $unitType->monthly_price : null,
             'yearly_price' => $unitType->offersYearlyRental() ? $unitType->yearly_price : null,
             'yearly_monthly_equivalent' => $unitType->yearlyMonthlyEquivalent(),
@@ -517,13 +523,7 @@ class ApartmentConciergeTools
                 'max_monthly_lease_months' => Apartment::MAX_MONTHLY_LEASE_MONTHS,
                 'max_yearly_lease_years' => Apartment::MAX_YEARLY_LEASE_YEARS,
             ],
-            'long_stay' => [
-                'weekly_discount_percent' => $this->apartment->weekly_discount_percent,
-                'weekly_from_nights' => Apartment::WEEKLY_STAY_NIGHTS,
-                'monthly_discount_percent' => $this->apartment->monthly_discount_percent,
-                'monthly_from_nights' => Apartment::MONTHLY_STAY_NIGHTS,
-            ],
-            'note' => 'starting_price is a per-night rate before long-stay discounts; monthly_price is the rent per month and yearly_price the rent per year (null when the unit is not rented that way). All are indicative only — always call check_availability for the exact price on real dates.',
+            'note' => 'monthly_price is the rent per month and yearly_price the rent per year (null when the unit is not rented that way). Both are indicative only — always call check_availability for the exact rent and deposit on real dates.',
             'images' => $images->map(fn ($img) => [
                 'url' => $img->image_source,
                 'tags' => $img->tags,
@@ -544,9 +544,6 @@ class ApartmentConciergeTools
             return ['text' => $stay, 'ui' => null];
         }
 
-        $isLease = $stay['rental_type'] !== Booking::RENTAL_DAILY;
-        $extraBed = ! $isLease && (bool) ($input['extra_bed'] ?? false);
-
         if (! $unitType->isForRent()) {
             return ['text' => self::SALE_ONLY_NOTE, 'ui' => null];
         }
@@ -555,14 +552,14 @@ class ApartmentConciergeTools
             return ['text' => 'This unit type is not rented '.$stay['rental_type'].'. Offer the rental types it does have (see monthly_price / yearly_price from get_unit_detail) or another unit.', 'ui' => null];
         }
 
-        $quote = $this->quoteFor($unitType, $stay, extraBed: $extraBed);
+        $quote = $this->quoteFor($unitType, $stay);
 
         if (! $quote) {
             return [
                 'text' => json_encode([
                     'available' => false,
                     'unit_type_slug' => $unitType->slug,
-                    'message' => 'Not every night in this range has availability for this unit type.',
+                    'message' => 'This unit type is not available for the whole lease from that move-in date.',
                 ], JSON_UNESCAPED_UNICODE),
                 'ui' => ['type' => 'availability', 'available' => false, 'unit_type_slug' => $unitType->slug],
             ];
@@ -576,21 +573,11 @@ class ApartmentConciergeTools
             'lease_months' => $stay['lease_months'],
             'check_in' => $stay['check_in']->toDateString(),
             'check_out' => $stay['check_out']->toDateString(),
-            'nights' => $stay['nights'],
-            ...($isLease
-                ? [
-                    'rate' => $quote['rate'],
-                    'rate_period' => $quote['rate_period'],
-                    'monthly_rate' => $quote['monthly_rate'],
-                    'deposit_months' => $quote['deposit_months'],
-                    'deposit_total' => $quote['deposit_total'],
-                ]
-                : ['nightly_breakdown' => $quote['nightly']]),
-            'unit_total' => $quote['unit_total'],
-            'extra_bed_total' => $quote['extra_bed_total'],
-            'subtotal' => $quote['subtotal'],
-            'discount_percent' => $quote['discount_percent'],
-            'discount_total' => $quote['discount_total'],
+            'rate' => $quote['rate'],
+            'rate_period' => $quote['rate_period'],
+            'monthly_rate' => $quote['monthly_rate'],
+            'deposit_months' => $quote['deposit_months'],
+            'deposit_total' => $quote['deposit_total'],
             'grand_total' => $quote['grand_total'],
             'currency' => $this->apartment->currency,
             'min_available_units' => $quote['min_available_units'],
@@ -640,7 +627,7 @@ class ApartmentConciergeTools
         };
 
         if ($problem) {
-            return ['text' => "The request was not created: {$problem}", 'ui' => null];
+            return ['text' => "The application was not created: {$problem}", 'ui' => null];
         }
 
         if (! $this->reservations->fitsOccupancy($unitType, $adults, $children, $units)) {
@@ -651,11 +638,9 @@ class ApartmentConciergeTools
             'rental_type' => $stay['rental_type'],
             'lease_months' => $stay['lease_months'],
             'check_in' => $stay['check_in'],
-            'check_out' => $stay['check_out'],
             'adults' => $adults,
             'children' => $children,
             'units' => $units,
-            'extra_bed' => (bool) ($input['extra_bed'] ?? false),
             'guest_name' => $guestName,
             'guest_email' => $guestEmail !== '' ? $guestEmail : null,
             'guest_phone' => $guestPhone,
@@ -665,7 +650,7 @@ class ApartmentConciergeTools
 
         if (! $booking) {
             return [
-                'text' => 'Unit is no longer available for these exact dates — availability may have just changed. Call check_availability again or offer alternative dates.',
+                'text' => 'Unit is no longer available for that whole lease — availability may have just changed. Call check_availability again or offer another move-in date.',
                 'ui' => null,
             ];
         }
@@ -678,7 +663,6 @@ class ApartmentConciergeTools
             'lease_months' => $booking->lease_months,
             'check_in' => $booking->check_in->toDateString(),
             'check_out' => $booking->check_out->toDateString(),
-            'nights' => (int) $booking->check_in->diffInDays($booking->check_out),
             'units' => $booking->unit_count,
             'total_price' => (float) $booking->total_price,
             'deposit_total' => $booking->deposit_total === null ? null : (float) $booking->deposit_total,
@@ -693,9 +677,9 @@ class ApartmentConciergeTools
     }
 
     /**
-     * The request this conversation already made for the same unit, dates and
-     * phone. A turn that failed after the booking was saved is retried by the
-     * guest, and the retry must not hold the units a second time.
+     * The application this conversation already made for the same unit, lease
+     * and phone. A turn that failed after the application was saved is retried
+     * by the guest, and the retry must not hold the units a second time.
      *
      * @param  array{rental_type: string, check_in: CarbonImmutable, check_out: CarbonImmutable}  $stay
      */
@@ -746,51 +730,26 @@ class ApartmentConciergeTools
 
     private function rentalType(array $input): string
     {
-        return in_array($input['rental_type'] ?? null, Booking::RENTAL_TYPES, true) ? $input['rental_type'] : Booking::RENTAL_DAILY;
+        return in_array($input['rental_type'] ?? null, Booking::RENTAL_TYPES, true) ? $input['rental_type'] : Booking::RENTAL_MONTHLY;
     }
 
     /**
-     * The stay the guest described, whichever way they want to rent: dates
-     * for a nightly stay, a move-in date and a term for a lease. A string is
+     * The lease the guest described: a move-in date and a term. A string is
      * the problem to report back to the model instead.
      *
      * @param  array<string, mixed>  $input
-     * @return array{rental_type: string, lease_months: ?int, check_in: CarbonImmutable, check_out: CarbonImmutable, nights: int}|string
+     * @return array{rental_type: string, lease_months: int, check_in: CarbonImmutable, check_out: CarbonImmutable}|string
      */
     private function stayFromInput(array $input): array|string
     {
         $rentalType = $this->rentalType($input);
         $checkIn = $this->parseDate($input['check_in'] ?? null);
+        $months = (int) ($input['lease_months'] ?? 0);
 
-        if ($rentalType === Booking::RENTAL_DAILY) {
-            $checkOut = $this->parseDate($input['check_out'] ?? null);
-
-            if (! $checkIn || ! $checkOut) {
-                return 'check_in and check_out are required for a daily rental, written as YYYY-MM-DD.';
-            }
-
-            $nights = (int) $checkIn->diffInDays($checkOut, false);
-
-            if ($nights < 1) {
-                return 'check_out must be after check_in.';
-            }
-
-            if ($nights > ReservationService::MAX_NIGHTS) {
-                return 'Online stays are limited to '.ReservationService::MAX_NIGHTS.' nights. For a longer stay offer a monthly or yearly rental, or call request_human_handover.';
-            }
-
-            $stay = ['rental_type' => $rentalType, 'lease_months' => null, 'check_in' => $checkIn, 'check_out' => $checkOut, 'nights' => $nights];
-        } else {
-            $months = (int) ($input['lease_months'] ?? 0);
-
-            if (! $checkIn || ! $this->reservations->isValidLeaseTerm($this->apartment, $rentalType, $months)) {
-                return $rentalType === Booking::RENTAL_YEARLY
-                    ? 'A yearly rental needs a move-in date (check_in, YYYY-MM-DD) and lease_months of 12, 24 or 36.'
-                    : 'A monthly rental needs a move-in date (check_in, YYYY-MM-DD) and lease_months from '.max(1, $this->apartment->min_monthly_lease_months).' to '.Apartment::MAX_MONTHLY_LEASE_MONTHS.'. Twelve months or more is a yearly rental.';
-            }
-
-            $checkOut = $this->reservations->leaseEnd($checkIn, $months);
-            $stay = ['rental_type' => $rentalType, 'lease_months' => $months, 'check_in' => $checkIn, 'check_out' => $checkOut, 'nights' => (int) $checkIn->diffInDays($checkOut)];
+        if (! $checkIn || ! $this->reservations->isValidLeaseTerm($this->apartment, $rentalType, $months)) {
+            return $rentalType === Booking::RENTAL_YEARLY
+                ? 'A yearly rental needs a move-in date (check_in, YYYY-MM-DD) and lease_months of 12, 24 or 36.'
+                : 'A monthly rental needs a move-in date (check_in, YYYY-MM-DD) and lease_months from '.max(1, $this->apartment->min_monthly_lease_months).' to '.Apartment::MAX_MONTHLY_LEASE_MONTHS.'. Twelve months or more is a yearly rental.';
         }
 
         $today = CarbonImmutable::now($this->apartment->timezone)->startOfDay();
@@ -799,7 +758,7 @@ class ApartmentConciergeTools
             return "check_in is in the past. Today is {$today->toDateString()}; ask the guest for a date from today on.";
         }
 
-        return $stay;
+        return ['rental_type' => $rentalType, 'lease_months' => $months, 'check_in' => $checkIn, 'check_out' => $this->reservations->leaseEnd($checkIn, $months)];
     }
 
     /**
@@ -817,13 +776,70 @@ class ApartmentConciergeTools
     }
 
     /**
-     * @param  array{rental_type: string, lease_months: ?int, check_in: CarbonImmutable, check_out: CarbonImmutable, nights: int}  $stay
+     * @param  array{rental_type: string, lease_months: int, check_in: CarbonImmutable, check_out: CarbonImmutable}  $stay
      * @return array<string, mixed>|null
      */
-    private function quoteFor(UnitType $unitType, array $stay, int $units = 1, bool $extraBed = false): ?array
+    private function quoteFor(UnitType $unitType, array $stay, int $units = 1): ?array
     {
-        return $stay['rental_type'] === Booking::RENTAL_DAILY
-            ? $this->reservations->quote($unitType, $stay['check_in'], $stay['check_out'], $units, $extraBed)
-            : $this->reservations->quoteLease($unitType, $stay['rental_type'], $stay['check_in'], $stay['lease_months'], $units);
+        return $this->reservations->quoteLease($unitType, $stay['rental_type'], $stay['check_in'], $stay['lease_months'], $units);
+    }
+
+    /**
+     * Records a viewing request from the chat and tells the guest the team
+     * will confirm the time.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array{text: string, ui: ?array<string, mixed>}
+     */
+    private function scheduleViewing(array $input): array
+    {
+        $unitType = $this->findUnitType($input['unit_type_slug']);
+        if (! $unitType) {
+            return ['text' => 'Unit type not found.', 'ui' => null];
+        }
+
+        $date = $this->parseDate($input['preferred_date']);
+        $time = (string) $input['preferred_time'];
+        $guestName = trim((string) $input['guest_name']);
+        $guestPhone = trim((string) $input['guest_phone']);
+        $guestEmail = trim((string) ($input['guest_email'] ?? ''));
+        $today = CarbonImmutable::now($this->apartment->timezone)->toDateString();
+
+        $problem = match (true) {
+            ! $date => 'preferred_date must be a date written as YYYY-MM-DD.',
+            $date->toDateString() < $today => "preferred_date is in the past. Today is {$today}; ask the guest for a date from today on.",
+            preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $time) !== 1 => 'preferred_time must be a time written as HH:MM on a 24 hour clock.',
+            $guestName === '' || mb_strlen($guestName) > 100 => 'guest_name must be the guest\'s name, at most 100 characters.',
+            preg_match(ReservationService::PHONE_PATTERN, $guestPhone) !== 1 => 'guest_phone is not a valid phone or WhatsApp number. Ask the guest to type it again.',
+            $guestEmail !== '' && ! filter_var($guestEmail, FILTER_VALIDATE_EMAIL) => 'guest_email is not a valid email address. Ask the guest to type it again or leave it out.',
+            default => null,
+        };
+
+        if ($problem) {
+            return ['text' => "The viewing was not recorded: {$problem}", 'ui' => null];
+        }
+
+        $viewing = $this->reservations->createViewing($this->apartment, $unitType, [
+            'preferred_date' => $date->toDateString(),
+            'preferred_time' => $time,
+            'visitor_name' => $guestName,
+            'visitor_email' => $guestEmail !== '' ? $guestEmail : null,
+            'visitor_phone' => $guestPhone,
+            'contact_type' => 'phone',
+            'locale' => $this->locale,
+            'notes' => isset($input['notes']) && is_string($input['notes']) ? Str::limit($input['notes'], 500, '') : null,
+        ], $this->conversation);
+
+        return [
+            'text' => json_encode([
+                'ok' => true,
+                'viewing_reference' => $viewing->reference,
+                'unit' => $unitType->translatedName($this->locale),
+                'preferred_date' => $viewing->preferred_date->toDateString(),
+                'preferred_time' => $viewing->preferred_time,
+                'message' => 'The viewing request is recorded and nothing is held for it. Tell the guest in one sentence that the apartment team will confirm the time with them.',
+            ], JSON_UNESCAPED_UNICODE),
+            'ui' => null,
+        ];
     }
 }
