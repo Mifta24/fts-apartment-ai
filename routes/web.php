@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\HandoverController;
 use App\Http\Controllers\Admin\KnowledgeItemController;
+use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\UnitInventoryController;
 use App\Http\Controllers\Admin\UnitTypeController;
 use App\Http\Controllers\Admin\ViewingController;
@@ -30,6 +31,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('unit-types', UnitTypeController::class)->except('show');
         Route::get('unit-types/{unitType}/inventory', [UnitInventoryController::class, 'index'])->name('unit-types.inventory.index');
         Route::post('unit-types/{unitType}/inventory', [UnitInventoryController::class, 'store'])->name('unit-types.inventory.store');
+        Route::resource('units', UnitController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('knowledge-items', KnowledgeItemController::class)->except('show');
 
         Route::get('bookings', [BookingController::class, 'index'])->name('bookings.index');
@@ -55,6 +57,7 @@ Route::prefix('{apartmentSlug}')->group(function () {
     Route::get('facilities', [ApartmentPageController::class, 'facilities'])->name('apartment.facilities');
     Route::get('facilities/{facilityId}', [ApartmentPageController::class, 'facility'])->whereNumber('facilityId')->name('apartment.facility');
     Route::get('info', [ApartmentPageController::class, 'info'])->name('apartment.info');
+    Route::get('lease-sample', [ApartmentPageController::class, 'leaseSample'])->name('apartment.lease-sample');
     Route::get('staff', [ApartmentPageController::class, 'staff'])->name('apartment.staff');
     Route::get('apply', [ApartmentPageController::class, 'reservationScene'])->name('apartment.reservation');
     Route::get('reservation', fn (Request $request, string $apartmentSlug) => redirect()->route('apartment.reservation', ['apartmentSlug' => $apartmentSlug, ...$request->query()], 301));

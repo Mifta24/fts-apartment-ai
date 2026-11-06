@@ -108,6 +108,26 @@
                     @endif
                 </dl>
 
+                @if ($unitType->isForRent())
+                    <h3 class="unit-scene-subheading">{{ $lobby['units_free_title'] }}</h3>
+                    @if ($listedUnits->isEmpty())
+                        <p class="unit-scene-note">{{ $lobby['units_free_none'] }}</p>
+                    @else
+                        <ul class="unit-scene-rooms">
+                            @foreach ($listedUnits as $room)
+                                @php $freeFrom = $room->freeFrom($today); @endphp
+                                <li>
+                                    <a href="{{ route('apartment.reservation', ['apartmentSlug' => $apartment->slug, 'lang' => $locale, 'unit' => $unitType->slug, 'room' => $room->unit_number]) }}" data-stage-exit data-tour-line="{{ $narration['tour_reservation'] }}" aria-label="{{ $lobby['unit_pick'] }}: {{ $lobby['unit_no'] }} {{ $room->unit_number }}">
+                                        <strong>{{ $lobby['unit_no'] }} {{ $room->unit_number }}</strong>
+                                        <span>{{ str_replace(':floor', $room->floor === 0 ? 'G' : $room->floor, $lobby['unit_floor']) }}@if ($room->facing) · {{ str_replace(':direction', $lobby['facing_'.$room->facing], $lobby['unit_facing']) }}@endif</span>
+                                        <span class="{{ $freeFrom ? 'is-later' : 'is-now' }}">{{ $freeFrom ? str_replace(':date', $freeFrom->copy()->locale($locale)->translatedFormat('j M Y'), $lobby['unit_free_from']) : $lobby['unit_ready'] }}</span>
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                @endif
+
                 @if (! empty($unitType->amenities))
                     <h3 class="unit-scene-subheading">{{ $lobby['amenities'] }}</h3>
                     <ul class="unit-scene-amenities">

@@ -26,7 +26,7 @@ class BookingController extends Controller
             : null;
 
         $bookings = $apartment->bookings()
-            ->with('unitType')
+            ->with(['unitType', 'preferredUnit'])
             ->when($status, fn ($q) => $q->where('status', $status))
             ->latest()
             ->paginate(20)

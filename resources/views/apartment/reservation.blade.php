@@ -61,6 +61,17 @@
                 </form>
             </details>
 
+            <details class="wizard-viewing" data-documents>
+                <summary>{{ $wizard['docs_title'] }}</summary>
+                <ul class="wizard-docs">
+                    <li>{{ $wizard['docs_individual'] }}</li>
+                    <li>{{ $wizard['docs_foreign'] }}</li>
+                    <li>{{ $wizard['docs_company'] }}</li>
+                </ul>
+                <p class="wizard-hint">{{ $wizard['docs_note'] }} <a href="{{ route('apartment.lease-sample', ['apartmentSlug' => $apartment->slug, 'lang' => $locale]) }}" target="_blank" rel="noopener" class="underline">{{ $wizard['sample_link'] }}</a></p>
+            </details>
+
+
             @unless ($canApply)
                 <p class="wizard-hint mt-4" role="status">{{ $wizard['no_units'] }}</p>
             @endunless
@@ -130,6 +141,13 @@
                 </div>
 
                 <div data-step="3" class="wizard-step wizard-step-wide" hidden>
+                    @if ($preselectedRoom ?? null)
+                        <p class="wizard-room" data-preferred-unit data-unit-type="{{ $preselectedRoom->unitType->slug }}">
+                            <input type="hidden" name="preferred_unit_number" value="{{ $preselectedRoom->unit_number }}">
+                            <strong>{{ $wizard['preferred_unit'] }}: {{ $preselectedRoom->unit_number }}</strong>
+                            <span>{{ str_replace([':floor', ':direction'], [$preselectedRoom->floor === 0 ? 'G' : $preselectedRoom->floor, $preselectedRoom->facing ? $lobby['facing_'.$preselectedRoom->facing] : '—'], $wizard['preferred_unit_hint']) }}</span>
+                        </p>
+                    @endif
                     <fieldset>
                         <legend>{{ $wizard['choose_unit'] }}</legend>
                         <div class="wizard-units">
@@ -207,6 +225,7 @@
             <p class="wizard-reference" data-done-reference></p>
             <p class="wizard-status">{{ $wizard['awaiting'] }}</p>
             <p class="mt-4 max-w-md text-sm leading-relaxed text-stone-600">{{ $wizard['done_hint'] }}</p>
+            <p class="mt-3 max-w-md text-sm leading-relaxed text-stone-600">{{ $wizard['docs_individual'] }} {{ $wizard['docs_foreign'] }} {{ $wizard['docs_note'] }}</p>
             <div class="mt-6 flex flex-wrap gap-3">
                 <a class="lobby-action" data-done-whatsapp target="_blank" rel="noopener" hidden>{{ $wizard['send_whatsapp'] }} <span aria-hidden="true">↗</span></a>
                 <a class="wizard-secondary" data-done-phone hidden>{{ $wizard['call_apartment'] }}</a>

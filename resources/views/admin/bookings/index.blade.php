@@ -30,7 +30,7 @@
                             <p class="text-xs text-stone-500">{{ $booking->contact_type ? ucfirst($booking->contact_type).': ' : '' }}{{ $booking->guest_phone ?? $booking->guest_email }}</p>
                             @if ($booking->notes)<p class="mt-1 max-w-xs text-xs italic text-stone-400">{{ $booking->notes }}</p>@endif
                         </td>
-                        <td class="px-4 py-3">{{ $booking->unit_count }} × {{ $booking->unitType->name }}<p class="text-xs text-stone-400">{{ $booking->adults }} {{ $booking->adults === 1 ? 'adult' : 'adults' }}{{ $booking->children ? ', '.$booking->children.' '.($booking->children === 1 ? 'child' : 'children') : '' }}</p></td>
+                        <td class="px-4 py-3">{{ $booking->unit_count }} × {{ $booking->unitType->name }}@if ($booking->preferredUnit)<p class="text-xs font-medium text-stone-700">Unit {{ $booking->preferredUnit->unit_number }}</p>@endif<p class="text-xs text-stone-400">{{ $booking->adults }} {{ $booking->adults === 1 ? 'adult' : 'adults' }}{{ $booking->children ? ', '.$booking->children.' '.($booking->children === 1 ? 'child' : 'children') : '' }}</p></td>
                         <td class="px-4 py-3 text-xs text-stone-500">
                             @if ($booking->isLease())<p class="font-medium text-stone-700">{{ $booking->rental_type === 'yearly' ? 'Yearly' : 'Monthly' }} · {{ $booking->lease_months }} {{ $booking->lease_months === 1 ? 'month' : 'months' }}</p>@else<p class="font-medium text-stone-700">Nightly stay (legacy)</p>@endif
                             {{ $booking->check_in->toFormattedDateString() }} → {{ $booking->check_out->toFormattedDateString() }}

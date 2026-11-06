@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Apartment;
 use App\Models\ApartmentKnowledgeItem;
+use App\Models\Unit;
 use App\Models\UnitInventory;
 use App\Models\UnitType;
 use App\Models\User;
@@ -15,8 +16,13 @@ class DemoApartmentSeeder extends Seeder
     /** Yearly leases of up to three years need inventory for every day of the lease, so this reaches about three years ahead. */
     private const INVENTORY_DAYS = 1100;
 
+    /** @var array<int, int> How many apartments have been numbered on each floor so far, shared by all unit types. */
+    private array $unitsOnFloor = [];
+
     public function run(): void
     {
+        $this->unitsOnFloor = [];
+
         $owner = User::firstOrCreate(
             ['email' => 'owner@ftsapartment.test'],
             [
@@ -27,9 +33,9 @@ class DemoApartmentSeeder extends Seeder
         );
 
         $description = [
-            'id' => 'Serviced apartment 32 lantai di Senopati, Jakarta Selatan. Unit siap huni dengan dapur, Wi-Fi fiber, dan housekeeping — untuk disewa bulanan atau tahunan. 8 menit jalan kaki ke MRT ASEAN.',
-            'en' => 'A 32-storey serviced apartment tower in Senopati, South Jakarta. Fully furnished units with kitchens, fibre Wi-Fi and housekeeping — for monthly or yearly leases. An 8-minute walk to ASEAN MRT station.',
-            'ja' => '南ジャカルタ・スノパティにある32階建てのサービスアパートメント。キッチン、光Wi-Fi、ハウスキーピング付きの家具付きのお部屋を、月契約・年契約でご利用いただけます。MRTアセアン駅まで徒歩8分。',
+            'id' => 'Serviced apartment 32 lantai di Senopati, Jakarta Selatan. Unit berperabot lengkap dengan dapur dan Wi-Fi fiber, layanan kebersihan opsional — untuk disewa bulanan atau tahunan. 8 menit jalan kaki ke MRT ASEAN.',
+            'en' => 'A 32-storey serviced apartment tower in Senopati, South Jakarta. Fully furnished units with kitchens and fibre Wi-Fi, plus optional cleaning — for monthly or yearly leases. An 8-minute walk to ASEAN MRT station.',
+            'ja' => '南ジャカルタ・スノパティにある32階建てのサービスアパートメント。キッチンと光Wi-Fi付きの家具付きのお部屋（清掃は有料オプション）を、月契約・年契約でご利用いただけます。MRTアセアン駅まで徒歩8分。',
         ];
 
         $apartment = Apartment::updateOrCreate(
@@ -85,6 +91,8 @@ class DemoApartmentSeeder extends Seeder
             if ($unitType->isForRent()) {
                 $this->seedInventory($unitType, $totalUnits);
             }
+
+            $this->seedUnits($apartment, $unitType, $totalUnits > 0 ? $totalUnits : 2);
         }
 
         $this->seedKnowledgeBase($apartment);
@@ -103,11 +111,11 @@ class DemoApartmentSeeder extends Seeder
             [
                 'slug' => 'studio-urban',
                 'name' => 'Studio Urban',
-                'description' => 'Studio 28 m² di lantai 6–14, sudah berperabot lengkap: tempat tidur queen, dapur kecil, meja kerja, AC, smart TV, dan Wi-Fi fiber. Jendelanya menghadap kota; housekeeping dua kali seminggu sudah termasuk. Pas untuk profesional yang tinggal sendiri.',
+                'description' => 'Studio 28 m² di lantai 6–14, sudah berperabot lengkap: tempat tidur queen, dapur kecil, meja kerja, AC, smart TV, dan Wi-Fi fiber. Jendelanya menghadap kota; paket kebersihan unit tersedia sebagai layanan opsional. Pas untuk profesional yang tinggal sendiri.',
                 'translations' => [
-                    'id' => ['name' => 'Studio Urban', 'description' => 'Studio 28 m² di lantai 6–14, sudah berperabot lengkap: tempat tidur queen, dapur kecil, meja kerja, AC, smart TV, dan Wi-Fi fiber. Jendelanya menghadap kota; housekeeping dua kali seminggu sudah termasuk. Pas untuk profesional yang tinggal sendiri.'],
-                    'en' => ['name' => 'Urban Studio', 'description' => 'A 28 m² studio on floors 6–14, fully furnished with a queen bed, kitchenette, work desk, air conditioning, smart TV and fibre Wi-Fi. City views, and housekeeping twice a week is included. Made for professionals living solo.'],
-                    'ja' => ['name' => 'アーバン スタジオ', 'description' => '6〜14階の28㎡スタジオ。クイーンベッド、ミニキッチン、ワークデスク、エアコン、スマートTV、光Wi-Fiを備えた家具付き。眺望は街並みで、週2回のハウスキーピング込み。おひとりで暮らすビジネスパーソンに。'],
+                    'id' => ['name' => 'Studio Urban', 'description' => 'Studio 28 m² di lantai 6–14, sudah berperabot lengkap: tempat tidur queen, dapur kecil, meja kerja, AC, smart TV, dan Wi-Fi fiber. Jendelanya menghadap kota; paket kebersihan unit tersedia sebagai layanan opsional. Pas untuk profesional yang tinggal sendiri.'],
+                    'en' => ['name' => 'Urban Studio', 'description' => 'A 28 m² studio on floors 6–14, fully furnished with a queen bed, kitchenette, work desk, air conditioning, smart TV and fibre Wi-Fi. City views, and a unit cleaning package is available as an option. Made for professionals living solo.'],
+                    'ja' => ['name' => 'アーバン スタジオ', 'description' => '6〜14階の28㎡スタジオ。クイーンベッド、ミニキッチン、ワークデスク、エアコン、スマートTV、光Wi-Fiを備えた家具付き。眺望は街並みで、お部屋の清掃は有料オプションです。おひとりで暮らすビジネスパーソンに。'],
                 ],
                 'size_sqm' => 28,
                 'bedrooms' => 0,
@@ -299,6 +307,38 @@ class DemoApartmentSeeder extends Seeder
         ];
     }
 
+    /**
+     * Gives a unit type its numbered apartments, spread over its floors and the
+     * four facings. Some are taken, with a date on which they free up, so the
+     * unit page shows a believable mix of "ready now" and "free from".
+     */
+    private function seedUnits(Apartment $apartment, UnitType $unitType, int $count): void
+    {
+        $range = (string) $unitType->floor_range;
+        $floors = preg_match('/^(\d+)\D+(\d+)$/u', $range, $match) === 1
+            ? range((int) $match[1], (int) $match[2])
+            : [ctype_digit($range) ? (int) $range : 0];
+        $today = now()->startOfDay();
+
+        for ($i = 0; $i < $count; $i++) {
+            $floor = $floors[$i % count($floors)];
+            $this->unitsOnFloor[$floor] = ($this->unitsOnFloor[$floor] ?? 0) + 1;
+            $number = $floor === 0 ? sprintf('G%02d', $this->unitsOnFloor[$floor]) : (string) ($floor * 100 + $this->unitsOnFloor[$floor]);
+            $taken = ($i * 7 + $unitType->id) % 10 >= 6;
+
+            Unit::updateOrCreate(
+                ['apartment_id' => $apartment->id, 'unit_number' => $number],
+                [
+                    'unit_type_id' => $unitType->id,
+                    'floor' => $floor,
+                    'facing' => Unit::FACINGS[($i + $floor) % count(Unit::FACINGS)],
+                    'status' => $taken ? Unit::STATUS_OCCUPIED : Unit::STATUS_AVAILABLE,
+                    'available_from' => $taken ? $today->copy()->addDays(20 + (($i * 11) % 70)) : null,
+                ]
+            );
+        }
+    }
+
     private function seedInventory(UnitType $unitType, int $totalUnits): void
     {
         $start = now()->startOfDay();
@@ -330,10 +370,10 @@ class DemoApartmentSeeder extends Seeder
             [
                 'category' => ApartmentKnowledgeItem::CATEGORY_GENERAL,
                 'title' => 'Tentang FTS Apartment AI',
-                'body' => 'FTS Apartment AI adalah serviced apartment 32 lantai di Senopati, Jakarta Selatan, dengan 53 unit siap huni dari studio hingga penthouse 3 kamar. Setiap unit sudah berisi perabot, peralatan dapur, Wi-Fi fiber, dan layanan housekeeping, sehingga penghuni cukup datang membawa koper.',
+                'body' => 'FTS Apartment AI adalah serviced apartment 32 lantai di Senopati, Jakarta Selatan, dengan 53 unit siap huni dari studio hingga penthouse 3 kamar. Setiap unit sudah berisi perabot, peralatan dapur, dan Wi-Fi fiber, sehingga penghuni cukup datang membawa koper; layanan kebersihan unit tersedia sebagai opsi.',
                 'translations' => [
-                    'en' => ['title' => 'About FTS Apartment AI', 'body' => 'FTS Apartment AI is a 32-storey serviced apartment tower in Senopati, South Jakarta, with 53 move-in-ready units from studios to three-bedroom penthouses. Every unit comes furnished, with kitchenware, fibre Wi-Fi and housekeeping, so residents only need to bring a suitcase.'],
-                    'ja' => ['title' => 'FTS Apartment AI について', 'body' => 'FTS Apartment AI は南ジャカルタ・スノパティにある32階建てのサービスアパートメントで、スタジオから3ベッドルームのペントハウスまで53戸をご用意しています。全戸に家具、キッチン用品、光Wi-Fi、ハウスキーピングが付いており、スーツケースひとつで入居いただけます。'],
+                    'en' => ['title' => 'About FTS Apartment AI', 'body' => 'FTS Apartment AI is a 32-storey serviced apartment tower in Senopati, South Jakarta, with 53 move-in-ready units from studios to three-bedroom penthouses. Every unit comes furnished, with kitchenware and fibre Wi-Fi, so residents only need to bring a suitcase; a unit cleaning service is available as an option.'],
+                    'ja' => ['title' => 'FTS Apartment AI について', 'body' => 'FTS Apartment AI は南ジャカルタ・スノパティにある32階建てのサービスアパートメントで、スタジオから3ベッドルームのペントハウスまで53戸をご用意しています。全戸に家具、キッチン用品、光Wi-Fiが付いており、スーツケースひとつで入居いただけます（お部屋の清掃は有料オプション）。'],
                 ],
                 'tags' => ['overview', 'introduction', 'serviced apartment'],
             ],
@@ -370,10 +410,10 @@ class DemoApartmentSeeder extends Seeder
             [
                 'category' => ApartmentKnowledgeItem::CATEGORY_POLICIES,
                 'title' => 'Listrik, air, dan biaya layanan',
-                'body' => 'Sewa sudah termasuk air, Wi-Fi, dan housekeeping. Listrik ditagihkan sesuai pemakaian meteran setiap bulan.',
+                'body' => 'Sewa sudah termasuk service charge gedung, air, dan Wi-Fi. Listrik tidak termasuk: ditagihkan setiap bulan sesuai pemakaian meteran dengan tarif Rp1.700 per kWh. Parkir mobil pertama gratis, slot tambahan Rp750.000 per bulan. Kebersihan unit adalah layanan opsional (lihat Laundry dan layanan kebersihan).',
                 'translations' => [
-                    'en' => ['title' => 'Electricity, water and service charges', 'body' => 'Rent includes water, Wi-Fi and housekeeping. Electricity is billed monthly by meter reading.'],
-                    'ja' => ['title' => '電気・水道・サービス料', 'body' => '賃料には水道・Wi-Fi・ハウスキーピングが含まれます。電気代はメーターの使用量に基づき毎月請求します。'],
+                    'en' => ['title' => 'Electricity, water and service charges', 'body' => 'Rent includes the building service charge, water and Wi-Fi. Electricity is not included: it is billed monthly by meter reading at IDR 1,700 per kWh. The first car park space is free, extra spaces are IDR 750,000 a month. Unit cleaning is an optional service (see Laundry and cleaning service).'],
+                    'ja' => ['title' => '電気・水道・サービス料', 'body' => '賃料には建物のサービスチャージ、水道、Wi-Fiが含まれます。電気代は含まれず、メーターの使用量に基づき1kWhあたり1,700ルピアで毎月請求します。駐車場は1台目が無料、追加は月75万ルピアです。お部屋の清掃は有料オプションです（「ランドリーと清掃サービス」をご覧ください）。'],
                 ],
                 'tags' => ['electricity', 'listrik', 'utilities', 'water', 'service charge'],
             ],
@@ -432,14 +472,14 @@ class DemoApartmentSeeder extends Seeder
             ],
             [
                 'category' => ApartmentKnowledgeItem::CATEGORY_FACILITIES,
-                'title' => 'Laundry dan housekeeping',
+                'title' => 'Laundry dan layanan kebersihan',
                 'image_url' => $photo('1626806787461-102c1bfaaea1'),
-                'body' => 'Housekeeping membersihkan unit dua kali seminggu dan mengganti sprei serta handuk sekali seminggu. Ruang laundry koin ada di lantai 3, dan layanan laundry kiloan bisa dipesan lewat concierge dengan selesai dalam 24 jam.',
+                'body' => 'Ruang laundry koin ada di lantai 3, dan layanan laundry kiloan bisa dipesan lewat concierge dengan selesai dalam 24 jam. Kebersihan unit adalah layanan opsional: Rp350.000 per kunjungan (sekitar 2 jam), dipesan lewat concierge; penggantian sprei dan handuk tidak termasuk. Area bersama dibersihkan setiap hari oleh pengelola gedung.',
                 'translations' => [
-                    'en' => ['title' => 'Laundry and housekeeping', 'body' => 'Housekeeping cleans each unit twice a week and changes linen and towels once a week. A coin laundry room is on the 3rd floor, and a 24-hour wash-and-fold service can be booked through the concierge.'],
-                    'ja' => ['title' => 'ランドリーとハウスキーピング', 'body' => 'ハウスキーピングは週2回の清掃と、週1回のリネン・タオル交換を行います。3階にコインランドリーがあり、24時間仕上げのランドリーサービスもコンシェルジュで承ります。'],
+                    'en' => ['title' => 'Laundry and cleaning service', 'body' => 'A coin laundry room is on the 3rd floor, and a 24-hour wash-and-fold service can be booked through the concierge. Unit cleaning is an optional service: IDR 350,000 per visit (about 2 hours), booked through the concierge; changing linen and towels is not included. Common areas are cleaned daily by building management.'],
+                    'ja' => ['title' => 'ランドリーと清掃サービス', 'body' => '3階にコインランドリーがあり、24時間仕上げのランドリーサービスもコンシェルジュで承ります。お部屋の清掃は有料オプションで、1回（約2時間）35万ルピア、コンシェルジュでお申し込みください。リネン・タオルの交換は含まれません。共用部は建物管理会社が毎日清掃します。'],
                 ],
-                'tags' => ['laundry', 'housekeeping', 'cleaning'],
+                'tags' => ['laundry', 'cleaning', 'kebersihan', 'optional service'],
             ],
             [
                 'category' => ApartmentKnowledgeItem::CATEGORY_FACILITIES,
@@ -514,6 +554,66 @@ class DemoApartmentSeeder extends Seeder
                     'ja' => ['title' => '空港送迎はありますか？', 'body' => 'はい。スカルノ・ハッタ空港からは片道45万ルピア、ハリム・ペルダナクスマ空港からは30万ルピアです。24時間前までに、フライト番号とあわせてコンシェルジュでご予約ください。'],
                 ],
                 'tags' => ['airport transfer', 'soekarno-hatta', 'halim', 'bandara', 'antar-jemput', 'faq'],
+            ],
+            [
+                'category' => ApartmentKnowledgeItem::CATEGORY_POLICIES,
+                'title' => 'Dokumen persyaratan sewa',
+                'body' => 'Penyewa perorangan WNI: KTP, bukti penghasilan (slip gaji atau surat keterangan kerja), dan NPWP bila ada. Penyewa WNA: paspor, KITAS/KITAP, dan surat jaminan dari perusahaan atau sponsor. Penyewa perusahaan: NIB atau akta perusahaan, NPWP, dan surat kuasa perwakilan. Setiap penghuni dewasa wajib menunjukkan identitas saat serah terima. Dokumen tidak diunggah di situs ini; tim leasing akan meminta salinannya lewat WhatsApp atau email setelah pengajuan masuk.',
+                'translations' => [
+                    'en' => ['title' => 'Documents required to rent', 'body' => 'Individual tenants (Indonesian citizens): ID card (KTP), proof of income (payslip or employer letter) and tax number (NPWP) if available. Foreign tenants: passport, KITAS/KITAP residence permit and a guarantee letter from a company or sponsor. Company tenants: business registration (NIB) or deed of establishment, tax number and an authorisation letter for the representative. Every adult resident shows ID at handover. Documents are not uploaded on this site; the leasing team asks for copies by WhatsApp or email once your application is in.'],
+                    'ja' => ['title' => 'お申し込みに必要な書類', 'body' => '個人（インドネシア国籍）：身分証（KTP）、収入証明（給与明細または在職証明）、お持ちであれば納税者番号（NPWP）。外国籍の方：パスポート、滞在許可証（KITAS/KITAP）、会社または保証人の保証書。法人：事業登録（NIB）または設立証書、納税者番号、代表者の委任状。大人の入居者全員がお引き渡し時に身分証を提示します。書類はこのサイトでは受け付けず、お申し込み後にリーシングチームがWhatsAppまたはメールでコピーをお願いします。'],
+                ],
+                'tags' => ['documents', 'dokumen', 'ktp', 'passport', 'kitas', 'npwp', 'requirements', 'persyaratan'],
+            ],
+            [
+                'category' => ApartmentKnowledgeItem::CATEGORY_POLICIES,
+                'title' => 'Biaya awal sewa',
+                'body' => 'Biaya awal dibayar setelah pengajuan disetujui dan sebelum perjanjian ditandatangani: deposit keamanan 2 bulan sewa ditambah sewa periode pertama dibayar di muka (sewa bulanan: 1 bulan; sewa tahunan: sesuai kesepakatan dengan tim leasing, umumnya 6 atau 12 bulan). Tidak ada biaya admin pengajuan. Contoh Studio Urban sewa bulanan: deposit Rp27.000.000 + sewa bulan pertama Rp13.500.000 = Rp40.500.000. Tarif final dikonfirmasi tim apartemen.',
+                'translations' => [
+                    'en' => ['title' => 'Move-in costs', 'body' => 'Move-in costs are paid after the application is approved and before the lease is signed: a security deposit of 2 months of rent plus the first rent period in advance (monthly lease: 1 month; yearly lease: as agreed with the leasing team, usually 6 or 12 months). There is no application fee. Example, Urban Studio on a monthly lease: deposit IDR 27,000,000 + first month IDR 13,500,000 = IDR 40,500,000. The apartment team confirms the final amounts.'],
+                    'ja' => ['title' => '入居時にかかる費用', 'body' => '入居時費用は、申込の承認後、賃貸借契約の締結前にお支払いいただきます。内訳は賃料2か月分の敷金と、最初の賃料期間分の前払いです（月契約は1か月分、年契約はリーシングチームとの合意により通常6か月または12か月分）。申込手数料はありません。例：アーバン スタジオの月契約は、敷金2,700万ルピア＋初月賃料1,350万ルピア＝4,050万ルピア。最終金額はアパートメントチームが確認します。'],
+                ],
+                'tags' => ['move-in costs', 'biaya awal', 'deposit', 'first month', 'down payment', 'payment'],
+            ],
+            [
+                'category' => ApartmentKnowledgeItem::CATEGORY_POLICIES,
+                'title' => 'Perpanjangan dan pemutusan sewa lebih awal',
+                'body' => 'Untuk memperpanjang, beri tahu tim leasing paling lambat 60 hari sebelum masa sewa berakhir; tarif perpanjangan mengikuti tarif sewa yang berlaku saat itu. Untuk berhenti lebih awal, penyewa memberi pemberitahuan tertulis minimal 30 hari sebelumnya. Sewa yang sudah dibayar untuk sisa masa sewa tidak dikembalikan, kecuali ada penyewa pengganti yang disetujui tim leasing. Deposit dikembalikan sesuai ketentuan deposit setelah unit diperiksa.',
+                'translations' => [
+                    'en' => ['title' => 'Renewals and early termination', 'body' => 'To renew, tell the leasing team at least 60 days before the lease ends; the renewal rent follows the rate in force at that time. To leave early, the tenant gives at least 30 days\' written notice. Rent already paid for the rest of the term is not refunded unless the leasing team approves a replacement tenant. The deposit is returned under the deposit terms after the unit is inspected.'],
+                    'ja' => ['title' => '契約更新と中途解約', 'body' => '更新をご希望の場合は、契約終了の60日前までにリーシングチームへご連絡ください。更新後の賃料はその時点の賃料に準じます。中途解約は30日前までの書面通知が必要です。残りの期間分として支払済みの賃料は、リーシングチームが承認した後任の入居者がいる場合を除き返金されません。敷金はお部屋の確認後、敷金に関する規定に従って返還します。'],
+                ],
+                'tags' => ['renewal', 'extend', 'perpanjang', 'terminate', 'early termination', 'berhenti', 'pemutusan'],
+            ],
+            [
+                'category' => ApartmentKnowledgeItem::CATEGORY_FAQ,
+                'title' => 'Dokumen apa yang harus disiapkan untuk menyewa?',
+                'body' => 'WNI: KTP dan bukti penghasilan. WNA: paspor, KITAS/KITAP, dan surat jaminan perusahaan atau sponsor. Perusahaan: NIB atau akta, NPWP, dan surat kuasa. Dokumen dikirim ke tim leasing lewat WhatsApp atau email setelah pengajuan masuk, bukan diunggah di situs.',
+                'translations' => [
+                    'en' => ['title' => 'Which documents do I need to rent?', 'body' => 'Indonesian citizens: ID card (KTP) and proof of income. Foreigners: passport, KITAS/KITAP and a company or sponsor guarantee letter. Companies: NIB or deed, tax number and an authorisation letter. Send them to the leasing team by WhatsApp or email once your application is in; they are not uploaded on the site.'],
+                    'ja' => ['title' => '申し込みにはどんな書類が必要ですか？', 'body' => 'インドネシア国籍の方：KTPと収入証明。外国籍の方：パスポート、KITAS/KITAP、会社または保証人の保証書。法人：NIBまたは設立証書、納税者番号、委任状。お申し込み後にリーシングチームへWhatsAppまたはメールでお送りください（サイトへのアップロードは不要です）。'],
+                ],
+                'tags' => ['documents', 'dokumen', 'requirements', 'faq'],
+            ],
+            [
+                'category' => ApartmentKnowledgeItem::CATEGORY_FAQ,
+                'title' => 'Berapa biaya awal untuk menyewa?',
+                'body' => 'Deposit 2 bulan sewa ditambah sewa periode pertama di muka, tanpa biaya admin pengajuan. Contoh Studio Urban bulanan: Rp27.000.000 deposit + Rp13.500.000 sewa bulan pertama = Rp40.500.000. Listrik ditagih terpisah setiap bulan.',
+                'translations' => [
+                    'en' => ['title' => 'How much do I pay to move in?', 'body' => 'A deposit of 2 months of rent plus the first rent period in advance, with no application fee. Example, Urban Studio monthly: IDR 27,000,000 deposit + IDR 13,500,000 first month = IDR 40,500,000. Electricity is billed separately each month.'],
+                    'ja' => ['title' => '入居時にいくら必要ですか？', 'body' => '賃料2か月分の敷金と、最初の賃料期間分の前払いです。申込手数料はありません。例：アーバン スタジオの月契約は、敷金2,700万ルピア＋初月賃料1,350万ルピア＝4,050万ルピア。電気代は毎月別途請求します。'],
+                ],
+                'tags' => ['move-in costs', 'biaya awal', 'faq', 'deposit'],
+            ],
+            [
+                'category' => ApartmentKnowledgeItem::CATEGORY_FAQ,
+                'title' => 'Bagaimana jika ingin memperpanjang atau berhenti lebih awal?',
+                'body' => 'Perpanjangan: beri tahu tim leasing 60 hari sebelum sewa berakhir. Berhenti lebih awal: pemberitahuan tertulis minimal 30 hari; sewa yang sudah dibayar tidak dikembalikan kecuali ada penyewa pengganti yang disetujui.',
+                'translations' => [
+                    'en' => ['title' => 'Can I renew or leave early?', 'body' => 'Renewal: tell the leasing team 60 days before the lease ends. Leaving early: at least 30 days\' written notice; rent already paid is not refunded unless an approved replacement tenant takes over.'],
+                    'ja' => ['title' => '更新や中途解約はできますか？', 'body' => '更新：契約終了の60日前までにリーシングチームへご連絡ください。中途解約：30日前までの書面通知が必要です。支払済みの賃料は、承認された後任の入居者がいる場合を除き返金されません。'],
+                ],
+                'tags' => ['renewal', 'terminate', 'perpanjang', 'faq'],
             ],
         ];
 

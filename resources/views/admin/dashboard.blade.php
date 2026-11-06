@@ -13,7 +13,7 @@
         <a href="{{ route('admin.handovers.index') }}" class="rounded-xl border p-4 {{ $stats['open_handovers'] > 0 ? 'border-amber-300 bg-amber-50' : 'border-stone-200 bg-white' }}">
             <p class="{{ $label }}">Open handovers</p>
             <p class="mt-2 text-3xl font-semibold text-stone-900">{{ $stats['open_handovers'] }}</p>
-            <p class="mt-1 text-xs {{ $stats['open_handovers'] > 0 ? 'font-medium text-amber-700' : 'text-stone-400' }}">{{ $stats['open_handovers'] > 0 ? 'A guest is waiting for staff' : 'All answered' }}</p>
+            <p class="mt-1 text-xs {{ $stats['open_handovers'] > 0 ? 'font-medium text-amber-700' : 'text-stone-400' }}">{{ $stats['open_handovers'] > 0 ? 'A visitor is waiting for staff' : 'All answered' }}</p>
         </a>
         <div class="rounded-xl border border-stone-200 bg-white p-4">
             <p class="{{ $label }}">Move-ins · {{ $arrivalDays }} days</p>

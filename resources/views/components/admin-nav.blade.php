@@ -3,7 +3,8 @@
 
     $navItems = [
         ['route' => 'admin.dashboard', 'label' => 'Dashboard'],
-        ['route' => 'admin.unit-types.index', 'label' => 'Units'],
+        ['route' => 'admin.unit-types.index', 'label' => 'Unit types'],
+        ['route' => 'admin.units.index', 'label' => 'Apartments'],
         ['route' => 'admin.knowledge-items.index', 'label' => 'Knowledge base'],
         ['route' => 'admin.bookings.index', 'label' => 'Rental applications'],
         ['route' => 'admin.viewings.index', 'label' => 'Viewings'],

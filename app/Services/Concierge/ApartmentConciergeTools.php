@@ -6,6 +6,7 @@ use App\Models\Apartment;
 use App\Models\ApartmentKnowledgeItem;
 use App\Models\Booking;
 use App\Models\Conversation;
+use App\Models\Unit;
 use App\Models\UnitType;
 use App\Services\Reservation\ReservationService;
 use Carbon\CarbonImmutable;
@@ -424,8 +425,20 @@ class ApartmentConciergeTools
 
         $detail = $this->unitDetail($unitType, $input['image_tag'] ?? null);
 
+        $text = $detail;
+        if ($unitType->isForRent()) {
+            $today = now($this->apartment->timezone)->startOfDay();
+            $text['available_apartments'] = $unitType->units()->listable()->orderBy('floor')->orderBy('unit_number')->limit(8)->get()
+                ->map(fn (Unit $unit) => [
+                    'unit_number' => $unit->unit_number,
+                    'floor' => $unit->floor,
+                    'facing' => $unit->facing,
+                    'free_from' => $unit->freeFrom($today)?->toDateString() ?? 'now',
+                ])->all();
+        }
+
         return [
-            'text' => json_encode($detail, JSON_UNESCAPED_UNICODE),
+            'text' => json_encode($text, JSON_UNESCAPED_UNICODE),
             'ui' => ['type' => 'unit_detail', 'unit' => $detail],
         ];
     }

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'rental_type',
     'apartment_id',
     'unit_type_id',
+    'preferred_unit_id',
     'conversation_id',
     'guest_name',
     'guest_email',
@@ -99,6 +100,11 @@ class Booking extends Model
     public function unitType(): BelongsTo
     {
         return $this->belongsTo(UnitType::class)->withTrashed();
+    }
+
+    public function preferredUnit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class, 'preferred_unit_id');
     }
 
     public function conversation(): BelongsTo

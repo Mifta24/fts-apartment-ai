@@ -20,8 +20,8 @@
                     <input type="number" name="sort_order" value="{{ old('sort_order', $item->sort_order) }}" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
                 </div>
                 <div class="col-span-2">
-                    <label class="block text-sm font-medium text-stone-700">Tags (comma-separated, helps the AI match guest questions)</label>
-                    <input type="text" name="tags" value="{{ old('tags', implode(', ', $item->tags ?? [])) }}" placeholder="check-in, late check-in, front desk"
+                    <label class="block text-sm font-medium text-stone-700">Tags (comma-separated, helps the AI match visitor questions)</label>
+                    <input type="text" name="tags" value="{{ old('tags', implode(', ', $item->tags ?? [])) }}" placeholder="deposit, parking, move-in"
                         class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
                 </div>
                 <div class="col-span-2">

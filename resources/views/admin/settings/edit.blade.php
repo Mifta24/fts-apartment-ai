@@ -42,7 +42,7 @@
 
         <section class="rounded-xl border border-stone-200 bg-white p-5">
             <h2 class="text-sm font-semibold text-stone-900">Contact</h2>
-            <p class="mt-1 text-xs text-stone-500">Guests reach the team through these. They also get the stay summary by WhatsApp, phone or email.</p>
+            <p class="mt-1 text-xs text-stone-500">Applicants and residents reach the team through these. They also get their rental application summary by WhatsApp, phone or email.</p>
             <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
                 <div>
                     <label for="phone" class="block text-sm font-medium text-stone-700">Phone</label>
@@ -102,8 +102,8 @@
             <div class="mt-4">
                 <label for="public_status" class="block text-sm font-medium text-stone-700">Public page</label>
                 <select id="public_status" name="public_status" class="{{ $field }} sm:w-60">
-                    <option value="published" @selected(old('public_status', $apartment->public_status) === 'published')>Published — guests can see it</option>
-                    <option value="draft" @selected(old('public_status', $apartment->public_status) === 'draft')>Draft — hidden from guests</option>
+                    <option value="published" @selected(old('public_status', $apartment->public_status) === 'published')>Published — visitors can see it</option>
+                    <option value="draft" @selected(old('public_status', $apartment->public_status) === 'draft')>Draft — hidden from visitors</option>
                 </select>
             </div>
         </section>

@@ -85,6 +85,7 @@ function initReservationWizard() {
             children: Number(data.get('children')) || 0,
             units: Number(data.get('units')) || 0,
             unit_type_slug: data.get('unit_type_slug') || '',
+            preferred_unit_number: data.get('preferred_unit_number') || '',
             guest_name: (data.get('guest_name') || '').trim(),
             contact_type: data.get('contact_type') || 'whatsapp',
             contact_value: (data.get('contact_value') || '').trim(),
@@ -302,8 +303,11 @@ function initReservationWizard() {
     }
 
     function stayPayload() {
-        const { rental_type, lease_months, check_in, adults, children, units, unit_type_slug } = values();
-        return { rental_type, lease_months, check_in, adults, children, units, unit_type_slug, locale: config.locale };
+        const { rental_type, lease_months, check_in, adults, children, units, unit_type_slug, preferred_unit_number } = values();
+        const roomType = root.querySelector('[data-preferred-unit]')?.dataset.unitType;
+        // A preferred apartment only counts while its own unit type is the one chosen.
+        const room = preferred_unit_number && roomType === unit_type_slug ? { preferred_unit_number } : {};
+        return { rental_type, lease_months, check_in, adults, children, units, unit_type_slug, ...room, locale: config.locale };
     }
 
     function handleFailure(result) {

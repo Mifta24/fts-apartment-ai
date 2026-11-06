@@ -230,13 +230,26 @@ class ApartmentPageController extends Controller
 
         abort_if($index === false, 404);
 
+        $today = now($apartment->timezone)->startOfDay();
+
         return view('apartment.unit-detail', [
             ...$data,
             'unitType' => $units[$index],
+            'today' => $today,
+            'listedUnits' => $units[$index]->isForRent()
+                ? $units[$index]->units()->listable()->orderByRaw('available_from is not null')->orderBy('available_from')->orderBy('floor')->orderBy('unit_number')->limit(8)->get()
+                : collect(),
             'unitIndex' => $index,
             'previousUnit' => $units[($index - 1 + $units->count()) % $units->count()],
             'nextUnit' => $units[($index + 1) % $units->count()],
         ]);
+    }
+
+    public function leaseSample(Request $request, string $apartmentSlug): View
+    {
+        [$apartment, $locale] = $this->resolveStage($request, $apartmentSlug);
+
+        return view('apartment.lease-sample', ['apartment' => $apartment, 'locale' => $locale]);
     }
 
     public function facilities(Request $request, string $apartmentSlug): View
@@ -286,6 +299,9 @@ class ApartmentPageController extends Controller
         return view('apartment.reservation-index', [
             ...$this->stageData($apartment, $locale, 'reservation'),
             'preselectedUnit' => (string) $request->query('unit', ''),
+            'preselectedRoom' => filled($request->query('room'))
+                ? $apartment->units()->listable()->where('unit_number', (string) $request->query('room'))->first()
+                : null,
             'viewingRequested' => $request->boolean('viewing'),
         ]);
     }
@@ -554,7 +570,7 @@ class ApartmentPageController extends Controller
                 'error_generic' => 'Something went wrong. Please try again or contact the apartment team.', 'select_unit' => 'Please choose a unit type.',
                 'contact_staff' => 'Contact the apartment team',
                 'rental_title' => 'Lease type', 'rental_monthly' => 'Monthly lease', 'rental_yearly' => 'Yearly lease',
-                'viewing_title' => 'Want to see the unit first? Schedule a viewing', 'viewing_intro' => 'Tell us when you would like to visit. Nothing is held for you, and the leasing team will confirm the time.', 'viewing_date' => 'Preferred date', 'viewing_time' => 'Preferred time', 'viewing_submit' => 'Request a viewing',
+                'docs_title' => 'Documents to prepare', 'docs_individual' => 'Indonesian citizens: ID card (KTP) and proof of income (payslip or employer letter).', 'docs_foreign' => 'Foreigners: passport, KITAS/KITAP and a company or sponsor guarantee letter.', 'docs_company' => 'Companies: NIB or deed of establishment, tax number and an authorisation letter.', 'docs_note' => 'Nothing is uploaded here. After you apply, the leasing team asks for copies by WhatsApp or email.', 'sample_link' => 'Read a sample lease agreement', 'preferred_unit' => 'Preferred unit', 'preferred_unit_hint' => 'Floor :floor · facing :direction. The team confirms which unit you get.', 'viewing_title' => 'Want to see the unit first? Schedule a viewing', 'viewing_intro' => 'Tell us when you would like to visit. Nothing is held for you, and the leasing team will confirm the time.', 'viewing_date' => 'Preferred date', 'viewing_time' => 'Preferred time', 'viewing_submit' => 'Request a viewing',
                 'rental_hint_monthly' => 'A lease of :min to :max months, at a monthly rent.', 'rental_hint_yearly' => 'A lease of 1 to :years years, at a lower rent per month.',
                 'move_in' => 'Move-in date', 'term' => 'Lease length', 'term_month' => ':count month', 'term_months' => ':count months', 'term_year' => ':count year', 'term_years' => ':count years',
                 'lease_ends' => 'Lease ends :date', 'rent' => 'Rent', 'rent_per_month' => ':price / month', 'rent_per_year' => ':price / year',
@@ -581,7 +597,7 @@ class ApartmentPageController extends Controller
                 'error_generic' => 'エラーが発生しました。もう一度お試しいただくか、スタッフにご連絡ください。', 'select_unit' => 'お部屋タイプを選択してください。',
                 'contact_staff' => 'スタッフに連絡',
                 'rental_title' => 'ご契約の形態', 'rental_monthly' => '月契約', 'rental_yearly' => '年契約',
-                'viewing_title' => 'まずお部屋を見たい方は内見をご予約ください', 'viewing_intro' => 'ご希望の日時をお知らせください。お部屋は確保されません。リーシングチームが日時を確認してご連絡します。', 'viewing_date' => 'ご希望日', 'viewing_time' => 'ご希望時間', 'viewing_submit' => '内見を希望する',
+                'docs_title' => '準備していただく書類', 'docs_individual' => 'インドネシア国籍の方：身分証（KTP）と収入証明（給与明細または在職証明）。', 'docs_foreign' => '外国籍の方：パスポート、KITAS/KITAP、会社または保証人の保証書。', 'docs_company' => '法人：NIBまたは設立証書、納税者番号、委任状。', 'docs_note' => 'ここで書類をアップロードする必要はありません。お申し込み後、リーシングチームがWhatsAppまたはメールでコピーをお願いします。', 'sample_link' => '賃貸借契約書のサンプルを見る', 'preferred_unit' => 'ご希望のお部屋', 'preferred_unit_hint' => ':floor階 · :direction向き。お部屋の最終確定はスタッフが行います。', 'viewing_title' => 'まずお部屋を見たい方は内見をご予約ください', 'viewing_intro' => 'ご希望の日時をお知らせください。お部屋は確保されません。リーシングチームが日時を確認してご連絡します。', 'viewing_date' => 'ご希望日', 'viewing_time' => 'ご希望時間', 'viewing_submit' => '内見を希望する',
                 'rental_hint_monthly' => ':min〜:maxか月の月契約（月額賃料）。', 'rental_hint_yearly' => '1〜:years年の年契約。月あたりの賃料がさらにお得です。',
                 'move_in' => '入居開始日', 'term' => '契約期間', 'term_month' => ':countか月', 'term_months' => ':countか月', 'term_year' => ':count年', 'term_years' => ':count年',
                 'lease_ends' => '契約終了日：:date', 'rent' => '賃料', 'rent_per_month' => ':price / 月', 'rent_per_year' => ':price / 年',
@@ -608,7 +624,7 @@ class ApartmentPageController extends Controller
                 'error_generic' => 'Terjadi kesalahan. Coba lagi atau hubungi tim apartemen.', 'select_unit' => 'Silakan pilih tipe unit.',
                 'contact_staff' => 'Hubungi tim apartemen',
                 'rental_title' => 'Jenis sewa', 'rental_monthly' => 'Sewa bulanan', 'rental_yearly' => 'Sewa tahunan',
-                'viewing_title' => 'Ingin melihat unitnya dulu? Jadwalkan survei', 'viewing_intro' => 'Beri tahu kami kapan Anda ingin berkunjung. Unit tidak ditahan, dan tim leasing akan mengonfirmasi jadwalnya.', 'viewing_date' => 'Tanggal yang diinginkan', 'viewing_time' => 'Jam yang diinginkan', 'viewing_submit' => 'Minta jadwal survei',
+                'docs_title' => 'Dokumen yang perlu disiapkan', 'docs_individual' => 'WNI: KTP dan bukti penghasilan (slip gaji atau surat keterangan kerja).', 'docs_foreign' => 'WNA: paspor, KITAS/KITAP, dan surat jaminan perusahaan atau sponsor.', 'docs_company' => 'Perusahaan: NIB atau akta pendirian, NPWP, dan surat kuasa.', 'docs_note' => 'Tidak ada yang diunggah di sini. Setelah mengajukan, tim leasing meminta salinannya lewat WhatsApp atau email.', 'sample_link' => 'Baca contoh perjanjian sewa', 'preferred_unit' => 'Unit pilihan', 'preferred_unit_hint' => 'Lantai :floor · menghadap :direction. Tim akan mengonfirmasi unit yang Anda dapatkan.', 'viewing_title' => 'Ingin melihat unitnya dulu? Jadwalkan survei', 'viewing_intro' => 'Beri tahu kami kapan Anda ingin berkunjung. Unit tidak ditahan, dan tim leasing akan mengonfirmasi jadwalnya.', 'viewing_date' => 'Tanggal yang diinginkan', 'viewing_time' => 'Jam yang diinginkan', 'viewing_submit' => 'Minta jadwal survei',
                 'rental_hint_monthly' => 'Kontrak :min sampai :max bulan dengan tarif sewa per bulan.', 'rental_hint_yearly' => 'Kontrak 1 sampai :years tahun, tarif per bulan lebih hemat.',
                 'move_in' => 'Tanggal mulai sewa', 'term' => 'Lama sewa', 'term_month' => ':count bulan', 'term_months' => ':count bulan', 'term_year' => ':count tahun', 'term_years' => ':count tahun',
                 'lease_ends' => 'Sewa berakhir :date', 'rent' => 'Sewa', 'rent_per_month' => ':price / bulan', 'rent_per_year' => ':price / tahun',
@@ -644,7 +660,7 @@ class ApartmentPageController extends Controller
                 'reservation_q' => 'I would like to rent a unit. Please help me check availability.',
                 'start_booking' => 'Apply to rent', 'available' => 'Concierge on duty, 24/7',
                 'assistant' => 'Your resident concierge', 'illustration' => 'AI illustration',
-                'staff_intro' => 'Need a person? Message us and the apartment team — leasing, building management and housekeeping — will pick it up.',
+                'staff_intro' => 'Need a person? Message us and the apartment team — leasing and building management — will pick it up.',
                 'empty' => 'Ask your AI Concierge for more information.', 'back' => 'Back to the lobby',
                 'location' => 'Find the building',
                 'connection_error' => 'Chat could not connect. Please reload to try again.',
@@ -663,7 +679,7 @@ class ApartmentPageController extends Controller
                 'size' => 'Size', 'bed' => 'Beds', 'guests' => 'Residents', 'view' => 'View', 'layout' => 'Layout', 'floors' => 'Floors',
                 'studio' => 'Studio', 'bedrooms' => ':count bed · :baths bath',
                 'amenities' => 'In the unit',
-                'availability_note' => 'Final availability and rates are confirmed by the apartment team.',
+                'units_free_title' => 'Apartments you can move into', 'unit_no' => 'Unit', 'unit_floor' => 'Floor :floor', 'unit_ready' => 'Ready now', 'unit_free_from' => 'Free from :date', 'unit_facing' => 'Facing :direction', 'facing_north' => 'north', 'facing_east' => 'east', 'facing_south' => 'south', 'facing_west' => 'west', 'unit_pick' => 'Apply for this unit', 'units_free_none' => 'No apartment of this type is listed as free right now — ask the team about upcoming vacancies.', 'availability_note' => 'Final availability and rates are confirmed by the apartment team.',
                 'ask_unit_q' => 'Tell me more about the :name.',
                 'cta_units' => 'See the residences', 'stat_from' => 'Monthly rent from', 'rent_monthly' => 'Monthly rental :price / month', 'rent_yearly' => 'Yearly rental :price / year (about :monthly / month)',
                 'lease_note' => 'Refundable security deposit of :months month(s) of rent. Monthly leases run :min–:max months, yearly leases 1–:years years.',
@@ -677,7 +693,7 @@ class ApartmentPageController extends Controller
                 'reservation_q' => 'お部屋を借りたいです。空室を確認してください。',
                 'start_booking' => '入居を申し込む', 'available' => 'コンシェルジュ 24時間対応',
                 'assistant' => 'レジデントコンシェルジュ', 'illustration' => 'AIイラスト',
-                'staff_intro' => 'スタッフと話したい場合は、メッセージをお送りください。リーシング・管理・ハウスキーピングのチームが対応します。',
+                'staff_intro' => 'スタッフと話したい場合は、メッセージをお送りください。リーシングと建物管理のチームが対応します。',
                 'empty' => '詳しくはAIコンシェルジュにお尋ねください。', 'back' => 'ロビーに戻る',
                 'location' => 'アクセス',
                 'connection_error' => 'チャットに接続できませんでした。再読み込みしてください。',
@@ -696,7 +712,7 @@ class ApartmentPageController extends Controller
                 'size' => '広さ', 'bed' => 'ベッド', 'guests' => '定員', 'view' => '眺望', 'layout' => '間取り', 'floors' => 'フロア',
                 'studio' => 'スタジオ', 'bedrooms' => ':count ベッドルーム · :baths バスルーム',
                 'amenities' => 'お部屋の設備',
-                'availability_note' => '空室状況と料金は、スタッフが最終確認いたします。',
+                'units_free_title' => '入居できるお部屋', 'unit_no' => '号室', 'unit_floor' => ':floor階', 'unit_ready' => 'すぐ入居可', 'unit_free_from' => ':dateから入居可', 'unit_facing' => ':direction向き', 'facing_north' => '北', 'facing_east' => '東', 'facing_south' => '南', 'facing_west' => '西', 'unit_pick' => 'このお部屋で申し込む', 'units_free_none' => 'このタイプで現在空室として掲載中のお部屋はありません。今後の空き予定はスタッフにお尋ねください。', 'availability_note' => '空室状況と料金は、スタッフが最終確認いたします。',
                 'ask_unit_q' => ':name について詳しく教えてください。',
                 'cta_units' => 'お部屋を見る', 'stat_from' => '月額賃料', 'rent_monthly' => '月契約 :price / 月', 'rent_yearly' => '年契約 :price / 年（月あたり約 :monthly）',
                 'lease_note' => '敷金は賃料:monthsか月分（返還）。月契約は:min〜:maxか月、年契約は1〜:years年。',
@@ -710,7 +726,7 @@ class ApartmentPageController extends Controller
                 'reservation_q' => 'Saya ingin menyewa unit. Bantu saya cek ketersediaan.',
                 'start_booking' => 'Ajukan sewa', 'available' => 'Concierge siaga 24 jam',
                 'assistant' => 'Concierge penghuni Anda', 'illustration' => 'Ilustrasi AI',
-                'staff_intro' => 'Butuh bicara dengan orang? Kirim pesan dan tim apartemen — leasing, pengelola gedung, dan housekeeping — akan menindaklanjuti.',
+                'staff_intro' => 'Butuh bicara dengan orang? Kirim pesan dan tim apartemen — leasing dan pengelola gedung — akan menindaklanjuti.',
                 'empty' => 'Tanyakan informasi selengkapnya kepada AI Concierge.', 'back' => 'Kembali ke lobi',
                 'location' => 'Lokasi gedung',
                 'connection_error' => 'Chat belum tersambung. Muat ulang halaman untuk mencoba lagi.',
@@ -729,7 +745,7 @@ class ApartmentPageController extends Controller
                 'size' => 'Luas', 'bed' => 'Tempat tidur', 'guests' => 'Kapasitas', 'view' => 'Pemandangan', 'layout' => 'Denah', 'floors' => 'Lantai',
                 'studio' => 'Studio', 'bedrooms' => ':count kamar tidur · :baths kamar mandi',
                 'amenities' => 'Di dalam unit',
-                'availability_note' => 'Ketersediaan dan tarif final dikonfirmasi oleh tim apartemen.',
+                'units_free_title' => 'Unit yang bisa ditempati', 'unit_no' => 'Unit', 'unit_floor' => 'Lantai :floor', 'unit_ready' => 'Siap huni sekarang', 'unit_free_from' => 'Kosong mulai :date', 'unit_facing' => 'Menghadap :direction', 'facing_north' => 'utara', 'facing_east' => 'timur', 'facing_south' => 'selatan', 'facing_west' => 'barat', 'unit_pick' => 'Ajukan sewa unit ini', 'units_free_none' => 'Belum ada unit tipe ini yang terdaftar kosong saat ini — tanyakan jadwal kekosongan berikutnya kepada tim.', 'availability_note' => 'Ketersediaan dan tarif final dikonfirmasi oleh tim apartemen.',
                 'ask_unit_q' => 'Ceritakan lebih banyak tentang :name.',
                 'cta_units' => 'Lihat unit', 'stat_from' => 'Sewa bulanan mulai', 'rent_monthly' => 'Sewa bulanan :price / bulan', 'rent_yearly' => 'Sewa tahunan :price / tahun (sekitar :monthly / bulan)',
                 'lease_note' => 'Deposit keamanan :months bulan sewa, dikembalikan. Sewa bulanan :min–:max bulan, sewa tahunan 1–:years tahun.',

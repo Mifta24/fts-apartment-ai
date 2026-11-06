@@ -87,6 +87,11 @@ class Apartment extends Model
         return $this->hasMany(Conversation::class);
     }
 
+    public function units(): HasMany
+    {
+        return $this->hasMany(Unit::class);
+    }
+
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);

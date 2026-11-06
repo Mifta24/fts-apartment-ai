@@ -191,6 +191,12 @@
 .unit-scene-rate-amount { white-space: nowrap; }
 .unit-scene-monthly { margin-top: 4px; font-family: var(--font-mono); font-size: 12px; color: #4f5e14; }
 .unit-scene-note { margin-top: 6px; font-size: 11.5px; color: var(--muted); }
+.unit-scene-rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; margin-top: 10px; padding: 0; list-style: none; }
+.unit-scene-rooms a { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); font-size: 13px; transition: border-color .2s, background .2s; }
+.unit-scene-rooms a:hover { border-color: var(--ink); }
+.unit-scene-rooms strong { font-size: 15px; }
+.unit-scene-rooms .is-now { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: #4f5e14; }
+.unit-scene-rooms .is-later { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
 .unit-scene-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 22px; border-top: 1px solid var(--line); }
 .unit-scene-facts > div { padding: 12px 12px 12px 0; border-bottom: 1px solid var(--line); }
 .unit-scene-facts > div:nth-child(even) { padding-left: 14px; border-left: 1px solid var(--line); }
@@ -376,6 +382,9 @@ a.info-fact:hover { border-color: var(--text); }
 .wizard-check { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: 14px; }
 .wizard-check[hidden] { display: none; }
 .wizard-check input { width: 18px; height: 18px; accent-color: var(--ink); }
+.wizard-room { display: grid; gap: 2px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid var(--ink); border-radius: 4px; font-size: 13px; }
+.wizard-room strong { font-size: 15px; }
+.wizard-docs { margin: 10px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.55; color: var(--muted); list-style: disc; }
 .wizard-pills { display: flex; flex-wrap: wrap; gap: 8px; }
 .wizard-pills label { cursor: pointer; }
 .wizard-pills input { position: absolute; opacity: 0; pointer-events: none; }

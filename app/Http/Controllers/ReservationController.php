@@ -148,6 +148,7 @@ class ReservationController extends Controller
         $data = $request->validate([
             ...$this->stayRules($apartment),
             'guest_name' => ['required', 'string', 'max:100'],
+            'preferred_unit_number' => ['nullable', 'string', 'max:12'],
             'contact_type' => ['required', Rule::in(['whatsapp', 'phone', 'email'])],
             'contact_value' => ['required', 'string', 'max:120'],
             'special_request' => ['nullable', 'string', 'max:500'],
@@ -170,6 +171,7 @@ class ReservationController extends Controller
             'adults' => (int) $data['adults'],
             'children' => (int) ($data['children'] ?? 0),
             'units' => $stay['units'],
+            'preferred_unit_id' => $this->preferredUnitId($apartment, $unitType, $data['preferred_unit_number'] ?? null),
             'guest_name' => $data['guest_name'],
             'guest_email' => $isEmail ? $data['contact_value'] : null,
             'guest_phone' => $isEmail ? null : $data['contact_value'],
@@ -198,6 +200,19 @@ class ReservationController extends Controller
             'currency' => $apartment->currency,
             'handover' => $this->handover->forBooking($apartment, $booking, $locale),
         ], 201);
+    }
+
+    /**
+     * The apartment the applicant asked for, when it is of the chosen type and
+     * still listed as free; anything else is quietly ignored (the team assigns the unit).
+     */
+    private function preferredUnitId(Apartment $apartment, UnitType $unitType, ?string $unitNumber): ?int
+    {
+        if (! filled($unitNumber)) {
+            return null;
+        }
+
+        return $apartment->units()->listable()->where('unit_type_id', $unitType->id)->where('unit_number', $unitNumber)->value('id');
     }
 
     /**

@@ -148,7 +148,7 @@ class ReservationService
      * Creates a rental application and holds the unit for it until the team
      * answers. Returns null when the unit is no longer free on those days.
      *
-     * @param  array{rental_type: string, lease_months: int, check_in: CarbonImmutable, adults: int, children?: int, units?: int, guest_name: string, guest_email?: ?string, guest_phone?: ?string, contact_type?: ?string, locale?: ?string, notes?: ?string}  $data
+     * @param  array{rental_type: string, lease_months: int, check_in: CarbonImmutable, adults: int, children?: int, units?: int, preferred_unit_id?: ?int, guest_name: string, guest_email?: ?string, guest_phone?: ?string, contact_type?: ?string, locale?: ?string, notes?: ?string}  $data
      */
     public function createRequest(Apartment $apartment, UnitType $unitType, array $data, ?Conversation $conversation = null): ?Booking
     {
@@ -168,6 +168,7 @@ class ReservationService
                 'rental_type' => $rentalType,
                 'apartment_id' => $apartment->id,
                 'unit_type_id' => $unitType->id,
+                'preferred_unit_id' => $data['preferred_unit_id'] ?? null,
                 'conversation_id' => $conversation?->id,
                 'guest_name' => $data['guest_name'],
                 'guest_email' => $data['guest_email'] ?? null,

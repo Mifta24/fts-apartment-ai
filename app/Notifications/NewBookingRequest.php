@@ -30,13 +30,14 @@ class NewBookingRequest extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $booking = $this->booking->loadMissing(['apartment', 'unitType']);
+        $booking = $this->booking->loadMissing(['apartment', 'unitType', 'preferredUnit']);
         $contact = $booking->guest_phone ?? $booking->guest_email;
 
         return (new MailMessage)
             ->subject("New rental application {$booking->reference} from {$booking->guest_name}")
             ->greeting("New rental application for {$booking->apartment->name}")
             ->line("{$booking->guest_name} applied to rent {$booking->unit_count} × {$booking->unitType->name}.")
+            ->when($booking->preferredUnit, fn (MailMessage $mail) => $mail->line("Preferred unit: {$booking->preferredUnit->unit_number} (floor {$booking->preferredUnit->floor})."))
             ->line("Move-in {$booking->check_in->toFormattedDateString()}, lease ends {$booking->check_out->toFormattedDateString()} ({$booking->rental_type} rental, {$booking->lease_months} months).")
             ->line("Residents: {$booking->adults} adults".($booking->children ? ", {$booking->children} children" : '').'.')
             ->line("Total: {$booking->apartment->currency} ".number_format((float) $booking->total_price, 0, ',', '.').'.')

@@ -33,8 +33,8 @@ class NewHandoverRequest extends Notification implements ShouldQueue
         $reason = str_replace('_', ' ', $this->handover->reason);
 
         return (new MailMessage)
-            ->subject("A guest is waiting for staff: {$reason}")
-            ->greeting('A guest needs a person')
+            ->subject("A visitor is waiting for staff: {$reason}")
+            ->greeting('A visitor needs a person')
             ->line("The AI concierge handed this conversation over ({$reason}).")
             ->line($this->handover->summary)
             ->action('Open the conversation', route('admin.handovers.show', $this->handover));

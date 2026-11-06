@@ -26,7 +26,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'max_children',
     'bed_config',
     'view_type',
-    'breakfast_included',
     'base_price',
     'monthly_price',
     'yearly_price',
@@ -71,7 +70,6 @@ class UnitType extends Model
             'bathrooms' => 'integer',
             'bed_config' => 'array',
             'amenities' => 'array',
-            'breakfast_included' => 'boolean',
             'base_price' => 'decimal:2',
             'monthly_price' => 'decimal:2',
             'yearly_price' => 'decimal:2',
@@ -93,6 +91,11 @@ class UnitType extends Model
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    public function units(): HasMany
+    {
+        return $this->hasMany(Unit::class);
     }
 
     public function inventory(): HasMany
