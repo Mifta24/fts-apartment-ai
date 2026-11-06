@@ -79,9 +79,9 @@ class ContentGuard
         return false;
     }
 
-    private const INDONESIAN_WORDS = ['yang', 'dan', 'apa', 'ada', 'saya', 'aku', 'kamu', 'anda', 'bisa', 'untuk', 'tidak', 'ini', 'itu', 'dong', 'nggak', 'gak', 'berapa', 'mau', 'dengan', 'di', 'ke', 'dari', 'kamar', 'lu', 'gue'];
+    private const INDONESIAN_WORDS = ['yang', 'dan', 'apa', 'ada', 'saya', 'aku', 'kamu', 'anda', 'bisa', 'untuk', 'tidak', 'ini', 'itu', 'dong', 'nggak', 'gak', 'berapa', 'mau', 'dengan', 'di', 'ke', 'dari', 'kamar', 'lu', 'gue', 'sewa', 'bulanan', 'tahunan', 'bulan', 'tahun', 'harga', 'tipe', 'adalah', 'juga', 'atau', 'pada', 'akan', 'sudah', 'jika', 'silakan', 'kami', 'kita', 'dapat', 'memiliki', 'tersedia', 'hubungi', 'berikut', 'semua', 'setiap', 'sebesar', 'sekitar', 'bagaimana', 'bisakah', 'tolong', 'terima', 'kasih'];
 
-    private const ENGLISH_WORDS = ['the', 'and', 'what', 'is', 'are', 'you', 'your', 'can', 'do', 'does', 'i', 'my', 'me', 'have', 'with', 'for', 'this', 'that', 'how', 'much', 'please', 'tell', 'say', 'write'];
+    private const ENGLISH_WORDS = ['the', 'and', 'what', 'is', 'are', 'you', 'your', 'can', 'do', 'does', 'i', 'my', 'me', 'have', 'with', 'for', 'this', 'that', 'how', 'much', 'please', 'tell', 'say', 'write', 'a', 'an', 'to', 'of', 'in', 'on', 'at', 'we', 'our', 'it', 'if', 'will', 'would', 'monthly', 'rent', 'rental', 'available', 'from', 'month', 'year', 'or', 'be', 'by', 'there', 'here', 'about', 'which', 'when', 'where', 'yes', 'also', 'includes', 'included'];
 
     /**
      * Best guess of the language a message is written in, so a fixed reply can

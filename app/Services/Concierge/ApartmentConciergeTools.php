@@ -215,26 +215,32 @@ class ApartmentConciergeTools
         };
     }
 
+    /** Words too common to say which knowledge entry a question is about. */
+    private const SEARCH_STOP_WORDS = ['the', 'and', 'how', 'what', 'are', 'you', 'for', 'with', 'this', 'that', 'can', 'does', 'have', 'there', 'much', 'many', 'about', 'please', 'tell', 'yang', 'dan', 'apa', 'ada', 'ini', 'itu', 'untuk', 'dengan', 'saya', 'bisa', 'tidak', 'dari', 'atau', 'berapa', 'bagaimana', 'mau', 'anda'];
+
     private function searchKnowledge(array $input): array
     {
         $query = trim((string) ($input['query'] ?? ''));
         $category = $input['category'] ?? null;
-        $words = collect(preg_split('/\s+/', Str::lower($query)))->filter();
+        $words = collect(preg_split('/[^\p{L}\p{N}]+/u', Str::lower($query), -1, PREG_SPLIT_NO_EMPTY))
+            ->filter(fn (string $word) => mb_strlen($word) >= 3 && ! in_array($word, self::SEARCH_STOP_WORDS, true))
+            ->unique();
 
         $items = $this->apartment->knowledgeItems()
             ->where('is_active', true)
             ->when($category, fn ($q) => $q->where('category', $category))
             ->get()
-            ->filter(function (ApartmentKnowledgeItem $item) use ($query, $words) {
-                if ($query === '') {
-                    return true;
-                }
+            ->map(function (ApartmentKnowledgeItem $item) use ($query, $words) {
+                $translated = collect($item->translations ?? [])->flatten()->implode(' ');
+                $haystack = Str::lower($item->title.' '.$item->body.' '.$translated.' '.implode(' ', $item->tags ?? []));
+                $score = $words->filter(fn (string $word) => Str::contains($haystack, $word))->count()
+                    + ($query !== '' && Str::contains($haystack, Str::lower($query)) ? max(1, $words->count()) : 0);
 
-                $haystack = Str::lower($item->title.' '.$item->body.' '.implode(' ', $item->tags ?? []));
-
-                return Str::contains($haystack, Str::lower($query))
-                    || $words->contains(fn ($word) => Str::contains($haystack, $word));
+                return ['item' => $item, 'score' => $score];
             })
+            ->when($query !== '', fn ($c) => $c->filter(fn (array $match) => $match['score'] > 0))
+            ->sortByDesc('score')
+            ->pluck('item')
             ->take(5);
 
         if ($items->isEmpty()) {

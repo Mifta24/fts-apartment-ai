@@ -86,9 +86,9 @@ class ApartmentPageController extends Controller
      */
     private const NARRATION = [
         'en' => [
-            'units' => 'This is the residences floor. We have :count unit types, from :price per month. Open any of them and I will walk you through the layout, or ask me anything.',
-            'units_one' => 'This is the residences floor. We have one unit type, from :price per month. Open it and I will walk you through the layout, or ask me anything.',
-            'units_any' => 'This is the residences floor. We have :count unit types, for rent or for sale. Open any of them and I will walk you through it, or ask me anything.',
+            'units' => 'This is the units and properties floor. We have :count unit types, from :price per month. Open any of them and I will walk you through the layout, or ask me anything.',
+            'units_one' => 'This is the units and properties floor. We have one unit type, from :price per month. Open it and I will walk you through the layout, or ask me anything.',
+            'units_any' => 'This is the units and properties floor. We have :count unit types, :rent of them to rent (the rest are for sale). Open any of them and I will walk you through it, or ask me anything.',
             'category_layout' => 'It is a unit for :category use',
             'monthly' => 'Rent starts from :price per month. Final availability and rates are confirmed by our team.',
             'sale' => 'It is for sale at :price. Our team arranges enquiries and viewings.',
@@ -102,7 +102,7 @@ class ApartmentPageController extends Controller
             'info_welcome' => 'Welcome to :apartment.',
             'info_place' => 'The building is in :location.',
             'info_more' => 'Below you will find the address, house rules and frequently asked questions — or just ask me.',
-            'tour_units' => 'Going up to the residences floor.',
+            'tour_units' => 'Going up to the units and properties floor.',
             'tour_facilities' => 'Going up to the shared facilities.',
             'tour_info' => 'Going to the building information desk.',
             'tour_staff' => 'Going to the apartment team.',
@@ -111,9 +111,9 @@ class ApartmentPageController extends Controller
             'listen' => 'Listen', 'stop' => 'Stop', 'skip' => 'Skip', 'speaks' => 'is speaking',
         ],
         'id' => [
-            'units' => 'Ini lantai hunian. Ada :count tipe unit, mulai dari :price per bulan. Buka salah satu, nanti saya jelaskan denahnya — atau tanyakan apa saja kepada saya.',
-            'units_one' => 'Ini lantai hunian. Ada satu tipe unit, mulai dari :price per bulan. Buka unitnya, nanti saya jelaskan denahnya — atau tanyakan apa saja kepada saya.',
-            'units_any' => 'Ini lantai hunian. Ada :count tipe unit, untuk disewa maupun dijual. Buka salah satu, nanti saya jelaskan — atau tanyakan apa saja kepada saya.',
+            'units' => 'Ini lantai unit dan properti. Ada :count tipe unit, mulai dari :price per bulan. Buka salah satu, nanti saya jelaskan denahnya — atau tanyakan apa saja kepada saya.',
+            'units_one' => 'Ini lantai unit dan properti. Ada satu tipe unit, mulai dari :price per bulan. Buka unitnya, nanti saya jelaskan denahnya — atau tanyakan apa saja kepada saya.',
+            'units_any' => 'Ini lantai unit dan properti. Ada :count tipe unit, :rent di antaranya bisa disewa (sisanya dijual). Buka salah satu, nanti saya jelaskan — atau tanyakan apa saja kepada saya.',
             'category_layout' => 'Unit ini diperuntukkan untuk :category',
             'monthly' => 'Sewa mulai dari :price per bulan. Ketersediaan dan tarif final dikonfirmasi oleh tim kami.',
             'sale' => 'Unit ini dijual dengan harga :price. Pertanyaan dan jadwal kunjungan diatur oleh tim kami.',
@@ -127,7 +127,7 @@ class ApartmentPageController extends Controller
             'info_welcome' => 'Selamat datang di :apartment.',
             'info_place' => 'Gedung kami berada di :location.',
             'info_more' => 'Di bawah ini ada alamat, aturan gedung, dan pertanyaan yang sering diajukan — atau tanyakan langsung kepada saya.',
-            'tour_units' => 'Naik ke lantai hunian.',
+            'tour_units' => 'Naik ke lantai unit dan properti.',
             'tour_facilities' => 'Naik ke lantai fasilitas bersama.',
             'tour_info' => 'Menuju meja informasi gedung.',
             'tour_staff' => 'Menuju ruang tim apartemen.',
@@ -136,9 +136,9 @@ class ApartmentPageController extends Controller
             'listen' => 'Dengarkan', 'stop' => 'Berhenti', 'skip' => 'Lewati', 'speaks' => 'sedang berbicara',
         ],
         'ja' => [
-            'units' => 'こちらはレジデンスフロアです。:count タイプのお部屋を、月額 :price からご用意しています。お部屋を開いていただければ、間取りをご案内します。ご質問もお気軽にどうぞ。',
-            'units_one' => 'こちらはレジデンスフロアです。1タイプのお部屋を、月額 :price からご用意しています。お部屋を開いていただければ、間取りをご案内します。ご質問もお気軽にどうぞ。',
-            'units_any' => 'こちらはレジデンスフロアです。:count タイプのお部屋を、賃貸または販売でご用意しています。お部屋を開いていただければご案内します。ご質問もお気軽にどうぞ。',
+            'units' => 'こちらはお部屋・物件フロアです。:count タイプのお部屋を、月額 :price からご用意しています。お部屋を開いていただければ、間取りをご案内します。ご質問もお気軽にどうぞ。',
+            'units_one' => 'こちらはお部屋・物件フロアです。1タイプのお部屋を、月額 :price からご用意しています。お部屋を開いていただければ、間取りをご案内します。ご質問もお気軽にどうぞ。',
+            'units_any' => 'こちらはお部屋・物件フロアです。:count タイプのお部屋のうち、:rent タイプは賃貸、残りは販売です。お部屋を開いていただければご案内します。ご質問もお気軽にどうぞ。',
             'category_layout' => ':category用のユニットで',
             'monthly' => '賃料は月 :price から。空室状況と料金は、スタッフが最終確認いたします。',
             'sale' => ':price で販売中です。お問い合わせと内覧はスタッフが承ります。',
@@ -152,7 +152,7 @@ class ApartmentPageController extends Controller
             'info_welcome' => ':apartment へようこそ。',
             'info_place' => '建物は:locationにございます。',
             'info_more' => '以下に、所在地、館内ルール、よくあるご質問をご案内しています。お気軽にお尋ねください。',
-            'tour_units' => 'レジデンスフロアへ上がります。',
+            'tour_units' => 'お部屋・物件フロアへ上がります。',
             'tour_facilities' => '共用施設のフロアへ上がります。',
             'tour_info' => '建物のインフォメーションへご案内します。',
             'tour_staff' => 'スタッフのもとへご案内します。',
@@ -459,7 +459,7 @@ class ApartmentPageController extends Controller
                 [(string) $unitTypes->count(), $money($monthlyUnits->min('monthly_price'))],
                 $templates[$unitTypes->count() === 1 ? 'units_one' : 'units']
             )
-            : str_replace(':count', (string) $unitTypes->count(), $templates['units_any']);
+            : str_replace([':count', ':rent'], [(string) $unitTypes->count(), (string) $unitTypes->filter(fn (UnitType $unitType) => $unitType->isForRent())->count()], $templates['units_any']);
 
         $units = $unitTypes->mapWithKeys(function (UnitType $unitType) use ($templates, $terms, $money, $sentence, $locale, $join) {
             $parts = [$unitType->translatedName($locale).'.', filled($unitType->translatedDescription($locale)) ? $sentence(trim($unitType->translatedDescription($locale))) : null];
@@ -509,21 +509,21 @@ class ApartmentPageController extends Controller
                 'tagline' => 'Ride up through the building with an AI concierge that knows every unit, rent and house rule — and find your next home.',
                 'enter' => 'Enter :name', 'empty' => 'The virtual lobby is being prepared. Please come back soon.',
                 'loading' => 'Calling the lift…', 'sound_on' => 'Sound on', 'sound_off' => 'Sound off', 'directory' => 'Building directory',
-                'units' => 'Residences', 'facilities' => 'Shared facilities', 'reservation' => 'Apply to rent', 'staff' => 'Apartment team',
+                'units' => 'Units & properties', 'facilities' => 'Shared facilities', 'reservation' => 'Apply to rent', 'staff' => 'Talk to the team',
             ],
             'ja' => [
                 'eyebrow' => 'サービスアパートメント · AIコンシェルジュ', 'welcome' => '都市の暮らしを、', 'welcome_em' => 'ワンフロアずつ。',
                 'tagline' => 'すべてのお部屋・賃料・館内ルールを知るAIコンシェルジュと、建物の中をご案内します。次のお住まい探しをお手伝いします。',
                 'enter' => ':name に入る', 'empty' => 'バーチャルロビーは準備中です。しばらくしてからお越しください。',
                 'loading' => 'エレベーターを呼んでいます…', 'sound_on' => 'サウンドオン', 'sound_off' => 'サウンドオフ', 'directory' => 'フロアガイド',
-                'units' => 'レジデンス', 'facilities' => '共用施設', 'reservation' => '入居を申し込む', 'staff' => 'スタッフに相談',
+                'units' => 'お部屋・物件', 'facilities' => '共用施設', 'reservation' => '入居を申し込む', 'staff' => 'スタッフに相談',
             ],
             default => [
                 'eyebrow' => 'Serviced apartment · AI concierge', 'welcome' => 'Hidup di kota,', 'welcome_em' => 'satu lantai demi satu.',
                 'tagline' => 'Naik menjelajahi gedung bersama AI Concierge yang hafal setiap unit, harga sewa, dan aturan gedung — temukan hunian Anda berikutnya.',
                 'enter' => 'Masuk ke :name', 'empty' => 'Lobi virtual sedang dipersiapkan. Silakan kembali lagi nanti.',
                 'loading' => 'Memanggil lift…', 'sound_on' => 'Suara aktif', 'sound_off' => 'Suara mati', 'directory' => 'Direktori gedung',
-                'units' => 'Unit hunian', 'facilities' => 'Fasilitas bersama', 'reservation' => 'Ajukan sewa', 'staff' => 'Tim apartemen',
+                'units' => 'Unit & properti', 'facilities' => 'Fasilitas bersama', 'reservation' => 'Ajukan sewa', 'staff' => 'Bicara dengan tim',
             ],
         };
     }
@@ -638,7 +638,7 @@ class ApartmentPageController extends Controller
         return match ($locale) {
             'en' => [
                 'welcome' => 'Welcome to your', 'lobby' => 'virtual lobby',
-                'intro' => 'Fully furnished city apartments for a week, a month or longer. Take the lift to any floor — your AI concierge rides along.',
+                'intro' => 'Fully furnished city apartments to rent by the month or the year. Take the lift to any floor — your AI concierge rides along.',
                 'home' => 'Lobby', 'explore' => 'Building directory', 'reservation' => 'Apply to rent', 'floor' => 'Floor', 'elevator' => 'Lift',
                 'reservation_intro' => 'Tell your AI Concierge when you want to move in and how many people are moving in. We will help you find a unit and submit a rental application.',
                 'reservation_q' => 'I would like to rent a unit. Please help me check availability.',
@@ -658,7 +658,7 @@ class ApartmentPageController extends Controller
                 'no_photo' => 'Photos coming soon', 'prev_unit' => 'Previous', 'next_unit' => 'Next',
                 'for_sale' => 'For sale', 'sale_price' => 'For sale · :price', 'sale_from' => 'Sale price', 'sale_note' => 'Viewings and purchase enquiries are arranged by the apartment team.',
                 'ask_sale' => 'Ask about buying', 'ask_sale_q' => 'I am interested in buying :name. Can you tell me more?', 'rent_from_monthly' => 'Rent from :price / month',
-                'cat_residential' => 'Residence', 'cat_office' => 'Office', 'cat_commercial' => 'Commercial space',
+                'section_residential' => 'Residences', 'section_commercial' => 'Offices & commercial', 'section_sale' => 'For sale', 'cat_residential' => 'Residence', 'cat_office' => 'Office', 'cat_commercial' => 'Commercial space',
                 'ask_unit' => 'Ask about this unit', 'reserve_unit' => 'Apply for this unit', 'viewing_unit' => 'Schedule a viewing',
                 'size' => 'Size', 'bed' => 'Beds', 'guests' => 'Residents', 'view' => 'View', 'layout' => 'Layout', 'floors' => 'Floors',
                 'studio' => 'Studio', 'bedrooms' => ':count bed · :baths bath',
@@ -671,7 +671,7 @@ class ApartmentPageController extends Controller
             ],
             'ja' => [
                 'welcome' => 'ようこそ', 'lobby' => 'バーチャルロビーへ',
-                'intro' => '家具付きの都市型アパートメントを、1週間から1か月、それ以上でも。エレベーターでどのフロアへも — AIコンシェルジュがご一緒します。',
+                'intro' => '家具付きの都市型アパートメントを、月契約または年契約で。エレベーターでどのフロアへも — AIコンシェルジュがご一緒します。',
                 'home' => 'ロビー', 'explore' => 'フロアガイド', 'reservation' => '入居を申し込む', 'floor' => 'フロア', 'elevator' => 'エレベーター',
                 'reservation_intro' => 'ご希望の入居日と入居人数をAIコンシェルジュにお伝えください。お部屋探しと入居のお申し込みをお手伝いします。',
                 'reservation_q' => 'お部屋を借りたいです。空室を確認してください。',
@@ -691,7 +691,7 @@ class ApartmentPageController extends Controller
                 'no_photo' => '写真は準備中です', 'prev_unit' => '前へ', 'next_unit' => '次へ',
                 'for_sale' => '販売中', 'sale_price' => '販売価格 · :price', 'sale_from' => '販売価格', 'sale_note' => '内覧とご購入のお問い合わせは、スタッフが承ります。',
                 'ask_sale' => '購入について聞く', 'ask_sale_q' => ':name の購入を検討しています。詳しく教えてください。', 'rent_from_monthly' => '賃料 :price / 月から',
-                'cat_residential' => 'レジデンス', 'cat_office' => 'オフィス', 'cat_commercial' => '商業スペース',
+                'section_residential' => 'レジデンス', 'section_commercial' => 'オフィス・商業', 'section_sale' => '販売物件', 'cat_residential' => 'レジデンス', 'cat_office' => 'オフィス', 'cat_commercial' => '商業スペース',
                 'ask_unit' => 'このお部屋について聞く', 'reserve_unit' => 'このお部屋に申し込む', 'viewing_unit' => '内見を予約する',
                 'size' => '広さ', 'bed' => 'ベッド', 'guests' => '定員', 'view' => '眺望', 'layout' => '間取り', 'floors' => 'フロア',
                 'studio' => 'スタジオ', 'bedrooms' => ':count ベッドルーム · :baths バスルーム',
@@ -704,7 +704,7 @@ class ApartmentPageController extends Controller
             ],
             default => [
                 'welcome' => 'Selamat datang di', 'lobby' => 'lobi virtual Anda',
-                'intro' => 'Apartemen kota siap huni untuk seminggu, sebulan, atau lebih. Naik lift ke lantai mana pun — AI Concierge ikut menemani.',
+                'intro' => 'Apartemen kota siap huni untuk disewa bulanan atau tahunan. Naik lift ke lantai mana pun — AI Concierge ikut menemani.',
                 'home' => 'Lobi', 'explore' => 'Direktori gedung', 'reservation' => 'Ajukan sewa', 'floor' => 'Lantai', 'elevator' => 'Lift',
                 'reservation_intro' => 'Ceritakan kepada AI Concierge kapan Anda ingin pindah dan berapa penghuninya. Kami bantu mencari unit hingga mengajukan sewa.',
                 'reservation_q' => 'Saya ingin menyewa unit. Bantu saya cek ketersediaan.',
@@ -724,7 +724,7 @@ class ApartmentPageController extends Controller
                 'no_photo' => 'Foto segera tersedia', 'prev_unit' => 'Sebelumnya', 'next_unit' => 'Berikutnya',
                 'for_sale' => 'Dijual', 'sale_price' => 'Dijual · :price', 'sale_from' => 'Harga jual', 'sale_note' => 'Kunjungan dan pertanyaan pembelian diatur oleh tim apartemen.',
                 'ask_sale' => 'Tanya tentang pembelian', 'ask_sale_q' => 'Saya tertarik membeli :name. Bisa dijelaskan lebih lanjut?', 'rent_from_monthly' => 'Sewa mulai :price / bulan',
-                'cat_residential' => 'Hunian', 'cat_office' => 'Kantor', 'cat_commercial' => 'Ruang komersial',
+                'section_residential' => 'Hunian', 'section_commercial' => 'Kantor & komersial', 'section_sale' => 'Dijual', 'cat_residential' => 'Hunian', 'cat_office' => 'Kantor', 'cat_commercial' => 'Ruang komersial',
                 'ask_unit' => 'Tanya tentang unit ini', 'reserve_unit' => 'Ajukan sewa unit ini', 'viewing_unit' => 'Jadwalkan survei',
                 'size' => 'Luas', 'bed' => 'Tempat tidur', 'guests' => 'Kapasitas', 'view' => 'Pemandangan', 'layout' => 'Denah', 'floors' => 'Lantai',
                 'studio' => 'Studio', 'bedrooms' => ':count kamar tidur · :baths kamar mandi',
@@ -752,7 +752,7 @@ class ApartmentPageController extends Controller
                 'chat_year' => 'year(s)',
                 'chat_deposit' => 'deposit',
                 'ask_ai' => 'Ask the AI Concierge',
-                'units_heading' => 'Residences',
+                'units_heading' => 'Units & properties',
                 'chat_heading' => 'AI Concierge',
                 'chat_subtitle' => 'Ask about units, rent, viewings or the building — on duty 24/7.',
                 'chat_placeholder' => 'Ask about a unit, a rate or a house rule…',
@@ -803,7 +803,7 @@ class ApartmentPageController extends Controller
                 'chat_year' => '年',
                 'chat_deposit' => '敷金',
                 'ask_ai' => 'AIコンシェルジュに聞く',
-                'units_heading' => 'レジデンス',
+                'units_heading' => 'お部屋・物件',
                 'chat_heading' => 'AIコンシェルジュ',
                 'chat_subtitle' => 'お部屋・賃料・内見・建物について24時間いつでもどうぞ。',
                 'chat_placeholder' => 'お部屋、料金、館内ルールについて質問…',
@@ -854,7 +854,7 @@ class ApartmentPageController extends Controller
                 'chat_year' => 'tahun',
                 'chat_deposit' => 'deposit',
                 'ask_ai' => 'Tanya AI Concierge',
-                'units_heading' => 'Unit Hunian',
+                'units_heading' => 'Unit & Properti',
                 'chat_heading' => 'AI Concierge',
                 'chat_subtitle' => 'Tanyakan unit, harga sewa, survei, atau gedung — siaga 24 jam.',
                 'chat_placeholder' => 'Tanya soal unit, tarif, atau aturan gedung…',

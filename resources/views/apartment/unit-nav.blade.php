@@ -1,8 +1,19 @@
-{{-- The residences directory board: every unit type with its layout, floors and monthly rent, so the guest can step between units without going back. --}}
+{{-- The units and properties directory board, grouped into residences, offices and commercial, and units for sale: every unit type with its layout, floors and monthly rent, so the guest can step between units without going back. --}}
 <aside class="unit-directory" aria-label="{{ $labels['units_heading'] }}">
     <p class="unit-directory-title"><span>{{ $labels['units_heading'] }}</span><span>{{ $unitTypes->count() }}</span></p>
-    <nav class="unit-nav">
-        @foreach ($unitTypes as $item)
+    @php
+        $sections = $unitTypes->groupBy(fn ($item) => match (true) {
+            ! $item->isForRent() => 'sale',
+            $item->isResidential() => 'residential',
+            default => 'commercial',
+        });
+    @endphp
+    <div class="unit-directory-scroll">
+    @foreach (['residential', 'commercial', 'sale'] as $section)
+        @continue (! $sections->has($section))
+        <p class="unit-directory-section"><span>{{ $lobby['section_'.$section] }}</span><span>{{ $sections[$section]->count() }}</span></p>
+        <nav class="unit-nav" aria-label="{{ $lobby['section_'.$section] }}">
+        @foreach ($sections[$section] as $item)
             <a href="{{ route('apartment.unit', ['apartmentSlug' => $apartment->slug, 'unitSlug' => $item->slug, 'lang' => $locale]) }}"
                 data-stage-exit
                 @if (($unitType ?? null)?->slug === $item->slug) aria-current="page" @endif>
@@ -32,5 +43,7 @@
                 <span class="unit-nav-go" aria-hidden="true">→</span>
             </a>
         @endforeach
-    </nav>
+        </nav>
+    @endforeach
+    </div>
 </aside>

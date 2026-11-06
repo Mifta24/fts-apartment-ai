@@ -230,7 +230,7 @@ class ApartmentLobbyTest extends TestCase
         $this->get('/demo?lang=id')
             ->assertOk()
             ->assertSee('href="'.route('apartment.units', ['apartmentSlug' => 'demo', 'lang' => 'id']).'"', false)
-            ->assertSee('data-tour-line="Naik ke lantai hunian."', false)
+            ->assertSee('data-tour-line="Naik ke lantai unit dan properti."', false)
             ->assertSee('href="'.route('apartment.facilities', ['apartmentSlug' => 'demo', 'lang' => 'id']).'"', false)
             ->assertSee('data-tour-line="Naik ke lantai fasilitas bersama."', false)
             ->assertDontSee('data-lobby-panel="units"', false)
@@ -501,7 +501,7 @@ class ApartmentLobbyTest extends TestCase
 
         // the open unit is marked as current in the index, the others are not
         $index = $this->get('/demo/units/family-suite?lang=id')->getContent();
-        $navigation = Str::between($index, '<nav class="unit-nav">', '</nav>');
+        $navigation = Str::between($index, '<nav class="unit-nav"', '</nav>');
         $this->assertStringContainsString('aria-current="page"', Str::after($navigation, 'unitSlug=family-suite') ?: $navigation);
         $this->assertSame(1, substr_count($navigation, 'aria-current'));
 
@@ -510,6 +510,25 @@ class ApartmentLobbyTest extends TestCase
             ->assertOk()
             ->assertSee('href="'.route('apartment.reservation', ['apartmentSlug' => 'demo', 'lang' => 'id']).'"', false)
             ->assertDontSee('class="unit-nav"', false);
+    }
+
+    public function test_the_units_directory_groups_residences_offices_and_units_for_sale(): void
+    {
+        $apartment = Apartment::create(['name' => 'Demo', 'slug' => 'demo', 'public_status' => 'published', 'currency' => 'IDR']);
+        $apartment->unitTypes()->create(['name' => 'Deluxe King', 'slug' => 'deluxe-king', 'monthly_price' => 12000000, 'max_adults' => 2, 'max_children' => 0, 'is_active' => true, 'sort_order' => 0]);
+        $apartment->unitTypes()->create(['name' => 'Podium Office', 'slug' => 'podium-office', 'category' => 'office', 'monthly_price' => 38000000, 'max_adults' => 10, 'max_children' => 0, 'is_active' => true, 'sort_order' => 1]);
+        $apartment->unitTypes()->create(['name' => 'Penthouse For Sale', 'slug' => 'penthouse-sale', 'listing_type' => 'sale', 'sale_price' => 7900000000, 'max_adults' => 4, 'max_children' => 0, 'is_active' => true, 'sort_order' => 2]);
+
+        $response = $this->get('/demo/units?lang=id')->assertOk();
+        $content = $response->getContent();
+
+        $response->assertSee('Unit &amp; Properti', false)
+            ->assertSee('aria-label="Hunian"', false)
+            ->assertSee('aria-label="Kantor &amp; komersial"', false)
+            ->assertSee('aria-label="Dijual"', false);
+
+        $this->assertLessThan(strpos($content, 'Podium Office'), strpos($content, 'Deluxe King'));
+        $this->assertLessThan(strpos($content, 'Penthouse For Sale'), strpos($content, 'Podium Office'));
     }
 
     public function test_each_floor_opens_onto_its_own_photograph_with_the_concierge_posed_in_front(): void

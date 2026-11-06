@@ -223,6 +223,59 @@ class ConciergeChatTest extends TestCase
         });
     }
 
+    public function test_a_price_quoted_from_memory_twice_is_replaced_by_a_real_unit_search(): void
+    {
+        Http::fake(['llm.test/*' => Http::sequence()
+            ->push($this->completion('Studio IDR 5.000.000 per month.'))
+            ->push($this->completion('Studio IDR 5.000.000 per month, really.'))
+            ->push($this->completion('The Deluxe King is IDR 12,000,000 per month.')),
+        ]);
+
+        $token = $this->startConversation();
+
+        $this->postJson('/demo/concierge/message', ['guest_token' => $token, 'message' => 'How much is the monthly rent?'])
+            ->assertOk()
+            ->assertJsonPath('message.content', 'The Deluxe King is IDR 12,000,000 per month.')
+            ->assertJsonPath('message.ui_payload.0.type', 'unit_results');
+
+        Http::assertSent(function (Request $request) {
+            $tool = collect($request['messages'])->firstWhere('role', 'tool');
+
+            return $tool !== null && str_contains($tool['content'], '12000000');
+        });
+    }
+
+    public function test_matching_knowledge_entries_are_handed_to_the_model_with_the_question(): void
+    {
+        $this->apartment->knowledgeItems()->create(['category' => 'policies', 'title' => 'Deposit', 'body' => 'The deposit is 2 months of rent.', 'is_active' => true]);
+        $this->apartment->knowledgeItems()->create(['category' => 'policies', 'title' => 'Old hotel rates', 'body' => 'Nightly rate with a deposit of 7 nights.', 'is_active' => false]);
+
+        $this->fakeReply();
+        $token = $this->startConversation();
+
+        $this->postJson('/demo/concierge/message', ['guest_token' => $token, 'message' => 'How much is the deposit?'])->assertOk();
+
+        Http::assertSent(function (Request $request) {
+            $last = collect($request['messages'])->last()['content'];
+
+            return str_contains($last, 'The deposit is 2 months of rent.') && ! str_contains($last, '7 nights');
+        });
+    }
+
+    public function test_an_english_question_answered_in_indonesian_is_asked_again_in_english(): void
+    {
+        Http::fake(['llm.test/*' => Http::sequence()
+            ->push($this->completion('Sewa bulanan itu tersedia untuk semua unit, dan anda dapat menghubungi kami untuk informasi lebih lanjut.'))
+            ->push($this->completion('Monthly leases are available for every unit, and you can contact us for more information.')),
+        ]);
+
+        $token = $this->startConversation();
+
+        $this->postJson('/demo/concierge/message', ['guest_token' => $token, 'message' => 'How much is the monthly rent?'])
+            ->assertOk()
+            ->assertJsonPath('message.content', 'Monthly leases are available for every unit, and you can contact us for more information.');
+    }
+
     public function test_showing_a_unit_offers_matching_interface_actions(): void
     {
         Http::fake(['llm.test/*' => Http::sequence()

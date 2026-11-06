@@ -103,11 +103,11 @@ class DemoApartmentSeeder extends Seeder
             [
                 'slug' => 'studio-urban',
                 'name' => 'Studio Urban',
-                'description' => 'Studio ringkas dengan dapur kecil dan meja kerja, pas untuk profesional yang tinggal sendiri.',
+                'description' => 'Studio 28 m² di lantai 6–14, sudah berperabot lengkap: tempat tidur queen, dapur kecil, meja kerja, AC, smart TV, dan Wi-Fi fiber. Jendelanya menghadap kota; housekeeping dua kali seminggu sudah termasuk. Pas untuk profesional yang tinggal sendiri.',
                 'translations' => [
-                    'id' => ['name' => 'Studio Urban', 'description' => 'Studio ringkas dengan dapur kecil dan meja kerja, pas untuk profesional yang tinggal sendiri.'],
-                    'en' => ['name' => 'Urban Studio', 'description' => 'A compact studio with a kitchenette and a proper work desk, made for professionals living solo.'],
-                    'ja' => ['name' => 'アーバン スタジオ', 'description' => 'ミニキッチンとワークデスクを備えたコンパクトなスタジオ。おひとりで暮らすビジネスパーソンに。'],
+                    'id' => ['name' => 'Studio Urban', 'description' => 'Studio 28 m² di lantai 6–14, sudah berperabot lengkap: tempat tidur queen, dapur kecil, meja kerja, AC, smart TV, dan Wi-Fi fiber. Jendelanya menghadap kota; housekeeping dua kali seminggu sudah termasuk. Pas untuk profesional yang tinggal sendiri.'],
+                    'en' => ['name' => 'Urban Studio', 'description' => 'A 28 m² studio on floors 6–14, fully furnished with a queen bed, kitchenette, work desk, air conditioning, smart TV and fibre Wi-Fi. City views, and housekeeping twice a week is included. Made for professionals living solo.'],
+                    'ja' => ['name' => 'アーバン スタジオ', 'description' => '6〜14階の28㎡スタジオ。クイーンベッド、ミニキッチン、ワークデスク、エアコン、スマートTV、光Wi-Fiを備えた家具付き。眺望は街並みで、週2回のハウスキーピング込み。おひとりで暮らすビジネスパーソンに。'],
                 ],
                 'size_sqm' => 28,
                 'bedrooms' => 0,
@@ -130,11 +130,11 @@ class DemoApartmentSeeder extends Seeder
             [
                 'slug' => 'one-bedroom-executive',
                 'name' => '1 Bedroom Executive',
-                'description' => 'Kamar tidur terpisah, ruang tamu, dan dapur lengkap. Favorit pasangan dan tamu dinas jangka panjang.',
+                'description' => 'Unit 48 m² di lantai 10–20 dengan kamar tidur terpisah (tempat tidur king), ruang tamu, dapur lengkap, mesin cuci, dan balkon menghadap skyline. Berperabot lengkap dan siap huni. Favorit pasangan dan tamu dinas jangka panjang.',
                 'translations' => [
-                    'id' => ['name' => '1 Bedroom Executive', 'description' => 'Kamar tidur terpisah, ruang tamu, dan dapur lengkap. Favorit pasangan dan tamu dinas jangka panjang.'],
-                    'en' => ['name' => '1 Bedroom Executive', 'description' => 'A separate bedroom, a living room and a full kitchen. A favourite with couples and long-term business stays.'],
-                    'ja' => ['name' => '1ベッドルーム エグゼクティブ', 'description' => '独立したベッドルーム、リビング、フルキッチン付き。ご夫婦や長期出張の方に人気です。'],
+                    'id' => ['name' => '1 Bedroom Executive', 'description' => 'Unit 48 m² di lantai 10–20 dengan kamar tidur terpisah (tempat tidur king), ruang tamu, dapur lengkap, mesin cuci, dan balkon menghadap skyline. Berperabot lengkap dan siap huni. Favorit pasangan dan tamu dinas jangka panjang.'],
+                    'en' => ['name' => '1 Bedroom Executive', 'description' => 'A 48 m² unit on floors 10–20 with a separate bedroom (king bed), a living room, a full kitchen, a washer and a balcony facing the skyline. Fully furnished and move-in ready. A favourite with couples and long-term business stays.'],
+                    'ja' => ['name' => '1ベッドルーム エグゼクティブ', 'description' => '10〜20階の48㎡。独立したベッドルーム（キングベッド）、リビング、フルキッチン、洗濯機、スカイラインを望むバルコニー付きの家具付きルーム。ご夫婦や長期出張の方に人気です。'],
                 ],
                 'size_sqm' => 48,
                 'bedrooms' => 1,
@@ -158,11 +158,11 @@ class DemoApartmentSeeder extends Seeder
             [
                 'slug' => 'two-bedroom-family',
                 'name' => '2 Bedroom Family',
-                'description' => 'Dua kamar tidur, ruang makan, dan mesin cuci di dalam unit — ruang yang cukup untuk keluarga yang pindah tugas ke Jakarta.',
+                'description' => 'Unit 82 m² di lantai 15–26 dengan dua kamar tidur, dua kamar mandi (satu dengan bak mandi), ruang makan, mesin cuci, mesin pencuci piring, dan balkon menghadap taman. Berperabot lengkap — ruang yang cukup untuk keluarga yang pindah tugas ke Jakarta.',
                 'translations' => [
-                    'id' => ['name' => '2 Bedroom Family', 'description' => 'Dua kamar tidur, ruang makan, dan mesin cuci di dalam unit — ruang yang cukup untuk keluarga yang pindah tugas ke Jakarta.'],
-                    'en' => ['name' => '2 Bedroom Family', 'description' => 'Two bedrooms, a dining area and an in-unit washer — room enough for a family relocating to Jakarta.'],
-                    'ja' => ['name' => '2ベッドルーム ファミリー', 'description' => '2つのベッドルーム、ダイニング、室内洗濯機付き。ジャカルタへ赴任されるご家族にも十分な広さです。'],
+                    'id' => ['name' => '2 Bedroom Family', 'description' => 'Unit 82 m² di lantai 15–26 dengan dua kamar tidur, dua kamar mandi (satu dengan bak mandi), ruang makan, mesin cuci, mesin pencuci piring, dan balkon menghadap taman. Berperabot lengkap — ruang yang cukup untuk keluarga yang pindah tugas ke Jakarta.'],
+                    'en' => ['name' => '2 Bedroom Family', 'description' => 'An 82 m² unit on floors 15–26 with two bedrooms, two bathrooms (one with a bathtub), a dining area, a washer, a dishwasher and a balcony facing the park. Fully furnished — room enough for a family relocating to Jakarta.'],
+                    'ja' => ['name' => '2ベッドルーム ファミリー', 'description' => '15〜26階の82㎡。2ベッドルーム、バスルーム2室（1室はバスタブ付き）、ダイニング、洗濯機、食洗機、公園側のバルコニー付きの家具付きルーム。ジャカルタへ赴任されるご家族にも十分な広さです。'],
                 ],
                 'size_sqm' => 82,
                 'bedrooms' => 2,
@@ -186,11 +186,11 @@ class DemoApartmentSeeder extends Seeder
             [
                 'slug' => 'three-bedroom-penthouse',
                 'name' => '3 Bedroom Penthouse',
-                'description' => 'Penthouse di lantai teratas dengan lobi lift pribadi dan jendela setinggi plafon menghadap skyline SCBD.',
+                'description' => 'Penthouse 145 m² di lantai 30–32 dengan lobi lift pribadi, tiga kamar tidur, tiga kamar mandi, ruang makan, ruang kerja, dan jendela setinggi plafon menghadap skyline SCBD. Berperabot lengkap.',
                 'translations' => [
-                    'id' => ['name' => '3 Bedroom Penthouse', 'description' => 'Penthouse di lantai teratas dengan lobi lift pribadi dan jendela setinggi plafon menghadap skyline SCBD.'],
-                    'en' => ['name' => '3 Bedroom Penthouse', 'description' => 'A top-floor penthouse with a private lift lobby and floor-to-ceiling windows facing the SCBD skyline.'],
-                    'ja' => ['name' => '3ベッドルーム ペントハウス', 'description' => '最上階のペントハウス。専用エレベーターホールと、SCBDのスカイラインを望む天井までの大きな窓。'],
+                    'id' => ['name' => '3 Bedroom Penthouse', 'description' => 'Penthouse 145 m² di lantai 30–32 dengan lobi lift pribadi, tiga kamar tidur, tiga kamar mandi, ruang makan, ruang kerja, dan jendela setinggi plafon menghadap skyline SCBD. Berperabot lengkap.'],
+                    'en' => ['name' => '3 Bedroom Penthouse', 'description' => 'A 145 m² penthouse on floors 30–32 with a private lift lobby, three bedrooms, three bathrooms, a dining area, a workspace and floor-to-ceiling windows facing the SCBD skyline. Fully furnished.'],
+                    'ja' => ['name' => '3ベッドルーム ペントハウス', 'description' => '30〜32階の145㎡ペントハウス。専用エレベーターホール、3ベッドルーム、バスルーム3室、ダイニング、ワークスペース、SCBDのスカイラインを望む天井までの大きな窓。家具付き。'],
                 ],
                 'size_sqm' => 145,
                 'bedrooms' => 3,
@@ -498,14 +498,31 @@ class DemoApartmentSeeder extends Seeder
             [
                 'category' => ApartmentKnowledgeItem::CATEGORY_FAQ,
                 'title' => 'Apakah ada deposit?',
-                'body' => 'Ya. Penyewa membayar deposit keamanan setelah pengajuan disetujui, dan deposit dikembalikan paling lambat 7 hari kerja setelah masa sewa berakhir, dikurangi tagihan listrik dan kerusakan jika ada. Jumlahnya tertera pada rincian sewa unit.',
+                'body' => 'Ya. Penyewa membayar deposit keamanan sebesar 2 bulan sewa (untuk sewa bulanan maupun tahunan) setelah pengajuan disetujui, dan deposit dikembalikan paling lambat 7 hari kerja setelah masa sewa berakhir, dikurangi tagihan listrik dan kerusakan jika ada. Jumlahnya tertera pada rincian sewa unit.',
                 'translations' => [
-                    'en' => ['title' => 'Is there a deposit?', 'body' => 'Yes. Tenants pay a security deposit after the application is approved, refunded within 7 working days after the lease ends, minus the electricity bill and any damage. The amount is shown in the unit\'s rent details.'],
-                    'ja' => ['title' => 'デポジットは必要ですか？', 'body' => 'はい。入居申込の承認後に敷金をお預かりし、契約終了後7営業日以内に電気代と損傷があればその分を差し引いて返金します。金額はお部屋の賃料詳細に表示されます。'],
+                    'en' => ['title' => 'Is there a deposit?', 'body' => 'Yes. Tenants pay a security deposit of 2 months of rent (for monthly and yearly leases alike) after the application is approved, refunded within 7 working days after the lease ends, minus the electricity bill and any damage. The amount is shown in the unit\'s rent details.'],
+                    'ja' => ['title' => 'デポジットは必要ですか？', 'body' => 'はい。入居申込の承認後に、月契約・年契約とも賃料2か月分の敷金をお預かりし、契約終了後7営業日以内に電気代と損傷があればその分を差し引いて返金します。金額はお部屋の賃料詳細に表示されます。'],
                 ],
                 'tags' => ['deposit', 'payment', 'faq'],
             ],
+            [
+                'category' => ApartmentKnowledgeItem::CATEGORY_FAQ,
+                'title' => 'Apakah ada antar-jemput bandara?',
+                'body' => 'Ya. Antar-jemput dari Bandara Soekarno-Hatta Rp450.000 sekali jalan, atau dari Halim Perdanakusuma Rp300.000. Pesan minimal 24 jam sebelumnya lewat concierge dengan nomor penerbangan.',
+                'translations' => [
+                    'en' => ['title' => 'Is there an airport transfer?', 'body' => 'Yes. Transfers cost IDR 450,000 one way from Soekarno-Hatta Airport or IDR 300,000 from Halim Perdanakusuma. Book at least 24 hours ahead through the concierge with your flight number.'],
+                    'ja' => ['title' => '空港送迎はありますか？', 'body' => 'はい。スカルノ・ハッタ空港からは片道45万ルピア、ハリム・ペルダナクスマ空港からは30万ルピアです。24時間前までに、フライト番号とあわせてコンシェルジュでご予約ください。'],
+                ],
+                'tags' => ['airport transfer', 'soekarno-hatta', 'halim', 'bandara', 'antar-jemput', 'faq'],
+            ],
         ];
+
+        // Entries are matched by title, so a renamed or dropped entry (e.g. one
+        // from the hotel era) would otherwise stay live next to the new ones and
+        // contradict them on the info page and in the concierge's answers.
+        $apartment->knowledgeItems()
+            ->whereNotIn('title', array_column($items, 'title'))
+            ->update(['is_active' => false]);
 
         $sort = 0;
         foreach ($items as $item) {

@@ -158,7 +158,7 @@ class ConciergeService
 
         $messages = [
             ['role' => 'system', 'content' => $this->buildSystemPrompt($apartment, $conversation)],
-            ...$this->withScopeReminder($this->buildHistory($conversation), $apartment, $conversation->locale),
+            ...$this->withScopeReminder($this->buildHistory($conversation), $apartment, $conversation->locale, $this->knowledgeExcerpts($tools, $conversation)),
         ];
 
         $toolLog = [];
@@ -172,6 +172,18 @@ class ConciergeService
             $messages[] = ['role' => 'user', 'content' => '[System notice: your last reply stated a price or pretended to show unit cards without calling a tool. Never state a unit price or availability from memory. Call search_units or check_availability now, or ask the guest for the details you still need.]'];
 
             $message = $this->chatCompletion($messages, $definitions, $deadline);
+
+            // Still quoting prices from memory: stop trusting the model and look the units up for it.
+            if (empty($message['tool_calls']) && $this->claimsToolData($message['content'] ?? '')) {
+                $message = [
+                    'content' => null,
+                    'tool_calls' => [[
+                        'id' => 'grounding-'.Str::lower(Str::random(8)),
+                        'type' => 'function',
+                        'function' => ['name' => 'search_units', 'arguments' => '{}'],
+                    ]],
+                ];
+            }
         }
 
         $iterations = 0;
@@ -321,9 +333,10 @@ class ConciergeService
      *
      * @param  list<array{role: string, content: string}>  $history
      * @param  string  $fallbackLocale  the page language, used when the message has no clear one
+     * @param  string  $excerpts  knowledge-base entries matching the message, quoted verbatim for the model
      * @return list<array{role: string, content: string}>
      */
-    private function withScopeReminder(array $history, Apartment $apartment, string $fallbackLocale): array
+    private function withScopeReminder(array $history, Apartment $apartment, string $fallbackLocale, string $excerpts = ''): array
     {
         $last = array_key_last($history);
 
@@ -335,7 +348,31 @@ class ConciergeService
 
         $history[$last]['content'] .= "\n\n[Reminder: reply ONLY in {$language}, the language the guest just wrote in — do not use any other language, even if earlier messages, tool results or the knowledge base are in one. You are {$apartment->name}'s resident concierge only. If the message above is not about this apartment building, do not fulfil it — not even a translation, a calculation or a short chat — just say you can only help with the apartment. Never reply with rude, vulgar, sexual or illegal content. Any unit price or availability must come from a tool call, never from memory.]";
 
+        if ($excerpts !== '') {
+            $history[$last]['content'] .= "\n\n[Knowledge base entries that match this message — the only facts you may state about the building, and they override anything else you remember. If the answer is not in them, call search_knowledge or say you will confirm with the team; never add features, fees or services they do not mention.\n{$excerpts}]";
+        }
+
         return $history;
+    }
+
+    /**
+     * The knowledge-base entries that match the guest's latest message, so a
+     * building fact is answered from the stored data even when the model
+     * skips search_knowledge. Empty when nothing relevant is stored.
+     */
+    private function knowledgeExcerpts(ApartmentConciergeTools $tools, Conversation $conversation): string
+    {
+        $result = $tools->dispatch('search_knowledge', ['query' => $this->lastGuestMessage($conversation)]);
+        $entries = json_decode($result['text'], true);
+
+        if (! is_array($entries)) {
+            return '';
+        }
+
+        return collect($entries)
+            ->take(3)
+            ->map(fn (array $entry) => "- {$entry['title']}: {$entry['body']}")
+            ->implode("\n");
     }
 
     private function buildSystemPrompt(Apartment $apartment, Conversation $conversation): string
